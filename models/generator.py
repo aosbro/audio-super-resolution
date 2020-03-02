@@ -1,5 +1,5 @@
-from models.down_block import *
-from models.up_block import *
+from blocks.down_block import *
+from blocks.up_block import *
 
 
 class Generator(nn.Module):
@@ -42,18 +42,3 @@ class Generator(nn.Module):
         u3 = self.up_block_3(u2, d2)
         u4 = self.up_block_4(u3, d1)
         return u4
-
-
-def main():
-    kernel_sizes = [3, 9, 27, 81]
-    channel_sizes = [16, 32, 16, 8]
-    bottleneck_channels = 8
-    p = 0.2
-    G = Generator(kernel_sizes, channel_sizes, bottleneck_channels, p)
-    x = torch.randn(31, 1, 8000)
-    y = G(x)
-    print(y.shape)
-
-
-if __name__ == '__main__':
-    main()
