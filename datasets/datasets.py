@@ -9,7 +9,7 @@ from torch import nn
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, fs, ratio, overlap):
+    def __init__(self, datapath, fs=16000, ratio=8, overlap=0.5):
         """
         Initializes the class DatasetBeethoven
         :param datapath: path to raw .npy file
@@ -41,7 +41,7 @@ class DatasetBeethoven(data.Dataset):
         """
         return self.data.shape[0] * self.window_number
 
-    def __pad_signal(self, x):
+    def pad_signal(self, x):
         """
         Adds zero-padding at the end of the last window
         :param x: Signal with length smaller than the window length
@@ -68,12 +68,11 @@ class DatasetBeethoven(data.Dataset):
 
         # Add padding for last window
         if x_h.shape != self.window_length:
-            x_h = self.__pad_signal(x_h)
+            x_h = self.pad_signal(x_h)
 
         x_l = upsample(downsample(x_h, self.ratio), self.ratio)
-        X_h_db = compute_spectrogram(x_h)
-        X_l_db = compute_spectrogram(x_l)
-        return x_h, x_l, X_h_db, X_l_db
+        return torch.from_numpy(np.expand_dims(x_h, axis=0)), torch.from_numpy(np.expand_dims(x_l, axis=0))
+
 
 
 # def main():
@@ -85,7 +84,9 @@ class DatasetBeethoven(data.Dataset):
 #     print(dataset.__len__())
 #     print(dataset.window_number)
 #
-#     x_h, x_l, X_h_db, X_l_db = dataset.__getitem__(5)
+#     x_h, x_l = dataset.__getitem__(5)
+#         X_h_db = compute_spectrogram(x_h)
+#         X_l_db = compute_spectrogram(x_l)
 #
 #     # Plotting
 #     fig, axes = plt.subplots(1, 2, figsize=(14, 7))

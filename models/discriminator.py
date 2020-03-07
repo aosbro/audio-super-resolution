@@ -23,17 +23,3 @@ class Discriminator(nn.Module):
         x = self.mid_blocks(x)
         return self.out_block(x)
 
-
-# def main():
-#     kernel_sizes = [3, 9, 27, 81]
-#     channel_sizes = 4 * [16]
-#     bottleneck_channels = 8
-#     p = 0.2
-#     n_blocks = 7
-#     D = Discriminator(kernel_sizes, channel_sizes, bottleneck_channels, p, n_blocks)
-#     x = torch.randn(10, 1, 8192)
-#     print(D(x).shape)
-#
-#
-# if __name__ == '__main__':
-#     main()
