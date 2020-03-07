@@ -9,7 +9,7 @@ class UpBlock(BaseBlock):
         self.dropout = nn.Dropout(p)
         self.activation = nn.PReLU(sum(channel_sizes))
 
-    def forward(self, x, x_shortcut):
+    def forward(self, x, x_shortcut=None):
         x = self.forward_base(x)
         x = self.activation(self.dropout(x))
         x = self.subpixel(x)

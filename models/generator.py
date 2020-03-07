@@ -66,18 +66,17 @@ class Generator(nn.Module):
         u6 = self.up_block_6(u5, d2)
         u7 = self.up_block_7(u6, d1)
         u8 = self.up_block_8(u7, None)
-        output = self.output_conv(u8) + x_l
-        return output
+        return self.output_conv(u8) + x_l
 
 
-def main():
-    x_l = torch.randn(10, 1, 8192)
-    kernel_sizes = [3, 9, 27, 81]
-    channel_sizes = 4 * [16]
-    bottleneck_channels = 8
-    p = 0.2
-    G = Generator(kernel_sizes, channel_sizes, bottleneck_channels, p)
-    print(G(x_l).shape)
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     x_l = torch.randn(10, 1, 8192)
+#     kernel_sizes = [3, 9, 27, 81]
+#     channel_sizes = 4 * [16]
+#     bottleneck_channels = 8
+#     p = 0.2
+#     G = Generator(kernel_sizes, channel_sizes, bottleneck_channels, p)
+#     print(G(x_l).shape)
+#
+# if __name__ == '__main__':
+#     main()

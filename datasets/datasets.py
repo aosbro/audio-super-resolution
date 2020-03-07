@@ -76,25 +76,25 @@ class DatasetBeethoven(data.Dataset):
         return x_h, x_l, X_h_db, X_l_db
 
 
-def main():
-    datapath = '/media/thomas/Samsung_T5/VITA/data/music/music_train_.npy'
-    fs = 16000
-    ratio = 8
-    overlap = 0.5
-    dataset = DatasetBeethoven(datapath, fs, ratio, overlap)
-    print(dataset.__len__())
-    print(dataset.window_number)
-
-    x_h, x_l, X_h_db, X_l_db = dataset.__getitem__(5)
-
-    # Plotting
-    fig, axes = plt.subplots(1, 2, figsize=(14, 7))
-    librosa.display.specshow(X_h_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[0])
-    axes[0].set_title('High quality, spectrogram', fontsize=16)
-    librosa.display.specshow(X_l_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[1])
-    axes[1].set_title('Low quality, spectrogram', fontsize=16)
-    plt.show()
-
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     datapath = '/media/thomas/Samsung_T5/VITA/data/music/music_train_.npy'
+#     fs = 16000
+#     ratio = 8
+#     overlap = 0.5
+#     dataset = DatasetBeethoven(datapath, fs, ratio, overlap)
+#     print(dataset.__len__())
+#     print(dataset.window_number)
+#
+#     x_h, x_l, X_h_db, X_l_db = dataset.__getitem__(5)
+#
+#     # Plotting
+#     fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+#     librosa.display.specshow(X_h_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[0])
+#     axes[0].set_title('High quality, spectrogram', fontsize=16)
+#     librosa.display.specshow(X_l_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[1])
+#     axes[1].set_title('Low quality, spectrogram', fontsize=16)
+#     plt.show()
+#
+#
+# if __name__ == '__main__':
+#     main()
