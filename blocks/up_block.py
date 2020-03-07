@@ -1,11 +1,12 @@
 from layers.subpixel import *
 from blocks.base_block import *
+from utils.constants import *
 
 
 class UpBlock(BaseBlock):
     def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, p):
         super(UpBlock, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels)
-        self.subpixel = SubPixel1D(upscale_factor=2)
+        self.subpixel = SubPixel1D(upscale_factor=UPSCALE_FACTOR)
         self.dropout = nn.Dropout(p)
         self.activation = nn.PReLU(sum(channel_sizes))
 

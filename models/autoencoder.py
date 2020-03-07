@@ -1,5 +1,6 @@
 from blocks.down_block import *
 from blocks.up_block import *
+from utils.constants import *
 
 
 class AutoEncoder(nn.Module):
@@ -25,7 +26,7 @@ class AutoEncoder(nn.Module):
         self.decoder = nn.Sequential(*self.decoder)
 
         # Output convolution
-        kernel_size = 27
+        kernel_size = OUTPUT_KERNEL_SIZE
         padding = (kernel_size - 1) // 2
         self.output_conv = nn.Conv1d(in_channels=int((1/2) * sum(channel_sizes)), out_channels=1,
                                      kernel_size=kernel_size, padding=padding)

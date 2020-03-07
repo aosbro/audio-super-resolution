@@ -1,3 +1,4 @@
+from utils.constants import *
 from torch.utils import data
 import numpy as np
 from preprocessing.preprocessing import *
@@ -9,7 +10,7 @@ from torch import nn
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, fs=16000, ratio=8, overlap=0.5):
+    def __init__(self, datapath, ratio=8, overlap=0.5):
         """
         Initializes the class DatasetBeethoven
         :param datapath: path to raw .npy file
@@ -18,12 +19,11 @@ class DatasetBeethoven(data.Dataset):
         :param overlap: overlap ratio with adjacent windows
         """
         self.data = np.load(datapath)
-        self.fs = fs
         self.ratio = ratio
         self.overlap = overlap
-        self.window_length = 8192
+        self.window_length = WINDOW_LENGTH
         self.window_number = self.compute_window_number()
-        self.hanning_length = 101
+        self.hanning_length = HANNING_WINDOW_LENGTH
 
     def compute_window_number(self):
         """
@@ -47,7 +47,7 @@ class DatasetBeethoven(data.Dataset):
         :param x: Signal with length smaller than the window length
         :return: Padded signal
         """
-        # Apply hanning window to avoid alliasing
+        # Apply hanning window to avoid aliasing
         half_hanning = np.hanning(self.hanning_length)[self.hanning_length // 2:]
         x[- self.hanning_length // 2:] = x[- self.hanning_length // 2:] * half_hanning
 
@@ -71,7 +71,7 @@ class DatasetBeethoven(data.Dataset):
             x_h = self.pad_signal(x_h)
 
         x_l = upsample(downsample(x_h, self.ratio), self.ratio)
-        return torch.from_numpy(np.expand_dims(x_h, axis=0)), torch.from_numpy(np.expand_dims(x_l, axis=0))
+        return torch.from_numpy(np.expand_dims(x_h, axis=0)).float(), torch.from_numpy(np.expand_dims(x_l, axis=0)).float()
 
 
 
