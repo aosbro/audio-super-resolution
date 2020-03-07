@@ -18,7 +18,7 @@ class DiscriminatorBlock(BaseBlock):
 
 class DiscriminatorInput(BaseBlock):
     def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels):
-        super(DiscriminatorBlock, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels)
+        super(DiscriminatorInput, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels)
         self.activation = nn.LeakyReLU(negative_slope=0.2)
 
     def forward(self, x):
@@ -37,6 +37,7 @@ class DiscriminatorOutput(nn.Module):
         self.activation_2 = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.activation_1(self.dropout(self.fc_1(x)))
+        B, C, W = x.size()
+        x = self.activation_1(self.dropout(self.fc_1(x.view(B, C * W))))
         x = self.activation_2(self.fc_2(x))
         return x

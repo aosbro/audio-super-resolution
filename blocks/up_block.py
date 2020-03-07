@@ -13,4 +13,6 @@ class UpBlock(BaseBlock):
         x = self.forward_base(x)
         x = self.activation(self.dropout(x))
         x = self.subpixel(x)
+        if x_shortcut is None:
+            return x
         return torch.cat([x, x_shortcut], dim=1)
