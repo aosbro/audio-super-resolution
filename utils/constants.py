@@ -3,15 +3,18 @@ WINDOW_LENGTH = 8192
 HANNING_WINDOW_LENGTH = 101
 BATCH_SIZE = 10
 NUM_WORKERS = 6
+
 TRAIN_SHUFFLE = True
 TEST_SHUFFLE = False
 VALID_SHUFFLE = False
+
 TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train_.npy'
 TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test_.npy'
+VALID_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_valid_.npy'
+
 TRAIN_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_train_.npy'
 TEST_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_test_.npy'
-
-# Kernels constants
+VALID_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_valid_.npy'
 
 
 # Fully connected constants
