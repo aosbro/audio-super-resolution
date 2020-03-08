@@ -20,11 +20,7 @@ def train_autoencoder(model, epochs, train_generator, test_generator, optimizer,
             optimizer.step()
 
 
-def main():
-    # Define the datapaths
-    train_datapath = TRAIN_DATAPATH
-    test_datapath = TEST_DATAPATH
-
+def main(train_datapath, test_datapath):
     # Create the datasets
     train_dataset = DatasetBeethoven(train_datapath)
     test_dataset = DatasetBeethoven(test_datapath)
@@ -61,4 +57,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # Define the datapaths
+    train_datapath = TRAIN_DATAPATH
+    test_datapath = TEST_DATAPATH
+
+    main(train_datapath=train_datapath, test_datapath=test_datapath)

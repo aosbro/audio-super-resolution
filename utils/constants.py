@@ -8,6 +8,8 @@ TEST_SHUFFLE = False
 VALID_SHUFFLE = False
 TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train_.npy'
 TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test_.npy'
+TRAIN_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_train_.npy'
+TEST_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_test_.npy'
 
 # Kernels constants
 
