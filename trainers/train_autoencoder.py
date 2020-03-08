@@ -48,7 +48,7 @@ def main(train_datapath, test_datapath):
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Start training
-    train_autoencoder(model=model, epochs=1, train_generator=train_generator, test_generator=test_generator,
+    train_autoencoder(model=model.to(device), epochs=1, train_generator=train_generator, test_generator=test_generator,
                       optimizer=optimizer, loss_function=loss_function, device=device)
     # x = train_generator.dataset.__getitem__(0)
     # y = torch.stack(x)
