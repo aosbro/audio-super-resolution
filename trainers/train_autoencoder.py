@@ -1,6 +1,7 @@
 from datasets.datasets import *
 from models.autoencoder import *
 from utils.utils import *
+import os
 
 
 class AutoEncoderTrainer:
@@ -51,7 +52,7 @@ class AutoEncoderTrainer:
 
                 # Print message
                 if not(i % 100):
-                    message = 'Batch {}, train loss: {}'.format(i, loss.item())
+                    message = 'Batch {}, train loss: {}'.format(i, np.mean(batch_losses[-100:]))
                     print(message)
 
                 # Store the batch loss
@@ -83,7 +84,7 @@ class AutoEncoderTrainer:
 
             # Print message
             if not(i % 100):
-                message = 'Batch {}, test loss: {}'.format(i, loss.item())
+                message = 'Batch {}, test loss: {}'.format(i, np.mean(batch_losses[-100:]))
                 print(message)
 
             batch_losses.append(loss.item())
@@ -92,7 +93,7 @@ class AutoEncoderTrainer:
         self.test_losses.append(np.mean(batch_losses))
 
 
-def main(train_datapath, test_datapath, valid_datapath, savepath):
+def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath):
     # Create the datasets
     train_dataset = DatasetBeethoven(train_datapath)
     test_dataset = DatasetBeethoven(test_datapath)
@@ -120,13 +121,6 @@ def main(train_datapath, test_datapath, valid_datapath, savepath):
                         p=DROPOUT_PROBABILITY,
                         n_blocks=N_BLOCKS)
 
-    # Define the optimizer, loss and device
-    # optimizer = torch.optim.Adam(params=model.parameters(), lr=)
-    # loss_function = nn.MSELoss()
-    # device = ('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Path to save the trainer
-    savepath = '../objects/autoencoder_trainer.txt'
 
     autoencoder_trainer = AutoEncoderTrainer(autoencoder=model,
                                              train_generator=train_generator,
@@ -134,22 +128,26 @@ def main(train_datapath, test_datapath, valid_datapath, savepath):
                                              valid_generator=valid_generator,
                                              lr=LEARNING_RATE,
                                              savepath=savepath)
+    return autoencoder_trainer
 
 
-    autoencoder_trainer.train(1)
-    # autoencoder_trainer.save()
-    #
-    # autoencoder_trainer_2 = load_class(savepath)
-    # autoencoder_trainer_2.train(1)
+def main(train_datapath, test_datapath, valid_datapath, savepath, epochs):
+    # Get the trainer
+    if os.path.exists(savepath):
+        autoencoder_trainer = load_class(loadpath=savepath)
+    else:
+        autoencoder_trainer = create_autoencoder(train_datapath=train_datapath,
+                                                 test_datapath=test_datapath,
+                                                 valid_datapath=valid_datapath,
+                                                 savepath=savepath)
+
+    # Start training
+    autoencoder_trainer.train(epochs=epochs)
+    return autoencoder_trainer
 
 
 if __name__ == '__main__':
-    # Define the datapaths
-    train_datapath = TRAIN_DATAPATH
-    test_datapath = TEST_DATAPATH
-    valid_datapath = VALID_DATAPATH
-
-    # Define the savepath
-    savepath = AUTOENCODER_SAVEPATH
-
-    main(train_datapath=train_datapath, test_datapath=test_datapath, valid_datapath=valid_datapath, savepath=savepath)
+    main(train_datapath=TRAIN_DATAPATH,
+         test_datapath=TEST_DATAPATH,
+         valid_datapath=VALID_DATAPATH,
+         savepath=AUTOENCODER_SAVEPATH)

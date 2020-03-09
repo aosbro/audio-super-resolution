@@ -85,30 +85,8 @@ def main():
     x_h, x_l = dataset.__getitem__(30)
     x_h_np = x_h.numpy().squeeze()
     x_l_np = x_l.numpy().squeeze()
-    print(np.mean(x_h_np))
+
     plot_spectrograms(x_h_np, x_l_np, 16000)
-    # X_h_db = compute_spectrogram(x_h_np)
-    # X_l_db = compute_spectrogram(x_l_np)
-    #
-    # print(np.max(X_h_db), np.min(X_h_db))
-    #
-    # # Plotting
-    # fig, axes = plt.subplots(1, 2, figsize=(14, 7))
-    # librosa.display.specshow(X_h_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[0])
-    # axes[0].set_title('High quality, spectrogram', fontsize=16)
-    # librosa.display.specshow(X_l_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[1])
-    # axes[1].set_title('Low quality, spectrogram', fontsize=16)
-    # plt.show()
-
-
-# >>> S_dB = librosa.power_to_db(S, ref=np.max)
-# >>> librosa.display.specshow(S_dB, x_axis='time',
-# ...                          y_axis='mel', sr=sr,
-# ...                          fmax=8000)
-# >>> plt.colorbar(format='%+2.0f dB')
-# >>> plt.title('Mel-frequency spectrogram')
-# >>> plt.tight_layout()
-# >>> plt.show()
 
 
 if __name__ == '__main__':
