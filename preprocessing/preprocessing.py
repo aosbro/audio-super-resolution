@@ -1,5 +1,8 @@
 from scipy.signal import decimate, resample
 import librosa
+import librosa.display
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def downsample(x, downscale_factor):
@@ -33,3 +36,30 @@ def compute_spectrogram(x):
     X = librosa.stft(x)
     X_db = librosa.amplitude_to_db(abs(X))
     return X_db
+
+
+def plot_spectrograms(x_h, x_l, fs):
+    """
+    Displays the high and low quality signals' spectrograms
+    :param x_h: Original signal (numpy array)
+    :param x_l: Previously down-sampled signal (numpy array)
+    :param fs: Sampling frequency
+    :return: None
+    """
+    # Getting the high quality spectrogram
+    X_h = librosa.stft(x_h)
+    X_h_db = librosa.amplitude_to_db(abs(X_h))
+    X_h_db -= np.max(X_h_db)
+
+    # Getting the low quality spectrogram
+    X_l = librosa.stft(x_l)
+    X_l_db = librosa.amplitude_to_db(abs(X_l))
+    X_l_db -= np.max(X_l_db)
+
+    # Plotting
+    fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+    librosa.display.specshow(X_h_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[0])
+    axes[0].set_title('High quality, spectrogram', fontsize=16)
+    librosa.display.specshow(X_l_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[1])
+    axes[1].set_title('Low quality, spectrogram', fontsize=16)
+    plt.show()

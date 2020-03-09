@@ -8,13 +8,13 @@ TRAIN_SHUFFLE = True
 TEST_SHUFFLE = False
 VALID_SHUFFLE = False
 
-TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train_.npy'
-TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test_.npy'
-VALID_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_valid_.npy'
+TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train.npy'
+TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test.npy'
+VALID_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_valid.npy'
 
-TRAIN_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_train_.npy'
-TEST_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_test_.npy'
-VALID_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_valid_.npy'
+TRAIN_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_train.npy'
+TEST_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_test.npy'
+VALID_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_valid.npy'
 
 
 # Fully connected constants
@@ -33,3 +33,8 @@ DROPOUT_PROBABILITY = 0.2
 N_BLOCKS = 8
 
 # Optimizer constants
+LEARNING_RATE = 1e-3
+
+# Saving constants
+AUTOENCODER_SAVEPATH = '../objects/autoencoder_trainer.txt'
+AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.txt'
