@@ -50,13 +50,13 @@ class AutoEncoderTrainer:
                 x_tilde, _ = self.autoencoder.forward(local_batch)
                 loss = self.loss_function(input=x_tilde, target=local_batch)
 
+                # Store the batch loss
+                batch_losses.append(loss.item())
+
                 # Print message
                 if not(i % 100):
                     message = 'Batch {}, train loss: {}'.format(i, np.mean(batch_losses[-100:]))
                     print(message)
-
-                # Store the batch loss
-                batch_losses.append(loss.item())
 
                 # Backward pass
                 loss.backward()
@@ -82,12 +82,13 @@ class AutoEncoderTrainer:
             x_tilde, _ = self.autoencoder.forward(local_batch)
             loss = self.loss_function(input=x_tilde, target=local_batch)
 
+            # Store the batch loss
+            batch_losses.append(loss.item())
+
             # Print message
             if not(i % 100):
                 message = 'Batch {}, test loss: {}'.format(i, np.mean(batch_losses[-100:]))
                 print(message)
-
-            batch_losses.append(loss.item())
 
         # Add the current epoch's average mean to the train losses
         self.test_losses.append(np.mean(batch_losses))
