@@ -33,9 +33,30 @@ class AutoEncoderTrainer:
         self.epoch_counter = 0
 
     def save(self):
+        """
+        Saves the complete trainer class
+        :return: None
+        """
         f = open(self.savepath, 'wb')
         f.write(pickle.dumps(self))
         f.close()
+
+    def plot_reconstruction_time_domain(self, index):
+        index = index % BATCH_SIZE
+        self.autoencoder.eval()
+        test_input = torch.cat(next(iter(self.train_generator)))
+        test_output, test_phi = self.autoencoder(test_input.to(self.device))
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        axes[0, 0].plot(test_input[index].cpu().detach().numpy().squeeze())
+        axes[0, 0].set_title('Original, high quality', fontsize=16)
+        axes[0, 1].plot(test_output[index].cpu().detach().numpy().squeeze())
+        axes[0, 1].set_title('Reconstruction, high quality', fontsize=16)
+        axes[1, 0].plot(test_input[index + BATCH_SIZE].cpu().detach().numpy().squeeze())
+        axes[1, 0].set_title('Original, low quality', fontsize=16)
+        axes[1, 1].plot(test_output[index + BATCH_SIZE].cpu().detach().numpy().squeeze())
+        axes[1, 1].set_title('reconstruction, low quality', fontsize=16)
+        plt.show()
 
     def train(self, epochs):
         for epoch in range(epochs):
