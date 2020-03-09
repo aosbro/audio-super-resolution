@@ -31,6 +31,7 @@ DROPOUT_PROBABILITY = 0.2
 
 # Models constants
 N_BLOCKS = 8
+N_BLOCKS_AUTOENCODER = 4
 
 # Optimizer constants
 LEARNING_RATE = 1e-3

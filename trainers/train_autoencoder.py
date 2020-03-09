@@ -120,8 +120,7 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath):
                         channel_sizes=CHANNEL_SIZES,
                         bottleneck_channels=BOTTLENECK_CHANNELS,
                         p=DROPOUT_PROBABILITY,
-                        n_blocks=N_BLOCKS)
-
+                        n_blocks=N_BLOCKS_AUTOENCODER)
 
     autoencoder_trainer = AutoEncoderTrainer(autoencoder=model,
                                              train_generator=train_generator,
