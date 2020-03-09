@@ -5,8 +5,11 @@ from utils.utils import *
 
 class AutoEncoderTrainer:
     def __init__(self, autoencoder, train_generator, test_generator, valid_generator, lr, savepath):
+        # Device
+        self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
+
         # Model
-        self.autoencoder = autoencoder
+        self.autoencoder = autoencoder.to(self.device)
 
         # Data generators
         self.train_generator = train_generator
@@ -15,9 +18,6 @@ class AutoEncoderTrainer:
 
         # Optimizer
         self.optimizer = torch.optim.Adam(params=autoencoder.parameters(), lr=lr)
-
-        # Device
-        self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Loss function and stored losses
         self.loss_function = nn.MSELoss()
