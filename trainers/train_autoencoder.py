@@ -55,7 +55,7 @@ class AutoEncoderTrainer:
         axes[1, 0].plot(test_input[index + BATCH_SIZE].cpu().detach().numpy().squeeze())
         axes[1, 0].set_title('Original, low quality', fontsize=16)
         axes[1, 1].plot(test_output[index + BATCH_SIZE].cpu().detach().numpy().squeeze())
-        axes[1, 1].set_title('reconstruction, low quality', fontsize=16)
+        axes[1, 1].set_title('Reconstruction, low quality', fontsize=16)
         plt.show()
 
     def train(self, epochs):
