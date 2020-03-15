@@ -32,6 +32,7 @@ DROPOUT_PROBABILITY = 0.2
 
 # Models constants
 N_BLOCKS = 8
+N_BLOCKS_DISCRIMINATOR = 7
 N_BLOCKS_AUTOENCODER = 4
 
 # Optimizer constants

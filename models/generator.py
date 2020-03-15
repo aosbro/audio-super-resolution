@@ -3,8 +3,9 @@ from blocks.up_block import *
 
 
 class Generator(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, bottleneck_channels_min, p, n_blocks):
+    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks):
         super(Generator, self).__init__()
+
         # Compute channel sizes at each level
         channel_sizes = [list(map(lambda c_size: (2 ** min(i, CHANNEL_FACTOR_MAX)) * c_size, channel_sizes_min))
                          for i in range(n_blocks)]
@@ -29,23 +30,31 @@ class Generator(nn.Module):
                                       channel_sizes=channel_sizes[6], bottleneck_channels=bottleneck_channels[6])
         self.down_block_8 = DownBlock(in_channels=2 * sum(channel_sizes[6]), kernel_sizes=kernel_sizes,
                                       channel_sizes=channel_sizes[7], bottleneck_channels=bottleneck_channels[7])
+
         # Decoder
         self.up_block_1 = UpBlock(in_channels=2 * sum(channel_sizes[7]), kernel_sizes=kernel_sizes,
                                   channel_sizes=channel_sizes[7], bottleneck_channels=bottleneck_channels[7], p=p)
-        self.up_block_2 = UpBlock(in_channels=sum(channel_sizes[7]) // 2 + 2 * sum(channel_sizes[6]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[6], bottleneck_channels=bottleneck_channels[6], p=p)
-        self.up_block_3 = UpBlock(in_channels=sum(channel_sizes[6]) // 2 + 2 * sum(channel_sizes[5]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[5], bottleneck_channels=bottleneck_channels[5], p=p)
-        self.up_block_4 = UpBlock(in_channels=sum(channel_sizes[5]) // 2 + 2 * sum(channel_sizes[4]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[4], bottleneck_channels=bottleneck_channels[4], p=p)
-        self.up_block_5 = UpBlock(in_channels=sum(channel_sizes[4]) // 2 + 2 * sum(channel_sizes[3]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[3], bottleneck_channels=bottleneck_channels[3], p=p)
-        self.up_block_6 = UpBlock(in_channels=sum(channel_sizes[3]) // 2 + 2 * sum(channel_sizes[2]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[2], bottleneck_channels=bottleneck_channels[2], p=p)
-        self.up_block_7 = UpBlock(in_channels=sum(channel_sizes[2]) // 2 + 2 * sum(channel_sizes[1]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[1], bottleneck_channels=bottleneck_channels[1], p=p)
-        self.up_block_8 = UpBlock(in_channels=sum(channel_sizes[1]) // 2 + 2 * sum(channel_sizes[0]), kernel_sizes=kernel_sizes,
-                                  channel_sizes=channel_sizes[0], bottleneck_channels=bottleneck_channels[0], p=p)
+        self.up_block_2 = UpBlock(in_channels=sum(channel_sizes[7]) // 2 + 2 * sum(channel_sizes[6]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[6],
+                                  bottleneck_channels=bottleneck_channels[6], p=p)
+        self.up_block_3 = UpBlock(in_channels=sum(channel_sizes[6]) // 2 + 2 * sum(channel_sizes[5]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[5],
+                                  bottleneck_channels=bottleneck_channels[5], p=p)
+        self.up_block_4 = UpBlock(in_channels=sum(channel_sizes[5]) // 2 + 2 * sum(channel_sizes[4]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[4],
+                                  bottleneck_channels=bottleneck_channels[4], p=p)
+        self.up_block_5 = UpBlock(in_channels=sum(channel_sizes[4]) // 2 + 2 * sum(channel_sizes[3]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[3],
+                                  bottleneck_channels=bottleneck_channels[3], p=p)
+        self.up_block_6 = UpBlock(in_channels=sum(channel_sizes[3]) // 2 + 2 * sum(channel_sizes[2]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[2],
+                                  bottleneck_channels=bottleneck_channels[2], p=p)
+        self.up_block_7 = UpBlock(in_channels=sum(channel_sizes[2]) // 2 + 2 * sum(channel_sizes[1]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[1],
+                                  bottleneck_channels=bottleneck_channels[1], p=p)
+        self.up_block_8 = UpBlock(in_channels=sum(channel_sizes[1]) // 2 + 2 * sum(channel_sizes[0]),
+                                  kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[0],
+                                  bottleneck_channels=bottleneck_channels[0], p=p)
 
         # Output convolution
         kernel_size = 27
@@ -74,14 +83,3 @@ class Generator(nn.Module):
         u7 = self.up_block_7(u6, d1)
         u8 = self.up_block_8(u7, None)
         return self.output_conv(u8) + x_l
-
-
-def main():
-    G = Generator(KERNEL_SIZES, CHANNEL_SIZES_MIN, BOTTLENECK_CHANNELS_MIN, DROPOUT_PROBABILITY, N_BLOCKS)
-    x = torch.randn(10, 1, 8192)
-    y = G(x)
-    print(y.shape)
-
-
-if __name__ == '__main__':
-    main()
