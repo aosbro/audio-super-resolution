@@ -42,9 +42,10 @@ class AutoEncoderTrainer:
         f.close()
 
     def plot_reconstruction_time_domain(self, index):
-        index = index % BATCH_SIZE
+        batch_size = self.test_generator.batch_size
+        index = index % batch_size
         self.autoencoder.eval()
-        test_input = torch.cat(next(iter(self.train_generator)))
+        test_input = torch.cat(next(iter(self.test_generator)))
         test_output, test_phi = self.autoencoder(test_input.to(self.device))
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
