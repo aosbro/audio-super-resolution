@@ -28,7 +28,7 @@ class AutoEncoder(nn.Module):
 
         # Compute the number of input channel for the decoder
         in_channels_decoder = [2 * sum(channel_sizes[n_blocks - i - 1]) if i == 0 else
-                               sum(channel_sizes[n_blocks - i - 1]) for i in range(n_blocks)]
+                               sum(channel_sizes[n_blocks - i]) // 2 for i in range(n_blocks)]
 
         # Decoder
         self.decoder = [UpBlock(in_channels=in_channel,
@@ -56,3 +56,18 @@ class AutoEncoder(nn.Module):
         # Output
         x = self.output_conv(x)
         return x, phi
+
+
+def main():
+    x = torch.randn(10, 1, 8192)
+    kernel_sizes = [3, 9, 27, 81]
+    channel_sizes_min = [24, 24, 8, 8]
+    p = 0.2
+    n_blocks = 4
+    A = AutoEncoder(kernel_sizes, channel_sizes_min, p, n_blocks)
+    y,_ = A(x)
+    print(y.shape)
+
+
+if __name__ == '__main__':
+    main()
