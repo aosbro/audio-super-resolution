@@ -30,6 +30,7 @@ class BaseBlock(nn.Module):
                                                 for kernel_size, channel_size, padding in zip(kernel_sizes, channel_sizes,
                                                                                               paddings)])
         else:
+            # Useless comment
             self.conv_layers = nn.ModuleList([nn.Conv1d(in_channels=in_channels,
                                                         out_channels=channel_size,
                                                         kernel_size=kernel_size,
