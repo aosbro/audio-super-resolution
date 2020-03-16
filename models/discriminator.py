@@ -18,8 +18,6 @@ class Discriminator(nn.Module):
                                            bottleneck_channels=bottleneck_channels[0])
 
         # Define the intermediate blocks
-        # in_channels = [sum(channel_size) if i == 0 else sum(channel_size) * 2 for i, channel_size in enumerate(channel_sizes[1:])]
-        # in_channels = [list(map(lambda c_size: (2 ** min(i, CHANNEL_FACTOR_MAX)) * c_size, channel_sizes_min)) for i in range(n_blocks)]
         in_channels = [2 ** min(i, CHANNEL_FACTOR_MAX + 1) * sum(CHANNEL_SIZES_MIN) for i in range(n_blocks)]
 
         self.mid_blocks = [DiscriminatorBlock(in_channels=in_channel,
@@ -38,14 +36,3 @@ class Discriminator(nn.Module):
         x = self.in_block(x)
         x = self.mid_blocks(x)
         return self.out_block(x)
-
-
-def main():
-    G = Discriminator(KERNEL_SIZES, CHANNEL_SIZES_MIN, DROPOUT_PROBABILITY, N_BLOCKS_DISCRIMINATOR)
-    x = torch.randn(10, 1, 8192)
-    y = G(x)
-    print(y.shape)
-
-
-if __name__ == '__main__':
-    main()
