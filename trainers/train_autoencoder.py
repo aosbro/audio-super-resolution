@@ -138,8 +138,7 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath):
 
     # Load the autoencoder
     model = AutoEncoder(kernel_sizes=KERNEL_SIZES,
-                        channel_sizes=CHANNEL_SIZES,
-                        bottleneck_channels=BOTTLENECK_CHANNELS,
+                        channel_sizes_min=CHANNEL_SIZES_MIN,
                         p=DROPOUT_PROBABILITY,
                         n_blocks=N_BLOCKS_AUTOENCODER)
 
@@ -171,4 +170,5 @@ if __name__ == '__main__':
     main(train_datapath=TRAIN_DATAPATH,
          test_datapath=TEST_DATAPATH,
          valid_datapath=VALID_DATAPATH,
-         savepath=AUTOENCODER_SAVEPATH)
+         savepath=AUTOENCODER_SAVEPATH,
+         epochs=1)

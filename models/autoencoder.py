@@ -56,14 +56,3 @@ class AutoEncoder(nn.Module):
         # Output
         x = self.output_conv(x)
         return x, phi
-
-
-def main():
-    G = AutoEncoder(KERNEL_SIZES, CHANNEL_SIZES_MIN, DROPOUT_PROBABILITY, N_BLOCKS_AUTOENCODER)
-    x = torch.randn(10, 1, 8192)
-    x, phi = G(x)
-    print(x.shape, phi.shape)
-
-
-if __name__ == '__main__':
-    main()
