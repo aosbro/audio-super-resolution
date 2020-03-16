@@ -159,10 +159,11 @@ def main(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_
         autoencoder_trainer = create_autoencoder(train_datapath=train_datapath,
                                                  test_datapath=test_datapath,
                                                  valid_datapath=valid_datapath,
-                                                 savepath=savepath)
+                                                 savepath=savepath,
+                                                 batch_size=batch_size)
 
     # Start training
-    autoencoder_trainer.train(epochs=epochs, batch_size=batch_size)
+    autoencoder_trainer.train(epochs=epochs)
     return autoencoder_trainer
 
 
