@@ -115,20 +115,20 @@ class AutoEncoderTrainer:
         self.test_losses.append(np.mean(batch_losses))
 
 
-def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath):
+def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
     # Create the datasets
     train_dataset = DatasetBeethoven(train_datapath)
     test_dataset = DatasetBeethoven(test_datapath)
     valid_dataset = DatasetBeethoven(valid_datapath)
 
     # Create the generators
-    train_params = {'batch_size': BATCH_SIZE,
+    train_params = {'batch_size': batch_size,
                     'shuffle': TRAIN_SHUFFLE,
                     'num_workers': NUM_WORKERS}
-    test_params = {'batch_size': BATCH_SIZE,
+    test_params = {'batch_size': batch_size,
                    'shuffle': TEST_SHUFFLE,
                    'num_workers': NUM_WORKERS}
-    valid_params = {'batch_size': BATCH_SIZE,
+    valid_params = {'batch_size': batch_size,
                     'shuffle': VALID_SHUFFLE,
                     'num_workers': NUM_WORKERS}
 
@@ -151,7 +151,7 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath):
     return autoencoder_trainer
 
 
-def main(train_datapath, test_datapath, valid_datapath, savepath, epochs):
+def main(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_size):
     # Get the trainer
     if os.path.exists(savepath):
         autoencoder_trainer = load_class(loadpath=savepath)
@@ -162,7 +162,7 @@ def main(train_datapath, test_datapath, valid_datapath, savepath, epochs):
                                                  savepath=savepath)
 
     # Start training
-    autoencoder_trainer.train(epochs=epochs)
+    autoencoder_trainer.train(epochs=epochs, batch_size=batch_size)
     return autoencoder_trainer
 
 
