@@ -3,7 +3,7 @@ import torch
 
 
 class BaseBlock(nn.Module):
-    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck=True):
+    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck=False):
         """
         Initializes the class BaseBlock which is the parent class to all blocks
         :param in_channels: Number of input channel
@@ -30,7 +30,6 @@ class BaseBlock(nn.Module):
                                                 for kernel_size, channel_size, padding in zip(kernel_sizes, channel_sizes,
                                                                                               paddings)])
         else:
-            # Useless comment
             self.conv_layers = nn.ModuleList([nn.Conv1d(in_channels=in_channels,
                                                         out_channels=channel_size,
                                                         kernel_size=kernel_size,
@@ -47,4 +46,4 @@ class BaseBlock(nn.Module):
             x = [conv_layer(x) for conv_layer in self.conv_layers_1]
             x = torch.cat(list(map(lambda temp_x, conv_layer: conv_layer(temp_x), x, self.conv_layers_2)), dim=1)
             return x
-        return torch.cat([conv_layer(x) for conv_layer in self.conv_layers])
+        return torch.cat([conv_layer(x) for conv_layer in self.conv_layers], dim=1)
