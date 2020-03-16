@@ -75,8 +75,8 @@ class AutoEncoderTrainer:
                 batch_losses.append(loss.item())
 
                 # Print message
-                if not(i % 100):
-                    message = 'Batch {}, train loss: {}'.format(i, np.mean(batch_losses[-100:]))
+                if not(i % 1):
+                    message = 'Batch {}, train loss: {}'.format(i, np.mean(batch_losses[-1:]))
                     print(message)
 
                 # Backward pass
