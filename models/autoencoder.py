@@ -12,7 +12,7 @@ class AutoEncoder(nn.Module):
                          for i in range(n_blocks)]
 
         # Compute bottleneck channel size at each level
-        bottleneck_channels = [min(channel_size) // 4 for channel_size in channel_sizes]
+        bottleneck_channels = [min(channel_size) // 1 for channel_size in channel_sizes]
 
         # Compute the number of input channel for the encoder
         in_channels_encoder = [1 if i == 0 else 2 * sum(channel_sizes[i-1]) for i in range(n_blocks)]

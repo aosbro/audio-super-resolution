@@ -174,4 +174,5 @@ if __name__ == '__main__':
          test_datapath=TEST_DATAPATH,
          valid_datapath=VALID_DATAPATH,
          savepath=AUTOENCODER_SAVEPATH,
-         epochs=1)
+         epochs=1,
+         batch_size=16)

@@ -3,7 +3,7 @@ import torch
 
 
 class BaseBlock(nn.Module):
-    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck=True):
+    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck=False):
         """
         Initializes the class BaseBlock which is the parent class to all blocks
         :param in_channels: Number of input channel
