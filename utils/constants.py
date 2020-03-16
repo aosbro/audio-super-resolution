@@ -36,7 +36,7 @@ N_BLOCKS_DISCRIMINATOR = 7
 N_BLOCKS_AUTOENCODER = 4
 
 # Optimizer constants
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 
 # Saving constants
 AUTOENCODER_SAVEPATH = '../objects/autoencoder_trainer.txt'
