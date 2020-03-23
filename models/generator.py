@@ -62,6 +62,8 @@ class Generator(nn.Module):
         self.output_conv = nn.Conv1d(in_channels=sum(channel_sizes[0]) // 2, out_channels=1,
                                      kernel_size=kernel_size, padding=padding)
 
+        self.tanh = nn.Tanh()
+
     def forward(self, x_l):
         # Encoder
         d1 = self.down_block_1(x_l)
@@ -74,12 +76,12 @@ class Generator(nn.Module):
         d8 = self.down_block_8(d7)
 
         # Decoder
-        u1 = self.up_block_1(d8, d7)
-        u2 = self.up_block_2(u1, d6)
-        u3 = self.up_block_3(u2, d5)
-        u4 = self.up_block_4(u3, d4)
-        u5 = self.up_block_5(u4, d3)
-        u6 = self.up_block_6(u5, d2)
-        u7 = self.up_block_7(u6, d1)
-        u8 = self.up_block_8(u7, None)
-        return self.output_conv(u8) + x_l
+        x = self.up_block_1(d8, d7)
+        x = self.up_block_2(x, d6)
+        x = self.up_block_3(x, d5)
+        x = self.up_block_4(x, d4)
+        x = self.up_block_5(x, d3)
+        x = self.up_block_6(x, d2)
+        x = self.up_block_7(x, d1)
+        x = self.up_block_8(x, None)
+        return self.tanh(self.output_conv(x) + x_l)

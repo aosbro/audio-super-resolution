@@ -33,11 +33,10 @@ class DiscriminatorOutput(nn.Module):
         self.fc_1 = nn.Linear(in_features=in_features_1, out_features=out_features_1)
         self.dropout = nn.Dropout(p)
         self.activation_1 = nn.LeakyReLU(negative_slope=0.2)
-        self.fc_2 = nn.Linear(in_features=out_features_1, out_features=1)
-        self.activation_2 = nn.Sigmoid()
+        self.fc_2 = nn.Linear(in_features=out_features_1, out_features=2)
 
     def forward(self, x):
         B, C, W = x.size()
         x = self.activation_1(self.dropout(self.fc_1(x.view(B, C * W))))
-        x = self.activation_2(self.fc_2(x))
+        x = self.fc_2(x)
         return x

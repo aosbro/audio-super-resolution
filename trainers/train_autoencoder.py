@@ -37,9 +37,7 @@ class AutoEncoderTrainer:
         Saves the complete trainer class
         :return: None
         """
-        f = open(self.savepath, 'wb')
-        f.write(pickle.dumps(self))
-        f.close()
+        torch.save(self, self.savepath)
 
     def plot_reconstruction_time_domain(self, index):
         # TODO: Change back to test_generator
@@ -154,7 +152,7 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, 
     return autoencoder_trainer
 
 
-def main(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_size):
+def train_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_size):
     # Get the trainer
     if os.path.exists(savepath):
         autoencoder_trainer = load_class(loadpath=savepath)
@@ -170,10 +168,10 @@ def main(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_
     return autoencoder_trainer
 
 
-if __name__ == '__main__':
-    main(train_datapath=TRAIN_DATAPATH,
-         test_datapath=TEST_DATAPATH,
-         valid_datapath=VALID_DATAPATH,
-         savepath=AUTOENCODER_SAVEPATH,
-         epochs=1,
-         batch_size=16)
+# if __name__ == '__main__':
+#     train_autoencoder(train_datapath=TRAIN_DATAPATH,
+#                       test_datapath=TEST_DATAPATH,
+#                       valid_datapath=VALID_DATAPATH,
+#                       savepath=AUTOENCODER_SAVEPATH,
+#                       epochs=1,
+#                       batch_size=16)

@@ -41,3 +41,6 @@ LEARNING_RATE = 1e-4
 # Saving constants
 AUTOENCODER_SAVEPATH = '../objects/autoencoder_trainer.txt'
 AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.txt'
+
+GAN_SAVEPATH = '../objects/gan_trainer.txt'
+GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.txt'
