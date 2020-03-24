@@ -64,14 +64,14 @@ class GanTrainer:
                 label = torch.full((batch_size,), self.real_label, device=self.device)
 
                 output = self.discriminator(x_h_batch)
-                loss_discriminator_real = self.adversarial_criterion(output, label)
+                loss_discriminator_real = self.adversarial_criterion(torch.squeeze(output), label)
                 loss_discriminator_real.backward()
 
                 # Train the discriminator with fake data
                 fake_batch = self.generator(x_l_batch)
                 label.fill_(self.fake_label)
-                output = self.generator(fake_batch.detach())
-                loss_discriminator_fake = self.adversarial_criterion(output, label)
+                output = self.discriminator(fake_batch.detach())
+                loss_discriminator_fake = self.adversarial_criterion(torch.squeeze(output), label)
                 loss_discriminator_fake.backward()
 
                 loss_discriminator = loss_discriminator_real + loss_discriminator_fake
@@ -85,7 +85,7 @@ class GanTrainer:
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
-                loss_generator = self.adversarial_criterion(output, label)
+                loss_generator = self.adversarial_criterion(torch.squeeze(output), label)
                 loss_generator.backward()
 
                 self.generator_optimizer.step()
