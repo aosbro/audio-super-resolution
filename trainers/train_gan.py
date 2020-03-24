@@ -98,29 +98,6 @@ class GanTrainer:
             # Increment epoch counter
             self.epoch_counter += 1
 
-    # def eval(self):
-    #     with torch.no_grad():
-    #         self.autoencoder.eval()
-    #         batch_losses = []
-    #         for i, local_batch in enumerate(self.test_generator):
-    #             # Transfer to GPU
-    #             local_batch = torch.cat(local_batch).to(self.device)
-    #
-    #             # Forward pass
-    #             x_tilde, _ = self.autoencoder.forward(local_batch)
-    #             loss = self.loss_function(input=x_tilde, target=local_batch)
-    #
-    #             # Store the batch loss
-    #             batch_losses.append(loss.item())
-    #
-    #             # Print message
-    #             if not(i % 100):
-    #                 message = 'Batch {}, test loss: {}'.format(i, np.mean(batch_losses[-100:]))
-    #                 print(message)
-    #
-    #         # Add the current epoch's average mean to the train losses
-    #         self.test_losses.append(np.mean(batch_losses))
-
 
 def create_gan(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
     # Create the datasets
