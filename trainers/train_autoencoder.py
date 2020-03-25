@@ -2,50 +2,29 @@ from datasets.datasets import *
 from models.autoencoder import *
 from utils.utils import *
 import os
+from trainers.base_trainer import *
 
 
-class AutoEncoderTrainer:
+class AutoEncoderTrainer(Trainer):
     def __init__(self, autoencoder, train_generator, test_generator, valid_generator, lr, savepath):
-        # Device
-        self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
+        super(AutoEncoderTrainer, self).__init__(train_generator, test_generator, valid_generator, savepath)
 
         # Model
         self.autoencoder = autoencoder.to(self.device)
 
-        # Data generators
-        self.train_generator = train_generator
-        self.test_generator = test_generator
-        self.valid_generator = valid_generator
-
         # Optimizer
         self.optimizer = torch.optim.Adam(params=autoencoder.parameters(), lr=lr)
 
-        # Loss function and stored losses
+        # Loss function
         self.loss_function = nn.MSELoss()
-        self.train_losses = []
-        self.test_losses = []
-        self.valid_losses = []
-
-        # Path to save to the class
-        self.savepath = savepath
-
-        # Epoch counter
-        self.epoch_counter = 0
-
-    def save(self):
-        """
-        Saves the complete trainer class
-        :return: None
-        """
-        torch.save(self, self.savepath)
 
     def plot_reconstruction_time_domain(self, index):
-        # TODO: Change back to test_generator
-        batch_size = self.valid_generator.batch_size
+        batch_size = self.test_generator.batch_size
         index = index % batch_size
         self.autoencoder.eval()
-        test_input = torch.cat(next(iter(self.valid_generator)))
-        test_output, test_phi = self.autoencoder(test_input.to(self.device))
+        with torch.no_grad:
+            test_input = torch.cat(next(iter(self.test_generator)))
+            test_output, test_phi = self.autoencoder(test_input.to(self.device))
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         axes[0, 0].plot(test_input[index].cpu().detach().numpy().squeeze())
@@ -168,10 +147,10 @@ def train_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, e
     return autoencoder_trainer
 
 
-# if __name__ == '__main__':
-#     train_autoencoder(train_datapath=TRAIN_DATAPATH,
-#                       test_datapath=TEST_DATAPATH,
-#                       valid_datapath=VALID_DATAPATH,
-#                       savepath=AUTOENCODER_SAVEPATH,
-#                       epochs=1,
-#                       batch_size=16)
+if __name__ == '__main__':
+    train_autoencoder(train_datapath=TRAIN_DATAPATH,
+                      test_datapath=TEST_DATAPATH,
+                      valid_datapath=VALID_DATAPATH,
+                      savepath=AUTOENCODER_SAVEPATH,
+                      epochs=1,
+                      batch_size=16)

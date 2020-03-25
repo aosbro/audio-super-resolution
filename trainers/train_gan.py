@@ -3,21 +3,16 @@ from utils.utils import *
 from datasets.datasets import *
 from models.generator import *
 from models.discriminator import *
+from trainers.base_trainer import *
 
 
-class GanTrainer:
+class GanTrainer(Trainer):
     def __init__(self, generator, discriminator, train_generator, test_generator, valid_generator, lr, savepath):
-        # Device
-        self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
+        super(GanTrainer, self).__init__(train_generator, test_generator, valid_generator, savepath)
 
         # Models
         self.generator = generator.to(self.device)
         self.discriminator = discriminator.to(self.device)
-
-        # Data generators
-        self.train_generator = train_generator
-        self.test_generator = test_generator
-        self.valid_generator = valid_generator
 
         # Optimizers
         self.generator_optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
@@ -27,12 +22,6 @@ class GanTrainer:
         self.adversarial_criterion = nn.BCEWithLogitsLoss()
         self.generator_criterion = nn.MSELoss()
 
-        # Path to save to the class
-        self.savepath = savepath
-
-        # Epoch counter
-        self.epoch_counter = 0
-
         # Define labels
         self.real_label = 1
         self.fake_label = 0
@@ -40,12 +29,24 @@ class GanTrainer:
         # Loss scaling factors
         self.lambda_adv = 1e-3
 
-    def save(self):
-        """
-        Saves the complete trainer class
-        :return: None
-        """
-        torch.save(self, self.savepath)
+    def plot_reconstruction_time_domain(self, index):
+        batch_size = self.test_generator.batch_size
+        index = index % batch_size
+        self.generator.eval()
+        with torch.no_grad:
+            test_input = torch.cat(next(iter(self.test_generator)))
+            test_output = self.generator(test_input.to(self.device))
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        axes[0, 0].plot(test_input[index].cpu().detach().numpy().squeeze())
+        axes[0, 0].set_title('Original, high quality', fontsize=16)
+        axes[0, 1].plot(test_output[index].cpu().detach().numpy().squeeze())
+        axes[0, 1].set_title('Reconstruction, high quality', fontsize=16)
+        axes[1, 0].plot(test_input[index + batch_size].cpu().detach().numpy().squeeze())
+        axes[1, 0].set_title('Original, low quality', fontsize=16)
+        axes[1, 1].plot(test_output[index + batch_size].cpu().detach().numpy().squeeze())
+        axes[1, 1].set_title('Reconstruction, low quality', fontsize=16)
+        plt.show()
 
     def train(self, epochs):
         for epoch in range(epochs):
@@ -99,6 +100,9 @@ class GanTrainer:
 
             # Increment epoch counter
             self.epoch_counter += 1
+
+    def eval(self, epoch):
+        pass
 
 
 def create_gan(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
