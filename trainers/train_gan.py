@@ -25,10 +25,7 @@ class GanTrainer:
 
         # Loss function and stored losses
         self.adversarial_criterion = nn.BCEWithLogitsLoss()
-        # self.loss_function = nn.MSELoss()
-        # self.train_losses = []
-        # self.test_losses = []
-        # self.valid_losses = []
+        self.generator_criterion = nn.MSELoss()
 
         # Path to save to the class
         self.savepath = savepath
@@ -85,13 +82,15 @@ class GanTrainer:
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
-                loss_generator = self.adversarial_criterion(torch.squeeze(output), label)
+                loss_generator = self.adversarial_criterion(torch.squeeze(output), label) + self.generator_criterion(
+                    fake_batch, x_h_batch)
+
                 loss_generator.backward()
 
                 self.generator_optimizer.step()
 
                 # Print message
-                if not(i % 1):
+                if not (i % 1):
                     message = 'Batch {}, train loss: {}, {}'.format(i, loss_discriminator.item(), loss_generator.item())
                     print(message)
 
