@@ -33,7 +33,7 @@ class GanTrainer(Trainer):
         batch_size = self.test_generator.batch_size
         index = index % batch_size
         self.generator.eval()
-        with torch.no_grad:
+        with torch.no_grad():
             test_input = torch.cat(next(iter(self.test_generator)))
             test_output = self.generator(test_input.to(self.device))
 

@@ -22,7 +22,7 @@ class AutoEncoderTrainer(Trainer):
         batch_size = self.test_generator.batch_size
         index = index % batch_size
         self.autoencoder.eval()
-        with torch.no_grad:
+        with torch.no_grad():
             test_input = torch.cat(next(iter(self.test_generator)))
             test_output, test_phi = self.autoencoder(test_input.to(self.device))
 
