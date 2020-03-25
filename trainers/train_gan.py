@@ -37,6 +37,9 @@ class GanTrainer:
         self.real_label = 1
         self.fake_label = 0
 
+        # Loss scaling factors
+        self.lambda_adv = 1e-3
+
     def save(self):
         """
         Saves the complete trainer class
@@ -82,8 +85,8 @@ class GanTrainer:
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
-                loss_generator = self.adversarial_criterion(torch.squeeze(output), label) + self.generator_criterion(
-                    fake_batch, x_h_batch)
+                loss_generator = self.lambda_adv * self.adversarial_criterion(torch.squeeze(output), label) + \
+                                 self.generator_criterion(fake_batch, x_h_batch)
 
                 loss_generator.backward()
 
