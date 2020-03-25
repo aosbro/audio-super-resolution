@@ -34,18 +34,15 @@ class GanTrainer(Trainer):
         index = index % batch_size
         self.generator.eval()
         with torch.no_grad():
-            test_input = torch.cat(next(iter(self.test_generator)))
-            test_output = self.generator(test_input.to(self.device))
+            local_batch = torch.cat(next(iter(self.test_generator)))
+            x_l_batch = local_batch[1].to(self.device)
+            fake_batch = self.generator(x_l_batch)
 
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        axes[0, 0].plot(test_input[index].cpu().detach().numpy().squeeze())
-        axes[0, 0].set_title('Original, high quality', fontsize=16)
-        axes[0, 1].plot(test_output[index].cpu().detach().numpy().squeeze())
-        axes[0, 1].set_title('Reconstruction, high quality', fontsize=16)
-        axes[1, 0].plot(test_input[index + batch_size].cpu().detach().numpy().squeeze())
-        axes[1, 0].set_title('Original, low quality', fontsize=16)
-        axes[1, 1].plot(test_output[index + batch_size].cpu().detach().numpy().squeeze())
-        axes[1, 1].set_title('Reconstruction, low quality', fontsize=16)
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        axes[0, 0].plot(x_l_batch[index].cpu().detach().numpy().squeeze())
+        axes[0, 0].set_title('Real low quality sample', fontsize=16)
+        axes[0, 1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
+        axes[0, 1].set_title('Fake high quality sample', fontsize=16)
         plt.show()
 
     def train(self, epochs):
