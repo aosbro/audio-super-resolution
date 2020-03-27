@@ -1,16 +1,14 @@
 from utils.constants import *
 from torch.utils import data
-import numpy as np
 from preprocessing.preprocessing import *
 import matplotlib.pyplot as plt
-import librosa.display
 import math
 import torch
-from torch import nn
+import torchaudio
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, ratio=8, overlap=0.5):
+    def __init__(self, datapath, ratio=4, overlap=0.5):
         """
         Initializes the class DatasetBeethoven
         :param datapath: path to raw .npy file
@@ -86,7 +84,20 @@ def main():
     x_h_np = x_h.numpy().squeeze()
     x_l_np = x_l.numpy().squeeze()
 
-    plot_spectrograms(x_h_np, x_l_np, 16000)
+    # plot_spectrograms(x_h_np, x_l_np, 16000)
+
+    specgram = torchaudio.transforms.Spectrogram()(x_h)
+    mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
+
+    print("Shape of spectrogram: {}".format(specgram.size()))
+
+    # plt.figure()
+    # plt.imshow(specgram.log2()[0, :, :].numpy(), cmap='jet')
+    # plt.show()
+
+    plt.figure()
+    plt.imshow(mel_specgram.log2()[0, :, :].numpy(), cmap='jet')
+    plt.show()
 
 
 if __name__ == '__main__':

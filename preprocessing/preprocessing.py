@@ -40,7 +40,7 @@ def compute_spectrogram(x):
 
 def plot_spectrograms(x_h, x_l, fs):
     """
-    Displays the high and low quality signals' spectrograms
+    Displays the high and low quality signals' spectrogram
     :param x_h: Original signal (numpy array)
     :param x_l: Previously down-sampled signal (numpy array)
     :param fs: Sampling frequency

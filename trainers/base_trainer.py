@@ -30,6 +30,14 @@ class Trainer(abc.ABC):
         """
         torch.save(self, self.savepath)
 
+    def generate_single_test_batch(self, model):
+        model.eval()
+        with torch.no_grad():
+            local_batch = next(iter(self.test_generator))
+            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+            fake_batch = model(x_l_batch)
+        return x_h_batch, fake_batch
+
     @abc.abstractmethod
     def train(self, epochs):
         """
@@ -52,4 +60,12 @@ class Trainer(abc.ABC):
         Plots real samples against fake sample in time domain
         :param index: index of the batch in the test generator to use
         :return: None
+        """
+
+    @abc.abstractmethod
+    def plot_reconstruction_time_domain(self, index):
+        """
+        Plots real samples against fake sample in frequency domain
+        :param index:
+        :return:
         """

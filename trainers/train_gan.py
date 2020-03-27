@@ -30,20 +30,40 @@ class GanTrainer(Trainer):
         self.lambda_adv = 1e-3
 
     def plot_reconstruction_time_domain(self, index):
+        """
+        Plots real samples against fake sample in time domain
+        :param index: index of the batch in the test generator to use
+        :return: None
+        """
         batch_size = self.test_generator.batch_size
         index = index % batch_size
-        self.generator.eval()
-        with torch.no_grad():
-            local_batch = torch.cat(next(iter(self.test_generator)))
-            x_l_batch = local_batch[1].to(self.device)
-            fake_batch = self.generator(x_l_batch)
 
+        # Get a pair of high quality and fake samples batches
+        x_h_batch, fake_batch = self.generate_single_test_batch(self.generator)
+
+        # Plot
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-        axes[0, 0].plot(x_l_batch[index].cpu().detach().numpy().squeeze())
-        axes[0, 0].set_title('Real low quality sample', fontsize=16)
-        axes[0, 1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
-        axes[0, 1].set_title('Fake high quality sample', fontsize=16)
+        axes[0].plot(x_h_batch[index].cpu().detach().numpy().squeeze())
+        axes[0].set_title('Real high quality sample', fontsize=16)
+        axes[1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
+        axes[1].set_title('Fake high quality sample', fontsize=16)
         plt.show()
+
+    def plot_reconstruction_frequency_domain(self, index):
+        """
+        Plots real samples against fake sample in frequency domain
+        :param index:
+        :return:
+        """
+        batch_size = self.test_generator.batch_size
+        index = index % batch_size
+
+        # Get a pair of low quality and fake samples batches
+        x_l_batch, fake_batch = self.generate_single_test_batch(self.generator)
+
+        # Plot
+        plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
+                          fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
 
     def train(self, epochs):
         for epoch in range(epochs):
@@ -155,7 +175,8 @@ def train_gan(train_datapath, test_datapath, valid_datapath, gan_savepath, epoch
                                  batch_size=batch_size)
 
     # Start training
-    gan_trainer.train(epochs=epochs)
+    # gan_trainer.train(epochs=epochs)
+    gan_trainer.plot_reconstruction_frequency_domain(0)
     return gan_trainer
 
 
