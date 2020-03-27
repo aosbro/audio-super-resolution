@@ -175,8 +175,7 @@ def train_gan(train_datapath, test_datapath, valid_datapath, gan_savepath, epoch
                                  batch_size=batch_size)
 
     # Start training
-    # gan_trainer.train(epochs=epochs)
-    gan_trainer.plot_reconstruction_frequency_domain(0)
+    gan_trainer.train(epochs=epochs)
     return gan_trainer
 
 
