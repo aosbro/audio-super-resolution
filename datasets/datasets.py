@@ -4,7 +4,7 @@ from preprocessing.preprocessing import *
 import matplotlib.pyplot as plt
 import math
 import torch
-import torchaudio
+from torchaudio.transforms import Spectrogram, MelSpectrogram
 
 
 class DatasetBeethoven(data.Dataset):
@@ -74,31 +74,31 @@ class DatasetBeethoven(data.Dataset):
 def main():
     datapath = '/media/thomas/Samsung_T5/VITA/data/music/music_train.npy'
     fs = 16000
-    ratio = 8
+    ratio = 4
     overlap = 0.5
     dataset = DatasetBeethoven(datapath, ratio, overlap)
     print(dataset.__len__())
     print(dataset.window_number)
 
-    x_h, x_l = dataset.__getitem__(30)
+    x_h, x_l = dataset.__getitem__(60)
     x_h_np = x_h.numpy().squeeze()
     x_l_np = x_l.numpy().squeeze()
 
-    # plot_spectrograms(x_h_np, x_l_np, 16000)
+    plot_spectrograms(x_h_np, x_l_np, 16000)
 
-    specgram = torchaudio.transforms.Spectrogram()(x_h)
-    mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
+    specgram_l = Spectrogram(normalized=True)(x_l)
+    specgram_h = Spectrogram(normalized=True)(x_h)
+    print(torch.max(specgram_l), torch.max(specgram_h))
+    print(torch.min(specgram_l), torch.min(specgram_h))
+    print(specgram_l.size())
+    # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
 
-    print("Shape of spectrogram: {}".format(specgram.size()))
-
-    # plt.figure()
-    # plt.imshow(specgram.log2()[0, :, :].numpy(), cmap='jet')
-    # plt.show()
-
-    plt.figure()
-    plt.imshow(mel_specgram.log2()[0, :, :].numpy(), cmap='jet')
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    axes[0].imshow(specgram_l[0, :, :].numpy(), cmap='jet')
+    axes[1].imshow(specgram_h[0, :, :].numpy(), cmap='jet')
     plt.show()
 
+    print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
 
 if __name__ == '__main__':
     main()

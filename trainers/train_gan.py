@@ -20,7 +20,8 @@ class GanTrainer(Trainer):
 
         # Loss function and stored losses
         self.adversarial_criterion = nn.BCEWithLogitsLoss()
-        self.generator_criterion = nn.MSELoss()
+        self.generator_time_criterion = nn.MSELoss()
+        self.generator_frequency_criterion = nn.MSELoss()
 
         # Define labels
         self.real_label = 1
@@ -28,6 +29,9 @@ class GanTrainer(Trainer):
 
         # Loss scaling factors
         self.lambda_adv = 1e-3
+
+        # Spectrogram converter
+        self.spectrogram = Spectrogram()
 
     def plot_reconstruction_time_domain(self, index):
         """
@@ -100,11 +104,16 @@ class GanTrainer(Trainer):
                 ###########################
                 self.generator_optimizer.zero_grad()
 
+                # Get the spectrogram
+                specgram_h_batch = self.spectrogram(x_h_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
+
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
                 loss_generator = self.lambda_adv * self.adversarial_criterion(torch.squeeze(output), label) + \
-                                 self.generator_criterion(fake_batch, x_h_batch)
+                                 self.generator_time_criterion(fake_batch, x_h_batch) +\
+                                 self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
 
                 loss_generator.backward()
 
