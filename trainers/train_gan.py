@@ -31,7 +31,7 @@ class GanTrainer(Trainer):
         self.lambda_adv = 1e-3
 
         # Spectrogram converter
-        self.spectrogram = Spectrogram().to(self.device)
+        self.spectrogram = Spectrogram(normalized=True).to(self.device)
 
     def plot_reconstruction_time_domain(self, index):
         """

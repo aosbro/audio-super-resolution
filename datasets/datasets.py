@@ -86,19 +86,19 @@ def main():
 
     plot_spectrograms(x_h_np, x_l_np, 16000)
 
-    specgram_l = Spectrogram(normalized=True)(x_l)
-    specgram_h = Spectrogram(normalized=True)(x_h)
-    print(torch.max(specgram_l), torch.max(specgram_h))
-    print(torch.min(specgram_l), torch.min(specgram_h))
-    print(specgram_l.size())
-    # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
-
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    axes[0].imshow(specgram_l[0, :, :].numpy(), cmap='jet')
-    axes[1].imshow(specgram_h[0, :, :].numpy(), cmap='jet')
-    plt.show()
-
-    print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
+    # specgram_l = Spectrogram(normalized=True)(x_l)
+    # specgram_h = Spectrogram(normalized=True)(x_h)
+    # print(torch.max(specgram_l), torch.max(specgram_h))
+    # print(torch.min(specgram_l), torch.min(specgram_h))
+    # print(specgram_l.size())
+    # # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
+    #
+    # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    # axes[0].imshow(specgram_l[0, :, :].numpy(), cmap='jet')
+    # axes[1].imshow(specgram_h[0, :, :].numpy(), cmap='jet')
+    # plt.show()
+    #
+    # print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
 
 if __name__ == '__main__':
     main()
