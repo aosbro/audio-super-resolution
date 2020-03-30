@@ -80,23 +80,24 @@ def main():
     print(dataset.__len__())
     print(dataset.window_number)
 
-    x_h, x_l = dataset.__getitem__(60)
+    x_h, x_l = dataset.__getitem__(1)
     x_h_np = x_h.numpy().squeeze()
     x_l_np = x_l.numpy().squeeze()
-
-    plot_spectrograms(x_h_np, x_l_np, 16000)
+    print(np.min(x_h_np), np.max(x_l_np))
+    # plot_spectrograms(x_h_np, x_l_np, 16000)
 
     # specgram_l = Spectrogram(normalized=True)(x_l)
-    # specgram_h = Spectrogram(normalized=True)(x_h)
+    specgram_h = Spectrogram(normalized=True)(x_h)
+
     # print(torch.max(specgram_l), torch.max(specgram_h))
     # print(torch.min(specgram_l), torch.min(specgram_h))
     # print(specgram_l.size())
     # # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
     #
-    # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    # axes[0].imshow(specgram_l[0, :, :].numpy(), cmap='jet')
+    fig, axes = plt.subplots(figsize=(6, 6))
+    plt.imshow(specgram_h[0, :, :].numpy(), cmap='jet')
     # axes[1].imshow(specgram_h[0, :, :].numpy(), cmap='jet')
-    # plt.show()
+    plt.show()
     #
     # print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
 
