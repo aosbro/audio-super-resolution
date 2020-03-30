@@ -31,7 +31,7 @@ class GanTrainer(Trainer):
         self.lambda_adv = 1e-3
 
         # Spectrogram converter
-        self.spectrogram = Spectrogram()
+        self.spectrogram = Spectrogram().to(self.device)
 
     def plot_reconstruction_time_domain(self, index):
         """
@@ -105,9 +105,8 @@ class GanTrainer(Trainer):
                 self.generator_optimizer.zero_grad()
 
                 # Get the spectrogram
-                import pdb; pdb.set_trace()
-                specgram_h_batch = self.spectrogram(x_h_batch).to(self.device)
-                specgram_fake_batch = self.spectrogram(fake_batch).to(self.device)
+                specgram_h_batch = self.spectrogram(x_h_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
