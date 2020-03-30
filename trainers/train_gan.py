@@ -105,7 +105,7 @@ class GanTrainer(Trainer):
                 self.generator_optimizer.zero_grad()
 
                 # Get the spectrogram
-                breakpoint()
+                import pdb; pdb.set_trace()
                 specgram_h_batch = self.spectrogram(x_h_batch).to(self.device)
                 specgram_fake_batch = self.spectrogram(fake_batch).to(self.device)
 
