@@ -1,10 +1,14 @@
 from utils.constants import *
 from torch.utils import data
-from preprocessing.preprocessing import *
+from processing.pre_processing import *
+from processing.post_processing import *
 import matplotlib.pyplot as plt
 import math
 import torch
 from torchaudio.transforms import Spectrogram, MelSpectrogram
+from scipy.signal import butter, filtfilt
+import sounddevice as sd
+from scipy.io.wavfile import write
 
 
 class DatasetBeethoven(data.Dataset):
@@ -21,6 +25,7 @@ class DatasetBeethoven(data.Dataset):
         self.window_length = WINDOW_LENGTH
         self.window_number = self.compute_window_number()
         self.hanning_length = HANNING_WINDOW_LENGTH
+        self.fs = 16000
 
     def compute_window_number(self):
         """
@@ -38,13 +43,22 @@ class DatasetBeethoven(data.Dataset):
         """
         return self.data.shape[0] * self.window_number
 
+    def butter_lowpass_filter(self, x_h, cutoff_frequency, order):
+        nyquist_frequency = self.fs / 2
+        normalised_cutoff_frequency = cutoff_frequency / nyquist_frequency
+
+        # Get the filter coefficients
+        coefficients = butter(N=order, Wn=normalised_cutoff_frequency, btype='lowpass', analog=False)
+        x_l = filtfilt(b=coefficients[0], a=coefficients[1], x=x_h)
+        return x_l.astype(np.float32)
+
     def pad_signal(self, x):
         """
         Adds zero-padding at the end of the last window
         :param x: Signal with length smaller than the window length
         :return: Padded signal
         """
-        # Apply hanning window to avoid aliasing
+        # Apply hanning window before padding to avoid aliasing
         half_hanning = np.hanning(self.hanning_length)[self.hanning_length // 2:]
         x[- self.hanning_length // 2:] = x[- self.hanning_length // 2:] * half_hanning
 
@@ -57,15 +71,25 @@ class DatasetBeethoven(data.Dataset):
         :param index: index of the sample to load
         :return: corresponding image
         """
+        # Get the row of the sample
         signal_index = int(index // self.window_number)
-        window_index = index % self.window_number
+
+        # Load the row
         signal = self.data[signal_index]
+
+        # Get the position inside the row
+        window_index = index % self.window_number
         window_start = int(window_index * (1 - self.overlap) * self.window_length)
+
+        # Load the high quality signal containing WINDOW_LENGTH samples
         x_h = signal[window_start: window_start + self.window_length]
 
         # Add padding for last window
         if x_h.shape != self.window_length:
             x_h = self.pad_signal(x_h)
+
+        # Apply hanning window over the whole window to avoid aliasing and for reconstruction
+        x_h *= np.hanning(WINDOW_LENGTH)
 
         x_l = upsample(downsample(x_h, self.ratio), self.ratio)
         return torch.from_numpy(np.expand_dims(x_h, axis=0)).float(), torch.from_numpy(np.expand_dims(x_l, axis=0)).float()
@@ -83,10 +107,11 @@ def main():
     x_h, x_l = dataset.__getitem__(1)
     x_h_np = x_h.numpy().squeeze()
     x_l_np = x_l.numpy().squeeze()
+
     print(np.min(x_h_np), np.max(x_l_np))
     # plot_spectrograms(x_h_np, x_l_np, 16000)
 
-    # specgram_l = Spectrogram(normalized=True)(x_l)
+    specgram_l = Spectrogram(normalized=True)(x_l)
     specgram_h = Spectrogram(normalized=True)(x_h)
 
     # print(torch.max(specgram_l), torch.max(specgram_h))
@@ -95,11 +120,28 @@ def main():
     # # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
     #
     fig, axes = plt.subplots(figsize=(6, 6))
-    plt.imshow(specgram_h[0, :, :].numpy(), cmap='jet')
-    # axes[1].imshow(specgram_h[0, :, :].numpy(), cmap='jet')
-    plt.show()
+    # plt.imshow(specgram_h[0, :, :].log2().numpy(), cmap='jet')
+
+    # axes[1].imshow(specgram_h[0, :, :].log2().numpy(), cmap='jet')
+    # plt.show()
     #
     # print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
+
+    params = {'batch_size': dataset.window_number,
+              'shuffle': False,
+              'num_workers': NUM_WORKERS}
+
+    train_loader = data.DataLoader(dataset, **params)
+    batch = next(iter(train_loader))
+    full_sample = overlap_and_add_samples(batch[1])
+    print(full_sample.max())
+    # sd.play(data=full_sample.numpy())
+
+    scaled = np.int16(full_sample.numpy() / np.max(np.abs(full_sample.numpy()) * 32767))
+    write('test.wav', 16000, full_sample.numpy())
+    plt.plot(full_sample.numpy())
+    plt.show()
+
 
 if __name__ == '__main__':
     main()

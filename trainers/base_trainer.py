@@ -63,7 +63,7 @@ class Trainer(abc.ABC):
         """
 
     @abc.abstractmethod
-    def plot_reconstruction_time_domain(self, index):
+    def plot_reconstruction_frequency_domain(self, index):
         """
         Plots real samples against fake sample in frequency domain
         :param index:
