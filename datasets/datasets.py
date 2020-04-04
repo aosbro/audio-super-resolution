@@ -7,7 +7,6 @@ import math
 import torch
 from torchaudio.transforms import Spectrogram, MelSpectrogram
 from scipy.signal import butter, filtfilt
-import sounddevice as sd
 from scipy.io.wavfile import write
 
 
@@ -38,7 +37,7 @@ class DatasetBeethoven(data.Dataset):
 
     def __len__(self):
         """
-        Returns the number of samples in the dataset
+        Returns the total number of samples in the dataset
         :return: number of samples
         """
         return self.data.shape[0] * self.window_number
@@ -127,21 +126,26 @@ def main():
     #
     # print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
 
-    params = {'batch_size': dataset.window_number,
-              'shuffle': False,
-              'num_workers': NUM_WORKERS}
-
-    train_loader = data.DataLoader(dataset, **params)
-    batch = next(iter(train_loader))
-    full_sample = overlap_and_add_samples(batch[1])
-    print(full_sample.max())
-    # sd.play(data=full_sample.numpy())
-
-    scaled = np.int16(full_sample.numpy() / np.max(np.abs(full_sample.numpy()) * 32767))
-    write('test.wav', 16000, full_sample.numpy())
-    plt.plot(full_sample.numpy())
-    plt.show()
-
+    # batch = next(iter(train_loader))
+    # batch = []
+    # for i in range(31):
+    #     batch.append(dataset.__getitem__(i))
+    # batch_h, batch_l = map(list, zip(*batch))
+    # batch_h, batch_l = torch.cat(batch_h), torch.cat(batch_l)
+    # print(batch_h.shape)
+    # full_sample = overlap_and_add_samples(batch_l.view(31, 1, 8192))
+    # # test = train_loader.__iter__()
+    # scaled = np.int16(full_sample.numpy() / np.max(np.abs(full_sample.numpy()) * 32767))
+    # write('test.wav', 16000, full_sample.numpy())
+    # # # plt.plot(dataset.data[3000])
+    # plt.plot(full_sample)
+    # plt.plot(dataset.data[0])
+    # # # plt.plot(dataset.data[0])
+    # # # plt.plot(batch[0][1].numpy().squeeze())
+    # plt.show()
+    #
+    # print(batch[0][2].shape)
+    test_reconstruction(0, dataset)
 
 if __name__ == '__main__':
     main()
