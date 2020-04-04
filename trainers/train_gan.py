@@ -31,7 +31,7 @@ class GanTrainer(Trainer):
         self.lambda_adv = 1e-3
 
         # Spectrogram converter
-        self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128)
+        self.spectrogram = Spectrogram(normalized=True).to(self.device)
 
     def train(self, epochs):
         for epoch in range(epochs):

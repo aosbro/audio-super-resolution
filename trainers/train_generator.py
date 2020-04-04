@@ -20,7 +20,7 @@ class GeneratorTrainer(Trainer):
         self.frequency_criterion = nn.MSELoss()
 
         # Time to frequency converter
-        self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128)
+        self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
 
     def train(self, epochs):
         """
