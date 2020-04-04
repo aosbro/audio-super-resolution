@@ -44,3 +44,6 @@ AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_
 
 GAN_SAVEPATH = '../objects/gan_trainer.txt'
 GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.txt'
+
+GENERATOR_SAVEPATH = '../objects/generator_trainer.txt'
+GENERATOR_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer.txt'

@@ -3,14 +3,14 @@ import torch
 
 
 class Trainer(abc.ABC):
-    def __init__(self, train_generator, test_generator, valid_generator, savepath):
+    def __init__(self, train_loader, test_loader, valid_loader, savepath):
         # Device
         self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Data generators
-        self.train_generator = train_generator
-        self.test_generator = test_generator
-        self.valid_generator = valid_generator
+        self.train_loader = train_loader
+        self.test_loader = test_loader
+        self.valid_loader = valid_loader
 
         # Path to save to the class
         self.savepath = savepath
@@ -33,7 +33,7 @@ class Trainer(abc.ABC):
     def generate_single_test_batch(self, model):
         model.eval()
         with torch.no_grad():
-            local_batch = next(iter(self.test_generator))
+            local_batch = next(iter(self.test_loader))
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
             fake_batch = model(x_l_batch)
         return x_h_batch, fake_batch

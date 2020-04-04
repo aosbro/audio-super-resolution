@@ -7,8 +7,8 @@ from trainers.base_trainer import *
 
 
 class GanTrainer(Trainer):
-    def __init__(self, generator, discriminator, train_generator, test_generator, valid_generator, lr, savepath):
-        super(GanTrainer, self).__init__(train_generator, test_generator, valid_generator, savepath)
+    def __init__(self, generator, discriminator, train_loader, test_loader, valid_loader, lr, savepath):
+        super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, savepath)
 
         # Models
         self.generator = generator.to(self.device)
@@ -39,7 +39,7 @@ class GanTrainer(Trainer):
         :param index: index of the batch in the test generator to use
         :return: None
         """
-        batch_size = self.test_generator.batch_size
+        batch_size = self.test_loader.batch_size
         index = index % batch_size
 
         # Get a pair of high quality and fake samples batches
@@ -59,7 +59,7 @@ class GanTrainer(Trainer):
         :param index:
         :return:
         """
-        batch_size = self.test_generator.batch_size
+        batch_size = self.test_loader.batch_size
         index = index % batch_size
 
         # Get a pair of low quality and fake samples batches
@@ -73,7 +73,7 @@ class GanTrainer(Trainer):
         for epoch in range(epochs):
             self.generator.train()
             self.discriminator.train()
-            for i, local_batch in enumerate(self.train_generator):
+            for i, local_batch in enumerate(self.train_loader):
                 # Transfer to GPU
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
                 batch_size = x_h_batch.shape[0]
@@ -148,9 +148,9 @@ def create_gan(train_datapath, test_datapath, valid_datapath, savepath, batch_si
                     'shuffle': VALID_SHUFFLE,
                     'num_workers': NUM_WORKERS}
 
-    train_generator = data.DataLoader(train_dataset, **train_params)
-    test_generator = data.DataLoader(test_dataset, **test_params)
-    valid_generator = data.DataLoader(valid_dataset, **valid_params)
+    train_loader = data.DataLoader(train_dataset, **train_params)
+    test_loader = data.DataLoader(test_dataset, **test_params)
+    valid_loader = data.DataLoader(valid_dataset, **valid_params)
 
     # Load the models
     generator = Generator(kernel_sizes=KERNEL_SIZES,
@@ -164,9 +164,9 @@ def create_gan(train_datapath, test_datapath, valid_datapath, savepath, batch_si
 
     gan_trainer = GanTrainer(generator=generator,
                              discriminator=discriminator,
-                             train_generator=train_generator,
-                             test_generator=test_generator,
-                             valid_generator=valid_generator,
+                             train_loader=train_loader,
+                             test_loader=test_loader,
+                             valid_loader=valid_loader,
                              lr=LEARNING_RATE,
                              savepath=savepath)
     return gan_trainer
@@ -196,5 +196,5 @@ if __name__ == '__main__':
                             epochs=1,
                             batch_size=16)
 
-    t = next(iter(gan_trainer.train_generator))
+    t = next(iter(gan_trainer.train_loader))
     print(t[1].shape)

@@ -6,8 +6,8 @@ from trainers.base_trainer import *
 
 
 class AutoEncoderTrainer(Trainer):
-    def __init__(self, autoencoder, train_generator, test_generator, valid_generator, lr, savepath):
-        super(AutoEncoderTrainer, self).__init__(train_generator, test_generator, valid_generator, savepath)
+    def __init__(self, autoencoder, train_loader, test_loader, valid_loader, lr, savepath):
+        super(AutoEncoderTrainer, self).__init__(train_loader, test_loader, valid_loader, savepath)
 
         # Model
         self.autoencoder = autoencoder.to(self.device)
@@ -19,11 +19,11 @@ class AutoEncoderTrainer(Trainer):
         self.loss_function = nn.MSELoss()
 
     def plot_reconstruction_time_domain(self, index):
-        batch_size = self.test_generator.batch_size
+        batch_size = self.test_loader.batch_size
         index = index % batch_size
         self.autoencoder.eval()
         with torch.no_grad():
-            test_input = torch.cat(next(iter(self.test_generator)))
+            test_input = torch.cat(next(iter(self.test_loader)))
             test_output, test_phi = self.autoencoder(test_input.to(self.device))
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -41,7 +41,7 @@ class AutoEncoderTrainer(Trainer):
         for epoch in range(epochs):
             self.autoencoder.train()
             batch_losses = []
-            for i, local_batch in enumerate(self.train_generator):
+            for i, local_batch in enumerate(self.train_loader):
                 # Transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
@@ -75,7 +75,7 @@ class AutoEncoderTrainer(Trainer):
         with torch.no_grad():
             self.autoencoder.eval()
             batch_losses = []
-            for i, local_batch in enumerate(self.test_generator):
+            for i, local_batch in enumerate(self.test_loader):
                 # Transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
 
@@ -112,9 +112,9 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, 
                     'shuffle': VALID_SHUFFLE,
                     'num_workers': NUM_WORKERS}
 
-    train_generator = data.DataLoader(train_dataset, **train_params)
-    test_generator = data.DataLoader(test_dataset, **test_params)
-    valid_generator = data.DataLoader(valid_dataset, **valid_params)
+    train_loader = data.DataLoader(train_dataset, **train_params)
+    test_loader = data.DataLoader(test_dataset, **test_params)
+    valid_loader = data.DataLoader(valid_dataset, **valid_params)
 
     # Load the autoencoder
     model = AutoEncoder(kernel_sizes=KERNEL_SIZES,
@@ -123,9 +123,9 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, 
                         n_blocks=N_BLOCKS_AUTOENCODER)
 
     autoencoder_trainer = AutoEncoderTrainer(autoencoder=model,
-                                             train_generator=train_generator,
-                                             test_generator=test_generator,
-                                             valid_generator=valid_generator,
+                                             train_loader=train_loader,
+                                             test_loader=test_loader,
+                                             valid_loader=valid_loader,
                                              lr=LEARNING_RATE,
                                              savepath=savepath)
     return autoencoder_trainer
