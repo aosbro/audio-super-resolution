@@ -13,9 +13,12 @@ class GeneratorTrainer(Trainer):
         # Optimizers
         self.optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
 
-        # Loss function and stored losses
+        # Loss function
         self.generator_time_criterion = nn.MSELoss()
         self.generator_frequency_criterion = nn.MSELoss()
+
+        # Stores the loss at each weight update
+        self.train_losses = []
 
     def train(self, epochs):
         """
@@ -26,17 +29,22 @@ class GeneratorTrainer(Trainer):
         for epoch in range(epochs):
             self.generator.train()
             for i, local_batch in enumerate(self.train_loader):
+
                 # Transfer to GPU
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
-                batch_size = x_h_batch.shape[0]
 
+                # Reset all gradients in the graph
                 self.optimizer.zero_grad()
+
+                # Generates a fake batch
                 fake_batch = self.generator(x_l_batch)
 
+                # Compute and store the loss
                 loss = self.generator_time_criterion(fake_batch, x_h_batch)
+                self.train_losses.append(loss.item())
 
+                # Backward pass
                 loss.backward()
-
                 self.optimizer.step()
 
                 # Print message
@@ -60,14 +68,6 @@ class GeneratorTrainer(Trainer):
         Plots real samples against fake sample in time domain
         :param index: index of the batch in the test generator to use
         :return: None
-        """
-        pass
-
-    def plot_reconstruction_frequency_domain(self, index):
-        """
-        Plots real samples against fake sample in frequency domain
-        :param index:
-        :return:
         """
         pass
 
@@ -104,7 +104,8 @@ def train_generator(train_datapath, test_datapath, valid_datapath, generator_sav
                                              batch_size=batch_size)
 
     # Start training
-    generator_trainer.train(epochs=epochs)
+    # generator_trainer.train(epochs=epochs)
+    generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.generator)
     return generator_trainer
 
 
@@ -116,5 +117,3 @@ if __name__ == '__main__':
                                         epochs=1,
                                         batch_size=4)
 
-    t = next(iter(generator_trainer.train_loader))
-    print(t[1].shape)

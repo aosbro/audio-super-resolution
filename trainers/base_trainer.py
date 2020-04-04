@@ -1,5 +1,6 @@
 import abc
 import torch
+from processing.pre_processing import *
 
 
 class Trainer(abc.ABC):
@@ -38,6 +39,23 @@ class Trainer(abc.ABC):
             fake_batch = model(x_l_batch)
         return x_h_batch, fake_batch
 
+    def plot_reconstruction_frequency_domain(self, index, model):
+        """
+        Plots real samples against fake sample in frequency domain
+        :param model: model used to generate a fake batch (auto-encoder or generator)
+        :param index:
+        :return:
+        """
+        batch_size = self.test_loader.batch_size
+        index = index % batch_size
+
+        # Get a pair of low quality and fake samples batches
+        x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
+
+        # Plot
+        plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
+                          fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
+
     @abc.abstractmethod
     def train(self, epochs):
         """
@@ -62,10 +80,11 @@ class Trainer(abc.ABC):
         :return: None
         """
 
-    @abc.abstractmethod
-    def plot_reconstruction_frequency_domain(self, index):
-        """
-        Plots real samples against fake sample in frequency domain
-        :param index:
-        :return:
-        """
+    # @abc.abstractmethod
+    # def plot_reconstruction_frequency_domain(self, index, model):
+    #     """
+    #     Plots real samples against fake sample in frequency domain
+    #     :param model: model used to generate a fake batch (auto-encoder or generator)
+    #     :param index:
+    #     :return:
+    #     """
