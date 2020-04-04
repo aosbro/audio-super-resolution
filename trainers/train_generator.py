@@ -21,6 +21,7 @@ class GeneratorTrainer(Trainer):
 
         # Time to frequency converter
         self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
+        self.amplitude_to_db = AmplitudeToDB()
 
     def train(self, epochs):
         """
@@ -42,12 +43,12 @@ class GeneratorTrainer(Trainer):
                 fake_batch = self.generator(x_l_batch)
 
                 # Get the spectrogram
-                x_h_batch_freq = self.spectrogram(x_h_batch)
-                fake_batch_freq = self.spectrogram(fake_batch)
+                x_h_batch_freq_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
+                fake_batch_freq_db = self.amplitude_to_db(self.spectrogram(fake_batch))
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-                freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+                freq_l2_loss = self.frequency_criterion(fake_batch_freq_db, x_h_batch_freq_db)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
