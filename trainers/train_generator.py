@@ -13,11 +13,14 @@ class GeneratorTrainer(Trainer):
 
         # Optimizers
         self.optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=100, gamma=0.5)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.3)
 
         # Loss function
-        self.generator_time_criterion = nn.MSELoss()
-        self.generator_frequency_criterion = nn.MSELoss()
+        self.time_criterion = nn.MSELoss()
+        self.frequency_criterion = nn.MSELoss()
+
+        # Time to frequency converter
+        self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128)
 
     def train(self, epochs):
         """
@@ -38,9 +41,16 @@ class GeneratorTrainer(Trainer):
                 # Generates a fake batch
                 fake_batch = self.generator(x_l_batch)
 
+                # Get the spectrogram
+                x_h_batch_freq = self.spectrogram(x_h_batch)
+                fake_batch_freq = self.spectrogram(fake_batch)
+
                 # Compute and store the loss
-                loss = self.generator_time_criterion(fake_batch, x_h_batch)
-                self.train_losses['time_l2'].append(loss.item())
+                time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
+                freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+                self.train_losses['time_l2'].append(time_l2_loss.item())
+                self.train_losses['freq_l2'].append(freq_l2_loss.item())
+                loss = time_l2_loss + freq_l2_loss
 
                 # Backward pass
                 loss.backward()
@@ -48,8 +58,8 @@ class GeneratorTrainer(Trainer):
                 self.scheduler.step()
 
                 # Print message
-                if not (i % 1):
-                    message = 'Batch {}, train loss: {}'.format(i, loss.item())
+                if not (i % 10):
+                    message = 'Batch {}, time l2: {}, freq l2: {}'.format(i, time_l2_loss.item(), freq_l2_loss.item())
                     print(message)
 
             # Increment epoch counter

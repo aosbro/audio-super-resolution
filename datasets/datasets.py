@@ -5,9 +5,8 @@ from processing.post_processing import *
 import matplotlib.pyplot as plt
 import math
 import torch
-from torchaudio.transforms import Spectrogram, MelSpectrogram
+from torchaudio.transforms import Spectrogram, MelSpectrogram, AmplitudeToDB
 from scipy.signal import butter, filtfilt
-from scipy.io.wavfile import write
 
 
 class DatasetBeethoven(data.Dataset):
@@ -110,16 +109,21 @@ def main():
     print(np.min(x_h_np), np.max(x_l_np))
     # plot_spectrograms(x_h_np, x_l_np, 16000)
 
-    specgram_l = Spectrogram(normalized=True)(x_l)
-    specgram_h = Spectrogram(normalized=True)(x_h)
+    specgram_l = Spectrogram(normalized=True, n_fft=512, hop_length=128)(x_l)
+    specgram_h = Spectrogram(normalized=True, n_fft=512, hop_length=128)(x_h)
+    print(specgram_h.shape)
 
-    # print(torch.max(specgram_l), torch.max(specgram_h))
-    # print(torch.min(specgram_l), torch.min(specgram_h))
-    # print(specgram_l.size())
+    specgram_l_db = AmplitudeToDB(top_db=80)(specgram_l)
+    specgram_h_db = AmplitudeToDB(top_db=80)(specgram_h)
+
+    print(specgram_h.min(), specgram_h.max())
     # # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
     #
-    fig, axes = plt.subplots(figsize=(6, 6))
-    # plt.imshow(specgram_h[0, :, :].log2().numpy(), cmap='jet')
+
+    fig, axes = plt.subplots(1, 2)
+    axes[0].imshow(np.flip(specgram_h_db[0].numpy(), axis=0))
+    axes[1].imshow(np.flip(specgram_l_db[0].numpy(), axis=0))
+    plt.show()
 
     # axes[1].imshow(specgram_h[0, :, :].log2().numpy(), cmap='jet')
     # plt.show()
@@ -145,7 +149,6 @@ def main():
     # plt.show()
     #
     # print(batch[0][2].shape)
-    test_reconstruction(0, dataset)
 
 if __name__ == '__main__':
     main()
