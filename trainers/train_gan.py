@@ -33,26 +33,6 @@ class GanTrainer(Trainer):
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
 
-    def plot_reconstruction_time_domain(self, index):
-        """
-        Plots real samples against fake sample in time domain
-        :param index: index of the batch in the test generator to use
-        :return: None
-        """
-        batch_size = self.test_loader.batch_size
-        index = index % batch_size
-
-        # Get a pair of high quality and fake samples batches
-        x_h_batch, fake_batch = self.generate_single_test_batch(self.generator)
-
-        # Plot
-        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-        axes[0].plot(x_h_batch[index].cpu().detach().numpy().squeeze())
-        axes[0].set_title('Real high quality sample', fontsize=16)
-        axes[1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
-        axes[1].set_title('Fake high quality sample', fontsize=16)
-        plt.show()
-
     def train(self, epochs):
         for epoch in range(epochs):
             self.generator.train()

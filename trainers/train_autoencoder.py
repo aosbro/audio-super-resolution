@@ -18,25 +18,6 @@ class AutoEncoderTrainer(Trainer):
         # Loss function
         self.loss_function = nn.MSELoss()
 
-    def plot_reconstruction_time_domain(self, index):
-        batch_size = self.test_loader.batch_size
-        index = index % batch_size
-        self.autoencoder.eval()
-        with torch.no_grad():
-            test_input = torch.cat(next(iter(self.test_loader)))
-            test_output, test_phi = self.autoencoder(test_input.to(self.device))
-
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        axes[0, 0].plot(test_input[index].cpu().detach().numpy().squeeze())
-        axes[0, 0].set_title('Original, high quality', fontsize=16)
-        axes[0, 1].plot(test_output[index].cpu().detach().numpy().squeeze())
-        axes[0, 1].set_title('Reconstruction, high quality', fontsize=16)
-        axes[1, 0].plot(test_input[index + batch_size].cpu().detach().numpy().squeeze())
-        axes[1, 0].set_title('Original, low quality', fontsize=16)
-        axes[1, 1].plot(test_output[index + batch_size].cpu().detach().numpy().squeeze())
-        axes[1, 1].set_title('Reconstruction, low quality', fontsize=16)
-        plt.show()
-
     def train(self, epochs):
         for epoch in range(epochs):
             self.autoencoder.train()
@@ -63,7 +44,7 @@ class AutoEncoderTrainer(Trainer):
                 self.optimizer.step()
 
             # Add the current epoch's average mean to the train losses
-            self.train_losses.append(np.mean(batch_losses))
+            self.train_time_losse.append(np.mean(batch_losses))
 
             # Evaluate
             self.eval()

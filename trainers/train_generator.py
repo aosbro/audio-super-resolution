@@ -2,6 +2,7 @@ from trainers.base_trainer import *
 from utils.utils import *
 from models.generator import *
 import os
+from torch.optim import lr_scheduler
 
 
 class GeneratorTrainer(Trainer):
@@ -12,13 +13,11 @@ class GeneratorTrainer(Trainer):
 
         # Optimizers
         self.optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=100, gamma=0.5)
 
         # Loss function
         self.generator_time_criterion = nn.MSELoss()
         self.generator_frequency_criterion = nn.MSELoss()
-
-        # Stores the loss at each weight update
-        self.train_losses = []
 
     def train(self, epochs):
         """
@@ -41,11 +40,12 @@ class GeneratorTrainer(Trainer):
 
                 # Compute and store the loss
                 loss = self.generator_time_criterion(fake_batch, x_h_batch)
-                self.train_losses.append(loss.item())
+                self.train_losses['time_l2'].append(loss.item())
 
                 # Backward pass
                 loss.backward()
                 self.optimizer.step()
+                self.scheduler.step()
 
                 # Print message
                 if not (i % 1):
