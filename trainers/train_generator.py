@@ -63,14 +63,6 @@ class GeneratorTrainer(Trainer):
         """
         pass
 
-    def plot_reconstruction_time_domain(self, index):
-        """
-        Plots real samples against fake sample in time domain
-        :param index: index of the batch in the test generator to use
-        :return: None
-        """
-        pass
-
 
 def create_genarator(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
     # Create the datasets
