@@ -75,6 +75,9 @@ class GeneratorTrainer(Trainer):
             # Increment epoch counter
             self.epoch += 1
 
+            # Save the trainer state
+            self.save()
+
     def eval(self, epoch):
         """
         Evaluates the model on the test dataset
