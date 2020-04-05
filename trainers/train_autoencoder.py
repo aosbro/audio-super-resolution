@@ -50,7 +50,7 @@ class AutoEncoderTrainer(Trainer):
             self.eval()
 
             # Increment epoch counter
-            self.epoch_counter += 1
+            self.epoch += 1
 
     def eval(self):
         with torch.no_grad():

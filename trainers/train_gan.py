@@ -89,7 +89,7 @@ class GanTrainer(Trainer):
                     print(message)
 
             # Increment epoch counter
-            self.epoch_counter += 1
+            self.epoch += 1
 
     def eval(self, epoch):
         pass

@@ -6,14 +6,21 @@ from torch.optim import lr_scheduler
 
 
 class GeneratorTrainer(Trainer):
-    def __init__(self, generator, train_loader, test_loader, valid_loader, lr, savepath):
+    def __init__(self, train_loader, test_loader, valid_loader, lr, savepath):
         super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, savepath)
         # Model
-        self.generator = generator.to(self.device)
+        self.generator = Generator(kernel_sizes=KERNEL_SIZES,
+                                   channel_sizes_min=CHANNEL_SIZES_MIN,
+                                   p=DROPOUT_PROBABILITY,
+                                   n_blocks=N_BLOCKS_GENERATOR).to(self.device)
 
         # Optimizers
-        self.optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
         self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
+
+        # Load saved states
+        if os.path.exists(savepath):
+            self.load()
 
         # Loss function
         self.time_criterion = nn.MSELoss()
@@ -66,7 +73,7 @@ class GeneratorTrainer(Trainer):
                     print(message)
 
             # Increment epoch counter
-            self.epoch_counter += 1
+            self.epoch += 1
 
     def eval(self, epoch):
         """
@@ -76,20 +83,48 @@ class GeneratorTrainer(Trainer):
         """
         pass
 
+    def save(self):
+        """
+        Saves the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        torch.save({
+            'epoch': self.epoch,
+            'generator_state_dict': self.generator.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+            'train_losses': self.train_losses,
+            'test_losses': self.test_losses,
+            'valid_losses': self.valid_losses
+        }, self.savepath)
+
+    def load(self):
+        """
+        Loads the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        checkpoint = torch.load(self.savepath)
+        self.epoch = checkpoint['epoch']
+        self.generator.load_state_dict(checkpoint['generator_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self.train_losses = checkpoint['train_losses']
+        self.test_losses = checkpoint['test_losses']
+        self.valid_losses = checkpoint['valid_losses']
+
 
 def create_genarator(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
     # Create the datasets
     train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
                                                                    batch_size)
 
-    # Load the models
-    generator = Generator(kernel_sizes=KERNEL_SIZES,
-                          channel_sizes_min=CHANNEL_SIZES_MIN,
-                          p=DROPOUT_PROBABILITY,
-                          n_blocks=N_BLOCKS_GENERATOR)
+    # # Load the models
+    # generator = Generator(kernel_sizes=KERNEL_SIZES,
+    #                       channel_sizes_min=CHANNEL_SIZES_MIN,
+    #                       p=DROPOUT_PROBABILITY,
+    #                       n_blocks=N_BLOCKS_GENERATOR)
 
-    generator_trainer = GeneratorTrainer(generator=generator,
-                                         train_loader=train_loader,
+    generator_trainer = GeneratorTrainer(train_loader=train_loader,
                                          test_loader=test_loader,
                                          valid_loader=valid_loader,
                                          lr=LEARNING_RATE,
@@ -99,18 +134,22 @@ def create_genarator(train_datapath, test_datapath, valid_datapath, savepath, ba
 
 def train_generator(train_datapath, test_datapath, valid_datapath, generator_savepath, epochs, batch_size):
     # Get the trainer
-    if os.path.exists(generator_savepath):
-        generator_trainer = load_class(loadpath=generator_savepath)
-    else:
-        generator_trainer = create_genarator(train_datapath=train_datapath,
-                                             test_datapath=test_datapath,
-                                             valid_datapath=valid_datapath,
-                                             savepath=generator_savepath,
-                                             batch_size=batch_size)
+    # if os.path.exists(generator_savepath):
+    #     generator_trainer = load_class(loadpath=generator_savepath)
+    # else:
+    #     generator_trainer = create_genarator(train_datapath=train_datapath,
+    #                                          test_datapath=test_datapath,
+    #                                          valid_datapath=valid_datapath,
+    #                                          savepath=generator_savepath,
+    #                                          batch_size=batch_size)
+    generator_trainer = create_genarator(train_datapath=train_datapath,
+                                         test_datapath=test_datapath,
+                                         valid_datapath=valid_datapath,
+                                         savepath=generator_savepath,
+                                         batch_size=batch_size)
 
     # Start training
-    generator_trainer.train(epochs=epochs)
-    # generator_trainer.plot_reconstruction_frequency_domain(0, generator_trainer.generator)
+    generator_trainer.train(epochs)
     return generator_trainer
 
 
@@ -118,7 +157,7 @@ if __name__ == '__main__':
     generator_trainer = train_generator(train_datapath=TRAIN_DATAPATH,
                                         test_datapath=TEST_DATAPATH,
                                         valid_datapath=VALID_DATAPATH,
-                                        generator_savepath=GAN_SAVEPATH,
+                                        generator_savepath=GENERATOR_L2_SAVEPATH,
                                         epochs=1,
                                         batch_size=4)
 

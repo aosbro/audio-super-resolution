@@ -18,7 +18,7 @@ class Trainer(abc.ABC):
         self.savepath = savepath
 
         # Epoch counter
-        self.epoch_counter = 0
+        self.epoch = 0
 
         # Stored losses
         self.train_losses = {'time_l2': [],
@@ -36,13 +36,6 @@ class Trainer(abc.ABC):
                              'autoencoder_l2': [],
                              'generator_adversarial': [],
                              'discriminator_adversarial': []}
-
-    def save(self):
-        """
-        Saves the complete trainer class
-        :return: None
-        """
-        torch.save(self, self.savepath)
 
     def generate_single_test_batch(self, model):
         model.eval()
@@ -114,5 +107,19 @@ class Trainer(abc.ABC):
         """
         Evaluates the model on the test dataset
         :param epoch: Current epoch, used to print status information
+        :return: None
+        """
+
+    @abc.abstractmethod
+    def save(self):
+        """
+        Saves the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+
+    @abc.abstractmethod
+    def load(self):
+        """
+        Loads the model(s), optimizer(s), scheduler(s) and losses
         :return: None
         """

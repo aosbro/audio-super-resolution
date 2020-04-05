@@ -26,9 +26,9 @@ FC1_OUTPUT_FEATURES = 64
 OUTPUT_KERNEL_SIZE = 27
 KERNEL_SIZES = [3, 9, 27, 81]
 CHANNEL_SIZES_MIN = [24, 24, 8, 8]
-GENERATOR_CHANNEL_FACTOR_MAX = 8
+GENERATOR_CHANNEL_FACTOR_MAX = 3
 AUTOENCODER_CHANNEL_FACTOR_MAX = 3
-GENERATOR_BOTTLENECK_REDUCTION_FACTOR = 4
+GENERATOR_BOTTLENECK_REDUCTION_FACTOR = 8
 AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.2
 
@@ -54,5 +54,5 @@ AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_
 GAN_SAVEPATH = '../objects/gan_trainer.txt'
 GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.txt'
 
-GENERATOR_L2_SAVEPATH = '../objects/generator_trainer_l2.txt'
+GENERATOR_L2_SAVEPATH = '../objects/generator_trainer_l2.tar'
 GENERATOR_L2_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.txt'
