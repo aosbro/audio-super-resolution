@@ -13,7 +13,7 @@ class GeneratorTrainer(Trainer):
 
         # Optimizers
         self.optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.3)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
 
         # Loss function
         self.time_criterion = nn.MSELoss()

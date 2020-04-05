@@ -13,8 +13,6 @@ class AutoEncoder(nn.Module):
                          for i in range(n_blocks)]
 
         # Compute bottleneck channel size at each level
-        # bottleneck_channels = [min(channel_size) // AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR
-        #                        for channel_size in channel_sizes]
         bottleneck_channels = [list(map(lambda c: c // AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR, channel_size))
                                for channel_size in channel_sizes]
 
@@ -25,7 +23,8 @@ class AutoEncoder(nn.Module):
         self.encoder = [DownBlock(in_channels=in_channel,
                                   kernel_sizes=kernel_sizes,
                                   channel_sizes=channel_size,
-                                  bottleneck_channels=bottleneck_channel)
+                                  bottleneck_channels=bottleneck_channel,
+                                  use_bottleneck=AUTOENCODER_USE_BOTTLENECK)
                         for in_channel, channel_size, bottleneck_channel in zip(in_channels_encoder, channel_sizes,
                                                                                 bottleneck_channels)]
         self.encoder = nn.Sequential(*self.encoder)
@@ -39,8 +38,10 @@ class AutoEncoder(nn.Module):
                                 kernel_sizes=kernel_sizes,
                                 channel_sizes=channel_size,
                                 bottleneck_channels=bottleneck_channel,
-                                p=p)
-                        for in_channel, channel_size, bottleneck_channel in zip(in_channels_decoder, channel_sizes[::-1],
+                                p=p,
+                                use_bottleneck=AUTOENCODER_USE_BOTTLENECK)
+                        for in_channel, channel_size, bottleneck_channel in zip(in_channels_decoder,
+                                                                                channel_sizes[::-1],
                                                                                 bottleneck_channels[::-1])]
         self.decoder = nn.Sequential(*self.decoder)
 

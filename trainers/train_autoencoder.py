@@ -128,10 +128,10 @@ def train_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, e
     return autoencoder_trainer
 
 
-# if __name__ == '__main__':
-#     train_autoencoder(train_datapath=TRAIN_DATAPATH,
-#                       test_datapath=TEST_DATAPATH,
-#                       valid_datapath=VALID_DATAPATH,
-#                       savepath=AUTOENCODER_SAVEPATH,
-#                       epochs=1,
-#                       batch_size=16)
+if __name__ == '__main__':
+    train_autoencoder(train_datapath=TRAIN_DATAPATH,
+                      test_datapath=TEST_DATAPATH,
+                      valid_datapath=VALID_DATAPATH,
+                      savepath=AUTOENCODER_SAVEPATH,
+                      epochs=1,
+                      batch_size=16)

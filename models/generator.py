@@ -11,7 +11,6 @@ class Generator(nn.Module):
                          for i in range(n_blocks)]
 
         # Compute bottleneck channel size at each level
-        # bottleneck_channels = [min(channel_size) // 4 for channel_size in channel_sizes]
         bottleneck_channels = [list(map(lambda c: c // GENERATOR_BOTTLENECK_REDUCTION_FACTOR, channel_size))
                                for channel_size in channel_sizes]
 
