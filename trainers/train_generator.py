@@ -48,10 +48,11 @@ class GeneratorTrainer(Trainer):
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-                freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+                # freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
-                self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                loss = time_l2_loss + freq_l2_loss
+                # self.train_losses['freq_l2'].append(freq_l2_loss.item())
+                # loss = time_l2_loss + freq_l2_loss
+                loss = time_l2_loss
 
                 # Backward pass
                 loss.backward()
@@ -60,11 +61,15 @@ class GeneratorTrainer(Trainer):
 
                 # Print message
                 if not (i % 10):
-                    message = 'Batch {}, time l2: {}, freq l2: {}'.format(i, time_l2_loss.item(), freq_l2_loss.item())
+                    # message = 'Batch {}, time l2: {}, freq l2: {}'.format(i, time_l2_loss.item(), freq_l2_loss.item())
+                    message = 'Batch {}, time l2: {}'.format(i, time_l2_loss.item())
                     print(message)
 
             # Increment epoch counter
             self.epoch_counter += 1
+
+            # Save trainer
+            self.save()
 
     def eval(self, epoch):
         """
