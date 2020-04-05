@@ -13,7 +13,9 @@ class AutoEncoder(nn.Module):
                          for i in range(n_blocks)]
 
         # Compute bottleneck channel size at each level
-        bottleneck_channels = [min(channel_size) // AUTOENCODER_BOTTLENECK_REDUCTION_FACOR
+        # bottleneck_channels = [min(channel_size) // AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR
+        #                        for channel_size in channel_sizes]
+        bottleneck_channels = [list(map(lambda c: c // AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR, channel_size))
                                for channel_size in channel_sizes]
 
         # Compute the number of input channel for the encoder
