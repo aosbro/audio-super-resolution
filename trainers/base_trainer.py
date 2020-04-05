@@ -95,8 +95,8 @@ class Trainer(abc.ABC):
         # plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
         #                   fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
         fig, axes = plt.subplots(1, 2)
-        axes[0].imshow(np.flip(specgram_h_db[index, 0].numpy(), axis=0))
-        axes[1].imshow(np.flip(specgram_fake_db[index, 0].numpy(), axis=0))
+        axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0))
+        axes[1].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0))
         plt.show()
 
     @abc.abstractmethod
