@@ -109,8 +109,8 @@ def train_generator(train_datapath, test_datapath, valid_datapath, generator_sav
                                              batch_size=batch_size)
 
     # Start training
-    # generator_trainer.train(epochs=epochs)
-    generator_trainer.plot_reconstruction_frequency_domain(0, generator_trainer.generator)
+    generator_trainer.train(epochs=epochs)
+    # generator_trainer.plot_reconstruction_frequency_domain(0, generator_trainer.generator)
     return generator_trainer
 
 
