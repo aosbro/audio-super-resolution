@@ -48,11 +48,11 @@ N_BLOCKS_AUTOENCODER = 4
 LEARNING_RATE = 1e-3
 
 # Saving constants
-AUTOENCODER_SAVEPATH = '../objects/autoencoder_trainer.txt'
-AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.txt'
+AUTOENCODER_SAVEPATH = '../objects/autoencoder_trainer.tar'
+AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.tar'
 
-GAN_SAVEPATH = '../objects/gan_trainer.txt'
-GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.txt'
+GAN_SAVEPATH = '../objects/gan_trainer.tar'
+GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 
 GENERATOR_L2_SAVEPATH = '../objects/generator_trainer_l2.tar'
-GENERATOR_L2_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.txt'
+GENERATOR_L2_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
