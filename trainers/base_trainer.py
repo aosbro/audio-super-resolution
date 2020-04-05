@@ -1,6 +1,7 @@
 import abc
 import torch
 from processing.pre_processing import *
+from torchaudio.transforms import Spectrogram, AmplitudeToDB
 
 
 class Trainer(abc.ABC):
@@ -83,11 +84,20 @@ class Trainer(abc.ABC):
         index = index % batch_size
 
         # Get a pair of low quality and fake samples batches
-        x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
+        x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
 
-        # Plot
-        plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
-                          fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
+        specgram_h_db = AmplitudeToDB(top_db=100)(Spectrogram(normalized=True, n_fft=256, hop_length=64)(x_h_batch))
+        specgram_fake_db = AmplitudeToDB(top_db=100)(Spectrogram(normalized=True, n_fft=256, hop_length=64)(fake_batch))
+
+        print(specgram_h_db.shape)
+
+        # # Plot
+        # plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
+        #                   fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
+        fig, axes = plt.subplots(1, 2)
+        axes[0].imshow(np.flip(specgram_h_db[index, 0].numpy(), axis=0))
+        axes[1].imshow(np.flip(specgram_fake_db[index, 0].numpy(), axis=0))
+        plt.show()
 
     @abc.abstractmethod
     def train(self, epochs):
