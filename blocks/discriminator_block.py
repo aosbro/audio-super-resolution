@@ -1,14 +1,16 @@
 from layers.superpixel import *
 from blocks.base_block import *
+from utils.constants import *
 
 
 class DiscriminatorBlock(BaseBlock):
-    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, p):
-        super(DiscriminatorBlock, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels)
+    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, p, use_bottleneck):
+        super(DiscriminatorBlock, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels,
+                                                 use_bottleneck)
         self.batch_normalization = nn.BatchNorm1d(sum(channel_sizes))
         self.dropout = nn.Dropout(p)
-        self.activation = nn.LeakyReLU(negative_slope=0.2)
-        self.superpixel = SuperPixel1D(downscale_factor=2)
+        self.activation = nn.LeakyReLU(negative_slope=LEAKY_RELU_SLOPE)
+        self.superpixel = SuperPixel1D(downscale_factor=DOWNSCALE_FACTOR)
 
     def forward(self, x):
         x = self.forward_base(x)
@@ -17,9 +19,10 @@ class DiscriminatorBlock(BaseBlock):
 
 
 class DiscriminatorInput(BaseBlock):
-    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels):
-        super(DiscriminatorInput, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels)
-        self.activation = nn.LeakyReLU(negative_slope=0.2)
+    def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck):
+        super(DiscriminatorInput, self).__init__(in_channels, kernel_sizes, channel_sizes, bottleneck_channels,
+                                                 use_bottleneck)
+        self.activation = nn.LeakyReLU(negative_slope=LEAKY_RELU_SLOPE)
 
     def forward(self, x):
         x = self.forward_base(x)
@@ -32,7 +35,7 @@ class DiscriminatorOutput(nn.Module):
         super(DiscriminatorOutput, self).__init__()
         self.fc_1 = nn.Linear(in_features=in_features_1, out_features=out_features_1)
         self.dropout = nn.Dropout(p)
-        self.activation_1 = nn.LeakyReLU(negative_slope=0.2)
+        self.activation_1 = nn.LeakyReLU(negative_slope=LEAKY_RELU_SLOPE)
         self.fc_2 = nn.Linear(in_features=out_features_1, out_features=1)
 
     def forward(self, x):

@@ -8,11 +8,13 @@ class AutoEncoder(nn.Module):
         super(AutoEncoder, self).__init__()
 
         # Compute channel sizes at each level
-        channel_sizes = [list(map(lambda c_size: (2 ** min(i, CHANNEL_FACTOR_MAX)) * c_size, channel_sizes_min))
+        channel_sizes = [list(map(lambda c_size: (2 ** min(i, AUTOENCODER_CHANNEL_FACTOR_MAX)) * c_size,
+                                  channel_sizes_min))
                          for i in range(n_blocks)]
 
         # Compute bottleneck channel size at each level
-        bottleneck_channels = [min(channel_size) // BOTTLENECK_REDUCTION_FACTOR for channel_size in channel_sizes]
+        bottleneck_channels = [min(channel_size) // AUTOENCODER_BOTTLENECK_REDUCTION_FACOR
+                               for channel_size in channel_sizes]
 
         # Compute the number of input channel for the encoder
         in_channels_encoder = [1 if i == 0 else 2 * sum(channel_sizes[i-1]) for i in range(n_blocks)]
