@@ -25,6 +25,7 @@ class AutoEncoderTrainer(Trainer):
 
         # Loss function
         self.time_criterion = nn.MSELoss()
+        self.frequency_criterion = nn.MSELoss()
 
         self.is_autoencoder = True
 
@@ -37,12 +38,18 @@ class AutoEncoderTrainer(Trainer):
                 self.optimizer.zero_grad()
 
                 # Forward pass
-                x_tilde, _ = self.autoencoder.forward(local_batch)
+                fake_batch, _ = self.autoencoder.forward(local_batch)
+
+                # Get the spectrogram
+                local_batch_freq = self.spectrogram(local_batch)
+                fake_batch_freq = self.spectrogram(fake_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(input=x_tilde, target=local_batch)
+                time_l2_loss = self.time_criterion(fake_batch, local_batch)
+                freq_l2_loss = self.frequency_criterion(fake_batch_freq, local_batch_freq)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
-                loss = time_l2_loss
+                self.train_losses['freq_l2'].append(freq_l2_loss.item())
+                loss = time_l2_loss + freq_l2_loss
 
                 # Print message
                 if not(i % 10):
