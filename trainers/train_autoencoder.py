@@ -43,7 +43,7 @@ class AutoEncoderTrainer(Trainer):
                 loss = time_l2_loss
 
                 # Print message
-                if not(i % 10):
+                if not(i % 1):
                     message = 'Batch {}, time l2: {}'.format(i, time_l2_loss.item())
                     print(message)
 
