@@ -1,4 +1,3 @@
-from datasets.datasets import *
 from models.autoencoder import *
 from utils.utils import *
 import os
@@ -7,14 +6,17 @@ from torch.optim import lr_scheduler
 
 
 class AutoEncoderTrainer(Trainer):
-    def __init__(self, autoencoder, train_loader, test_loader, valid_loader, lr, savepath):
-        super(AutoEncoderTrainer, self).__init__(train_loader, test_loader, valid_loader, savepath)
+    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath):
+        super(AutoEncoderTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Model
-        self.autoencoder = autoencoder.to(self.device)
+        self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
+                                       channel_sizes_min=CHANNEL_SIZES_MIN,
+                                       p=DROPOUT_PROBABILITY,
+                                       n_blocks=N_BLOCKS_AUTOENCODER)
 
         # Optimizer and scheduler
-        self.optimizer = torch.optim.Adam(params=autoencoder.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(params=self.autoencoder.parameters(), lr=lr)
         self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
 
         # Load saved states
@@ -22,12 +24,11 @@ class AutoEncoderTrainer(Trainer):
             self.load()
 
         # Loss function
-        self.loss_function = nn.MSELoss()
+        self.time_criterion = nn.MSELoss()
 
     def train(self, epochs):
         for epoch in range(epochs):
             self.autoencoder.train()
-            batch_losses = []
             for i, local_batch in enumerate(self.train_loader):
                 # Transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
@@ -35,25 +36,21 @@ class AutoEncoderTrainer(Trainer):
 
                 # Forward pass
                 x_tilde, _ = self.autoencoder.forward(local_batch)
-                loss = self.loss_function(input=x_tilde, target=local_batch)
 
-                # Store the batch loss
-                batch_losses.append(loss.item())
+                # Compute and store the loss
+                time_l2_loss = self.time_criterion(input=x_tilde, target=local_batch)
+                self.train_losses['time_l2'].append(time_l2_loss.item())
+                loss = time_l2_loss
 
                 # Print message
-                if not(i % 1):
-                    message = 'Batch {}, train loss: {}'.format(i, np.mean(batch_losses[-1:]))
+                if not(i % 10):
+                    message = 'Batch {}, time l2: {}'.format(i, time_l2_loss.item())
                     print(message)
 
                 # Backward pass
                 loss.backward()
                 self.optimizer.step()
-
-            # Add the current epoch's average mean to the train losses
-            self.train_time_losse.append(np.mean(batch_losses))
-
-            # Evaluate
-            self.eval()
+                self.scheduler.step()
 
             # Increment epoch counter
             self.epoch += 1
@@ -68,7 +65,7 @@ class AutoEncoderTrainer(Trainer):
 
                 # Forward pass
                 x_tilde, _ = self.autoencoder.forward(local_batch)
-                loss = self.loss_function(input=x_tilde, target=local_batch)
+                loss = self.time_criterion(input=x_tilde, target=local_batch)
 
                 # Store the batch loss
                 batch_losses.append(loss.item())
@@ -101,7 +98,7 @@ class AutoEncoderTrainer(Trainer):
         Loads the model(s), optimizer(s), scheduler(s) and losses
         :return: None
         """
-        checkpoint = torch.load(self.savepath)
+        checkpoint = torch.load(self.loadpath)
         self.epoch = checkpoint['epoch']
         self.autoencoder.load_state_dict(checkpoint['generator_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -111,52 +108,27 @@ class AutoEncoderTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
+def create_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
     # Create the datasets
-    train_dataset = DatasetBeethoven(train_datapath)
-    test_dataset = DatasetBeethoven(test_datapath)
-    valid_dataset = DatasetBeethoven(valid_datapath)
+    train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
+                                                                   batch_size)
 
-    # Create the generators
-    train_params = {'batch_size': batch_size,
-                    'shuffle': TRAIN_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-    test_params = {'batch_size': batch_size,
-                   'shuffle': TEST_SHUFFLE,
-                   'num_workers': NUM_WORKERS}
-    valid_params = {'batch_size': batch_size,
-                    'shuffle': VALID_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-
-    train_loader = data.DataLoader(train_dataset, **train_params)
-    test_loader = data.DataLoader(test_dataset, **test_params)
-    valid_loader = data.DataLoader(valid_dataset, **valid_params)
-
-    # Load the autoencoder
-    model = AutoEncoder(kernel_sizes=KERNEL_SIZES,
-                        channel_sizes_min=CHANNEL_SIZES_MIN,
-                        p=DROPOUT_PROBABILITY,
-                        n_blocks=N_BLOCKS_AUTOENCODER)
-
-    autoencoder_trainer = AutoEncoderTrainer(autoencoder=model,
-                                             train_loader=train_loader,
+    autoencoder_trainer = AutoEncoderTrainer(train_loader=train_loader,
                                              test_loader=test_loader,
                                              valid_loader=valid_loader,
                                              lr=LEARNING_RATE,
+                                             loadpath=loadpath,
                                              savepath=savepath)
     return autoencoder_trainer
 
 
-def train_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, epochs, batch_size):
-    # Get the trainer
-    if os.path.exists(savepath):
-        autoencoder_trainer = load_class(loadpath=savepath)
-    else:
-        autoencoder_trainer = create_autoencoder(train_datapath=train_datapath,
-                                                 test_datapath=test_datapath,
-                                                 valid_datapath=valid_datapath,
-                                                 savepath=savepath,
-                                                 batch_size=batch_size)
+def train_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size):
+    autoencoder_trainer = create_autoencoder(train_datapath=train_datapath,
+                                             test_datapath=test_datapath,
+                                             valid_datapath=valid_datapath,
+                                             loadpath=loadpath,
+                                             savepath=savepath,
+                                             batch_size=batch_size)
 
     # Start training
     autoencoder_trainer.train(epochs=epochs)
@@ -167,6 +139,7 @@ if __name__ == '__main__':
     train_autoencoder(train_datapath=TRAIN_DATAPATH,
                       test_datapath=TEST_DATAPATH,
                       valid_datapath=VALID_DATAPATH,
+                      loadpath=AUTOENCODER_SAVEPATH,
                       savepath=AUTOENCODER_SAVEPATH,
                       epochs=1,
                       batch_size=16)

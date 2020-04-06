@@ -8,6 +8,7 @@ from torch.optim import lr_scheduler
 class GeneratorTrainer(Trainer):
     def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath):
         super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
+
         # Model
         self.generator = Generator(kernel_sizes=KERNEL_SIZES,
                                    channel_sizes_min=CHANNEL_SIZES_MIN,
