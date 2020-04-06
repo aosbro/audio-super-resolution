@@ -13,7 +13,7 @@ class AutoEncoderTrainer(Trainer):
         self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
                                        channel_sizes_min=CHANNEL_SIZES_MIN,
                                        p=DROPOUT_PROBABILITY,
-                                       n_blocks=N_BLOCKS_AUTOENCODER)
+                                       n_blocks=N_BLOCKS_AUTOENCODER).to(self.device)
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.autoencoder.parameters(), lr=lr)
@@ -43,7 +43,7 @@ class AutoEncoderTrainer(Trainer):
                 loss = time_l2_loss
 
                 # Print message
-                if not(i % 1):
+                if not(i % 10):
                     message = 'Batch {}, time l2: {}'.format(i, time_l2_loss.item())
                     print(message)
 
