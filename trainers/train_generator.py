@@ -27,6 +27,8 @@ class GeneratorTrainer(Trainer):
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
 
+        self.is_autoencoder = False
+
     def train(self, epochs):
         """
         Trains the model for a specified number of epochs on the train dataset

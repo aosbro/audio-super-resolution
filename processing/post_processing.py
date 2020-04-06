@@ -47,3 +47,6 @@ def test_reconstruction(index, dataset):
     axes[1].set_xlabel('Time [s]', fontsize=14)
     axes[1].set_ylabel('Amplitude', fontsize=14)
     plt.show()
+
+def generate_high_resolution_sample(model, index, data):
+    pass

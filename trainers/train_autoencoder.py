@@ -26,6 +26,8 @@ class AutoEncoderTrainer(Trainer):
         # Loss function
         self.time_criterion = nn.MSELoss()
 
+        self.is_autoencoder = True
+
     def train(self, epochs):
         for epoch in range(epochs):
             self.autoencoder.train()
@@ -54,6 +56,9 @@ class AutoEncoderTrainer(Trainer):
 
             # Increment epoch counter
             self.epoch += 1
+
+            # Save the trainer state
+            self.save()
 
     def eval(self):
         with torch.no_grad():

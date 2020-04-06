@@ -48,6 +48,8 @@ class Trainer(abc.ABC):
             local_batch = next(iter(self.test_loader))
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
             fake_batch = model(x_l_batch)
+        if self.is_autoencoder:
+            return x_h_batch, fake_batch[0]
         return x_h_batch, fake_batch
 
     def plot_reconstruction_time_domain(self, index, model):
@@ -84,12 +86,14 @@ class Trainer(abc.ABC):
         # Get a pair of low quality and fake samples batches
         x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
 
-        specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch.cpu()))
-        specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch.cpu()))
+        print(fake_batch[1].shape)
+
+        specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
+        specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch))
 
         fig, axes = plt.subplots(1, 2)
-        axes[0].imshow(np.flip(specgram_h_db[index, 0].numpy(), axis=0))
-        axes[1].imshow(np.flip(specgram_fake_db[index, 0].numpy(), axis=0))
+        axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0))
+        axes[1].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0))
         plt.show()
 
     @abc.abstractmethod
