@@ -139,7 +139,7 @@ if __name__ == '__main__':
     train_autoencoder(train_datapath=TRAIN_DATAPATH,
                       test_datapath=TEST_DATAPATH,
                       valid_datapath=VALID_DATAPATH,
-                      loadpath=AUTOENCODER_SAVEPATH,
-                      savepath=AUTOENCODER_SAVEPATH,
+                      loadpath=AUTOENCODER_PATH,
+                      savepath=AUTOENCODER_PATH,
                       epochs=1,
                       batch_size=16)

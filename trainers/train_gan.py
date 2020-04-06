@@ -156,7 +156,7 @@ if __name__ == '__main__':
     gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
                             test_datapath=TEST_DATAPATH,
                             valid_datapath=VALID_DATAPATH,
-                            gan_savepath=GAN_SAVEPATH,
+                            gan_savepath=GAN_PATH,
                             epochs=1,
                             batch_size=16)
 
