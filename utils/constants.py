@@ -48,22 +48,22 @@ N_BLOCKS_AUTOENCODER = 4
 LEARNING_RATE = 1e-3
 
 # Saving constants
-    # Auto-encoder trained with the L2 criterion in time domain
-    AUTOENCODER_L2T_PATH = '../objects/autoencoder_trainer.tar'
-    AUTOENCODER_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.tar'
+# Auto-encoder trained with the L2 criterion in time domain
+AUTOENCODER_L2T_PATH = '../objects/autoencoder_trainer.tar'
+AUTOENCODER_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.tar'
 
-    # Auto-encoder trained with the L2 criterion in time and frequency domain
-    AUTOENCODER_L2TF_PATH = '../objects/autoencoder_trainer_l2tf.tar'
-    AUTOENCODER_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer_l2tf.tar'
+# Auto-encoder trained with the L2 criterion in time and frequency domain
+AUTOENCODER_L2TF_PATH = '../objects/autoencoder_trainer_l2tf.tar'
+AUTOENCODER_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer_l2tf.tar'
 
-    GAN_PATH = '../objects/gan_trainer.tar'
-    GAN_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
+GAN_PATH = '../objects/gan_trainer.tar'
+GAN_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 
-    # Generator trained with the L2 criterion in time domain
-    GENERATOR_L2T_PATH = '../objects/generator_trainer_l2.tar'
-    GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
+# Generator trained with the L2 criterion in time domain
+GENERATOR_L2T_PATH = '../objects/generator_trainer_l2.tar'
+GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
 
 
-    # Generator trained with the L2 criterion in time and frequency domain
-    GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
-    GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
+# Generator trained with the L2 criterion in time and frequency domain
+GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
+GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
