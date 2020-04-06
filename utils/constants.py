@@ -27,7 +27,7 @@ OUTPUT_KERNEL_SIZE = 27
 KERNEL_SIZES = [3, 9, 27, 81]
 CHANNEL_SIZES_MIN = [24, 24, 8, 8]
 GENERATOR_CHANNEL_FACTOR_MAX = 3
-AUTOENCODER_CHANNEL_FACTOR_MAX = 0
+AUTOENCODER_CHANNEL_FACTOR_MAX = 3
 GENERATOR_BOTTLENECK_REDUCTION_FACTOR = 8
 AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR = 8
 DROPOUT_PROBABILITY = 0.2
@@ -49,8 +49,8 @@ LEARNING_RATE = 1e-3
 
 # Saving constants
 # Auto-encoder trained with the L2 criterion in time domain
-AUTOENCODER_L2T_PATH = '../objects/autoencoder_trainer.tar'
-AUTOENCODER_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer.tar'
+AUTOENCODER_L2T_PATH = '../objects/autoencoder_trainer_l2t.tar'
+AUTOENCODER_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer_l2t.tar'
 
 # Auto-encoder trained with the L2 criterion in time and frequency domain
 AUTOENCODER_L2TF_PATH = '../objects/autoencoder_trainer_l2tf.tar'

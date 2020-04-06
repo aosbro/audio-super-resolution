@@ -116,39 +116,16 @@ def main():
     specgram_l_db = AmplitudeToDB(top_db=80)(specgram_l)
     specgram_h_db = AmplitudeToDB(top_db=80)(specgram_h)
 
-    print(specgram_h.min(), specgram_h.max())
-    # # mel_specgram = torchaudio.transforms.MelSpectrogram()(x_h)
-    #
-
     fig, axes = plt.subplots(1, 2)
     axes[0].imshow(np.flip(specgram_h_db[0].numpy(), axis=0))
     axes[1].imshow(np.flip(specgram_l_db[0].numpy(), axis=0))
     plt.show()
 
-    # axes[1].imshow(specgram_h[0, :, :].log2().numpy(), cmap='jet')
-    # plt.show()
-    #
-    # print(torch.sum(torch.pow(specgram_h[:, 0:201, :] - specgram_l[:, 0:201, :], 2)))
-
-    # batch = next(iter(train_loader))
-    # batch = []
-    # for i in range(31):
-    #     batch.append(dataset.__getitem__(i))
-    # batch_h, batch_l = map(list, zip(*batch))
-    # batch_h, batch_l = torch.cat(batch_h), torch.cat(batch_l)
-    # print(batch_h.shape)
     # full_sample = overlap_and_add_samples(batch_l.view(31, 1, 8192))
-    # # test = train_loader.__iter__()
+
     # scaled = np.int16(full_sample.numpy() / np.max(np.abs(full_sample.numpy()) * 32767))
     # write('test.wav', 16000, full_sample.numpy())
-    # # # plt.plot(dataset.data[3000])
-    # plt.plot(full_sample)
-    # plt.plot(dataset.data[0])
-    # # # plt.plot(dataset.data[0])
-    # # # plt.plot(batch[0][1].numpy().squeeze())
-    # plt.show()
-    #
-    # print(batch[0][2].shape)
+
 
 if __name__ == '__main__':
     main()

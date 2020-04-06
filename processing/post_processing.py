@@ -48,5 +48,11 @@ def test_reconstruction(index, dataset):
     axes[1].set_ylabel('Amplitude', fontsize=14)
     plt.show()
 
-def generate_high_resolution_sample(model, index, data):
-    pass
+
+def generate_high_resolution_sample(model, dataset, index, data):
+    batch = [dataset.__getitem__(i + index * dataset.window_number) for i in range(dataset.window_number)]
+    batch_h, batch_l = map(list, zip(*batch))
+    batch_h, batch_l = torch.cat(batch_h), torch.cat(batch_l)
+    B, W = batch_l.size()
+    full_sample_h = overlap_and_add_samples(batch_l.view(B, 1, W))
+    print(full_sample_h.shape)
