@@ -128,7 +128,7 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, 
     autoencoder_trainer = AutoEncoderTrainer(train_loader=train_loader,
                                              test_loader=test_loader,
                                              valid_loader=valid_loader,
-                                             lr=LEARNING_RATE,
+                                             lr=AUTOENCODER_LEARNING_RATE,
                                              loadpath=loadpath,
                                              savepath=savepath)
     return autoencoder_trainer

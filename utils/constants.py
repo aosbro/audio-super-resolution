@@ -46,6 +46,7 @@ N_BLOCKS_AUTOENCODER = 4
 
 # Optimizer constants
 LEARNING_RATE = 1e-3
+AUTOENCODER_LEARNING_RATE = 1e-4
 
 # Saving constants
 # Auto-encoder trained with the L2 criterion in time domain
