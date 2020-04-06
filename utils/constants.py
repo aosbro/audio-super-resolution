@@ -54,5 +54,11 @@ AUTOENCODER_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_
 GAN_SAVEPATH = '../objects/gan_trainer.tar'
 GAN_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 
-GENERATOR_L2_SAVEPATH = '../objects/generator_trainer_l2.tar'
-GENERATOR_L2_SAVEPATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
+# Generator trained with the L2 criterion in time domain
+GENERATOR_L2T_PATH = '../objects/generator_trainer_l2.tar'
+GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
+
+
+# Generator trained with the L2 criterion in time and frequency domain
+GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
+GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'

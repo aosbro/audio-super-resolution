@@ -5,7 +5,7 @@ from torchaudio.transforms import Spectrogram, AmplitudeToDB
 
 
 class Trainer(abc.ABC):
-    def __init__(self, train_loader, test_loader, valid_loader, savepath):
+    def __init__(self, train_loader, test_loader, valid_loader, loadpath, savepath):
         # Device
         self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -14,7 +14,8 @@ class Trainer(abc.ABC):
         self.test_loader = test_loader
         self.valid_loader = valid_loader
 
-        # Path to save to the class
+        # Paths
+        self.loadpath = loadpath
         self.savepath = savepath
 
         # Epoch counter
@@ -36,6 +37,10 @@ class Trainer(abc.ABC):
                              'autoencoder_l2': [],
                              'generator_adversarial': [],
                              'discriminator_adversarial': []}
+
+        # Time to frequency converter
+        self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
+        self.amplitude_to_db = AmplitudeToDB()
 
     def generate_single_test_batch(self, model):
         model.eval()
@@ -79,16 +84,9 @@ class Trainer(abc.ABC):
         # Get a pair of low quality and fake samples batches
         x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
 
-        specgram_h_db = AmplitudeToDB(top_db=100)(Spectrogram(normalized=True, n_fft=256, hop_length=64)(
-            x_h_batch.cpu()))
-        specgram_fake_db = AmplitudeToDB(top_db=100)(Spectrogram(normalized=True, n_fft=256, hop_length=64)(
-            fake_batch.cpu()))
+        specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch.cpu()))
+        specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch.cpu()))
 
-        print(specgram_h_db.shape)
-
-        # # Plot
-        # plot_spectrograms(x_l_batch[index].cpu().detach().numpy().squeeze(),
-        #                   fake_batch[index].cpu().detach().numpy().squeeze(), fs=16000)
         fig, axes = plt.subplots(1, 2)
         axes[0].imshow(np.flip(specgram_h_db[index, 0].numpy(), axis=0))
         axes[1].imshow(np.flip(specgram_fake_db[index, 0].numpy(), axis=0))

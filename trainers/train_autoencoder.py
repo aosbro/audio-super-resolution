@@ -3,6 +3,7 @@ from models.autoencoder import *
 from utils.utils import *
 import os
 from trainers.base_trainer import *
+from torch.optim import lr_scheduler
 
 
 class AutoEncoderTrainer(Trainer):
@@ -12,8 +13,13 @@ class AutoEncoderTrainer(Trainer):
         # Model
         self.autoencoder = autoencoder.to(self.device)
 
-        # Optimizer
+        # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=autoencoder.parameters(), lr=lr)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
+
+        # Load saved states
+        if os.path.exists(self.loadpath):
+            self.load()
 
         # Loss function
         self.loss_function = nn.MSELoss()
@@ -74,6 +80,35 @@ class AutoEncoderTrainer(Trainer):
 
             # Add the current epoch's average mean to the train losses
             self.test_losses.append(np.mean(batch_losses))
+
+    def save(self):
+        """
+        Saves the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        torch.save({
+            'epoch': self.epoch,
+            'generator_state_dict': self.autoencoder.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+            'train_losses': self.train_losses,
+            'test_losses': self.test_losses,
+            'valid_losses': self.valid_losses
+        }, self.savepath)
+
+    def load(self):
+        """
+        Loads the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        checkpoint = torch.load(self.savepath)
+        self.epoch = checkpoint['epoch']
+        self.autoencoder.load_state_dict(checkpoint['generator_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self.train_losses = checkpoint['train_losses']
+        self.test_losses = checkpoint['test_losses']
+        self.valid_losses = checkpoint['valid_losses']
 
 
 def create_autoencoder(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
