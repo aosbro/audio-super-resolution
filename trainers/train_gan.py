@@ -95,8 +95,8 @@ class GanTrainer(Trainer):
                 self.generator_optimizer.zero_grad()
 
                 # Get the spectrogram
-                specgram_h_batch = self.spectrogram(x_h_batch)
-                specgram_fake_batch = self.spectrogram(fake_batch)
+                specgram_h_batch = self.amplitude_to_db(self.spectrogram(x_h_batch))
+                specgram_fake_batch = self.amplitude_to_db(self.spectrogram(fake_batch))
 
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)

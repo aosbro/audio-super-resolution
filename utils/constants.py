@@ -73,5 +73,5 @@ GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
 GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
 
 # ...
-LAMBDA_ADVERSARIAL = 1e-2
+LAMBDA_ADVERSARIAL = 1e-3
 GENERATOR_CLIP_VALUE = 1000
