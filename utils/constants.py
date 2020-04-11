@@ -71,3 +71,6 @@ GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trai
 # Generator trained with the L2 criterion in time and frequency domain
 GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
 GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
+
+# ...
+LAMBDA_ADVERSARIAL = 1e-2

@@ -44,7 +44,7 @@ class GanTrainer(Trainer):
         self.fake_label = 0
 
         # Loss scaling factors
-        self.lambda_adv = 1e-3
+        self.lambda_adv = LAMBDA_ADVERSARIAL
 
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
