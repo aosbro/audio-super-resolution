@@ -4,6 +4,7 @@ from models.generator import *
 from models.discriminator import *
 from trainers.base_trainer import *
 from torch.optim import lr_scheduler
+from torch.nn.utils import clip_grad_norm_
 
 
 class GanTrainer(Trainer):
@@ -115,6 +116,7 @@ class GanTrainer(Trainer):
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
+                clip_grad_norm_(parameters=self.generator.parameters(), max_norm=GENERATOR_CLIP_VALUE)
                 self.generator_optimizer.step()
 
                 # Print message
