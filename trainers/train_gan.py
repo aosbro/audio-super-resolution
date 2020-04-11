@@ -118,7 +118,7 @@ class GanTrainer(Trainer):
                 self.generator_optimizer.step()
 
                 # Print message
-                if not (i % 1):
+                if not (i % 10):
                     message = 'Batch {}: \n' \
                               '\t Genarator: \n' \
                               '\t\t Time: {} \n' \
@@ -133,6 +133,9 @@ class GanTrainer(Trainer):
 
             # Increment epoch counter
             self.epoch += 1
+
+            # Save the trainer state
+            self.save()
 
     def eval(self, epoch):
         pass
