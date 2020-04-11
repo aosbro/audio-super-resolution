@@ -87,7 +87,6 @@ class GanTrainer(Trainer):
                 loss_discriminator_fake.backward()
 
                 # Update the discriminator weights
-                loss_discriminator = loss_discriminator_real + loss_discriminator_fake
                 self.discriminator_optimizer.step()
 
                 ############################
