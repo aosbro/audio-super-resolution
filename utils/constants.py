@@ -74,4 +74,4 @@ GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_tra
 
 # ...
 LAMBDA_ADVERSARIAL = 1e-2
-GENERATOR_CLIP_VALUE = 1
+GENERATOR_CLIP_VALUE = 1000
