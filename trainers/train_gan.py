@@ -1,22 +1,38 @@
 import os
 from utils.utils import *
-from datasets.datasets import *
 from models.generator import *
 from models.discriminator import *
 from trainers.base_trainer import *
+from torch.optim import lr_scheduler
 
 
 class GanTrainer(Trainer):
-    def __init__(self, generator, discriminator, train_loader, test_loader, valid_loader, lr, savepath):
-        super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, savepath)
+    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, generator_path=None):
+        super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Models
-        self.generator = generator.to(self.device)
-        self.discriminator = discriminator.to(self.device)
+        self.generator = Generator(kernel_sizes=KERNEL_SIZES,
+                                   channel_sizes_min=CHANNEL_SIZES_MIN,
+                                   p=DROPOUT_PROBABILITY,
+                                   n_blocks=N_BLOCKS_GENERATOR).to(self.device)
+        if generator_path:
+            self.load_pretrained_generator(generator_path)
 
-        # Optimizers
-        self.generator_optimizer = torch.optim.Adam(params=generator.parameters(), lr=lr)
-        self.discriminator_optimizer = torch.optim.Adam(params=discriminator.parameters(), lr=lr)
+        self.discriminator = Discriminator(kernel_sizes=KERNEL_SIZES,
+                                           channel_sizes_min=CHANNEL_SIZES_MIN,
+                                           p=DROPOUT_PROBABILITY,
+                                           n_blocks=N_BLOCKS_DISCRIMINATOR).to(self.device)
+
+        # Optimizers and schedulers
+        self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
+        self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(), lr=lr)
+        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=1000, gamma=0.3)
+        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=1000,
+                                                           gamma=0.3)
+
+        # Load saved states
+        if os.path.exists(self.loadpath):
+            self.load()
 
         # Loss function and stored losses
         self.adversarial_criterion = nn.BCEWithLogitsLoss()
@@ -33,6 +49,10 @@ class GanTrainer(Trainer):
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
 
+    def load_pretrained_generator(self, generator_path):
+        checkpoint = torch.load(generator_path, map_location=self.device)
+        self.generator.load_state_dict(checkpoint['generator_state_dict'])
+
     def train(self, epochs):
         for epoch in range(epochs):
             self.generator.train()
@@ -48,18 +68,24 @@ class GanTrainer(Trainer):
                 # Train the discriminator with real data
                 self.discriminator_optimizer.zero_grad()
                 label = torch.full((batch_size,), self.real_label, device=self.device)
-
                 output = self.discriminator(x_h_batch)
+
+                # Compute and store the discriminator loss on real data
                 loss_discriminator_real = self.adversarial_criterion(torch.squeeze(output), label)
+                self.train_losses['discriminator_adversarial']['real'].append(loss_discriminator_real.item())
                 loss_discriminator_real.backward()
 
                 # Train the discriminator with fake data
                 fake_batch = self.generator(x_l_batch)
                 label.fill_(self.fake_label)
                 output = self.discriminator(fake_batch.detach())
+
+                # Compute and store the discriminator loss on fake data
                 loss_discriminator_fake = self.adversarial_criterion(torch.squeeze(output), label)
+                self.train_losses['discriminator_adversarial']['fake'].append(loss_discriminator_fake.item())
                 loss_discriminator_fake.backward()
 
+                # Update the discriminator weights
                 loss_discriminator = loss_discriminator_real + loss_discriminator_fake
                 self.discriminator_optimizer.step()
 
@@ -75,17 +101,34 @@ class GanTrainer(Trainer):
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
-                loss_generator = self.lambda_adv * self.adversarial_criterion(torch.squeeze(output), label) + \
-                                 self.generator_time_criterion(fake_batch, x_h_batch) +\
-                                 self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
 
+                # Compute the generator loss on fake data
+                loss_generator_adversarial = self.adversarial_criterion(torch.squeeze(output), label)
+                self.train_losses['generator_adversarial'].append(loss_generator_adversarial.item())
+                loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
+                self.train_losses['time_l2'].append(loss_generator_time.item())
+                loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
+                self.train_losses['freq_l2'].append(loss_generator_frequency)
+
+                loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
+                                 loss_generator_frequency
+
+                # Back-propagate and update the generator weights
                 loss_generator.backward()
-
                 self.generator_optimizer.step()
 
                 # Print message
                 if not (i % 1):
-                    message = 'Batch {}, train loss: {}, {}'.format(i, loss_discriminator.item(), loss_generator.item())
+                    message = 'Batch {}: \n' \
+                              '\t Genarator: \n' \
+                              '\t\t Time: {} \n' \
+                              '\t\t Frequency: {} \n' \
+                              '\t\t Adversarial: {} \n' \
+                              '\t Discriminator: \n' \
+                              '\t\t Real {} \n' \
+                              '\t\t Fake {} \n'.format(i, loss_generator_time.item(), loss_generator_frequency.item(),
+                                                       loss_generator_adversarial, loss_discriminator_real,
+                                                       loss_discriminator_fake)
                     print(message)
 
             # Increment epoch counter
@@ -94,58 +137,65 @@ class GanTrainer(Trainer):
     def eval(self, epoch):
         pass
 
+    def save(self):
+        """
+        Saves the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        torch.save({
+            'epoch': self.epoch,
+            'generator_state_dict': self.generator.state_dict(),
+            'discriminator_state_dict': self.discriminator.state_dict(),
+            'generator_optimizer_state_dict': self.generator_optimizer.state_dict(),
+            'discriminator_optimizer_state_dict': self.discriminator_optimizer.state_dict(),
+            'generator_scheduler_state_dict': self.generator_scheduler.state_dict(),
+            'discriminator_scheduler_state_dict': self.discriminator_scheduler.state_dict(),
+            'train_losses': self.train_losses,
+            'test_losses': self.test_losses,
+            'valid_losses': self.valid_losses
+        }, self.savepath)
 
-def create_gan(train_datapath, test_datapath, valid_datapath, savepath, batch_size):
+    def load(self):
+        """
+        Loads the model(s), optimizer(s), scheduler(s) and losses
+        :return: None
+        """
+        checkpoint = torch.load(self.loadpath, map_location=self.device)
+        self.epoch = checkpoint['epoch']
+        self.generator.load_state_dict(checkpoint['generator_state_dict'])
+        self.discriminator.load_state_dict(checkpoint['discriminator_state_dict'])
+        self.generator_optimizer.load_state_dict(checkpoint['generator_optimizer_state_dict'])
+        self.discriminator_optimizer.load_state_dict(checkpoint['discriminator_optimizer_state_dict'])
+        self.generator_scheduler.load_state_dict(checkpoint['generator_scheduler_state_dict'])
+        self.discriminator_scheduler.load_state_dict(checkpoint['discriminator_scheduler_state_dict'])
+        self.train_losses = checkpoint['train_losses']
+        self.test_losses = checkpoint['test_losses']
+        self.valid_losses = checkpoint['valid_losses']
+
+
+def get_gan_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size, generator_path):
     # Create the datasets
-    train_dataset = DatasetBeethoven(train_datapath)
-    test_dataset = DatasetBeethoven(test_datapath)
-    valid_dataset = DatasetBeethoven(valid_datapath)
+    train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
+                                                                   batch_size)
 
-    # Create the generators
-    train_params = {'batch_size': batch_size,
-                    'shuffle': TRAIN_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-    test_params = {'batch_size': batch_size,
-                   'shuffle': TEST_SHUFFLE,
-                   'num_workers': NUM_WORKERS}
-    valid_params = {'batch_size': batch_size,
-                    'shuffle': VALID_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-
-    train_loader = data.DataLoader(train_dataset, **train_params)
-    test_loader = data.DataLoader(test_dataset, **test_params)
-    valid_loader = data.DataLoader(valid_dataset, **valid_params)
-
-    # Load the models
-    generator = Generator(kernel_sizes=KERNEL_SIZES,
-                          channel_sizes_min=CHANNEL_SIZES_MIN,
-                          p=DROPOUT_PROBABILITY,
-                          n_blocks=N_BLOCKS_GENERATOR)
-    discriminator = Discriminator(kernel_sizes=KERNEL_SIZES,
-                                  channel_sizes_min=CHANNEL_SIZES_MIN,
-                                  p=DROPOUT_PROBABILITY,
-                                  n_blocks=N_BLOCKS_DISCRIMINATOR)
-
-    gan_trainer = GanTrainer(generator=generator,
-                             discriminator=discriminator,
-                             train_loader=train_loader,
+    gan_trainer = GanTrainer(train_loader=train_loader,
                              test_loader=test_loader,
                              valid_loader=valid_loader,
                              lr=LEARNING_RATE,
-                             savepath=savepath)
+                             loadpath=loadpath,
+                             savepath=savepath,
+                             generator_path=generator_path)
     return gan_trainer
 
 
-def train_gan(train_datapath, test_datapath, valid_datapath, gan_savepath, epochs, batch_size):
-    # Get the trainer
-    if os.path.exists(gan_savepath):
-        gan_trainer = load_class(loadpath=gan_savepath)
-    else:
-        gan_trainer = create_gan(train_datapath=train_datapath,
-                                 test_datapath=test_datapath,
-                                 valid_datapath=valid_datapath,
-                                 savepath=gan_savepath,
-                                 batch_size=batch_size)
+def train_gan(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size, generator_path):
+    gan_trainer = get_gan_trainer(train_datapath=train_datapath,
+                                  test_datapath=test_datapath,
+                                  valid_datapath=valid_datapath,
+                                  loadpath=loadpath,
+                                  savepath=savepath,
+                                  batch_size=batch_size,
+                                  generator_path=generator_path)
 
     # Start training
     gan_trainer.train(epochs=epochs)
@@ -156,9 +206,9 @@ if __name__ == '__main__':
     gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
                             test_datapath=TEST_DATAPATH,
                             valid_datapath=VALID_DATAPATH,
-                            gan_savepath=GAN_PATH,
+                            loadpath=GAN_PATH,
+                            savepath=GAN_PATH,
                             epochs=1,
-                            batch_size=16)
+                            batch_size=16,
+                            generator_path=GENERATOR_L2TF_PATH)
 
-    t = next(iter(gan_trainer.train_loader))
-    print(t[1].shape)

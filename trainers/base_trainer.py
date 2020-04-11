@@ -22,25 +22,42 @@ class Trainer(abc.ABC):
         self.epoch = 0
 
         # Stored losses
-        self.train_losses = {'time_l2': [],
-                             'freq_l2': [],
-                             'autoencoder_l2': [],
-                             'generator_adversarial': [],
-                             'discriminator_adversarial': []}
-        self.test_losses = {'time_l2': [],
-                            'freq_l2': [],
-                            'autoencoder_l2': [],
-                            'generator_adversarial': [],
-                            'discriminator_adversarial': []}
-        self.valid_losses = {'time_l2': [],
-                             'freq_l2': [],
-                             'autoencoder_l2': [],
-                             'generator_adversarial': [],
-                             'discriminator_adversarial': []}
+        self.train_losses = {
+            'time_l2': [],
+            'freq_l2': [],
+            'autoencoder_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': {
+                 'real': [],
+                 'fake': []
+             }
+        }
+        self.test_losses = {
+            'time_l2': [],
+            'freq_l2': [],
+            'autoencoder_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': {
+                'real': [],
+                'fake': []
+            }
+        }
+        self.valid_losses = {
+            'time_l2': [],
+            'freq_l2': [],
+            'autoencoder_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': {
+                'real': [],
+                'fake': []
+            }
+        }
 
         # Time to frequency converter
         self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
         self.amplitude_to_db = AmplitudeToDB()
+
+        self.is_autoencoder = False
 
     def generate_single_test_batch(self, model):
         model.eval()

@@ -5,7 +5,7 @@ from processing.post_processing import *
 import matplotlib.pyplot as plt
 import math
 import torch
-from torchaudio.transforms import Spectrogram, MelSpectrogram, AmplitudeToDB
+from torchaudio.transforms import Spectrogram, AmplitudeToDB
 from scipy.signal import butter, filtfilt
 
 
@@ -122,9 +122,6 @@ def main():
     plt.show()
 
     # full_sample = overlap_and_add_samples(batch_l.view(31, 1, 8192))
-
-    # scaled = np.int16(full_sample.numpy() / np.max(np.abs(full_sample.numpy()) * 32767))
-    # write('test.wav', 16000, full_sample.numpy())
 
 
 if __name__ == '__main__':

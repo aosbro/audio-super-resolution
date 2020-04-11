@@ -110,7 +110,7 @@ class AutoEncoderTrainer(Trainer):
         Loads the model(s), optimizer(s), scheduler(s) and losses
         :return: None
         """
-        checkpoint = torch.load(self.loadpath)
+        checkpoint = torch.load(self.loadpath, map_location=self.device)
         self.epoch = checkpoint['epoch']
         self.autoencoder.load_state_dict(checkpoint['generator_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -120,7 +120,7 @@ class AutoEncoderTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def create_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
+def get_autoencoder_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
     # Create the datasets
     train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
                                                                    batch_size)
@@ -135,12 +135,12 @@ def create_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, 
 
 
 def train_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size):
-    autoencoder_trainer = create_autoencoder(train_datapath=train_datapath,
-                                             test_datapath=test_datapath,
-                                             valid_datapath=valid_datapath,
-                                             loadpath=loadpath,
-                                             savepath=savepath,
-                                             batch_size=batch_size)
+    autoencoder_trainer = get_autoencoder_trainer(train_datapath=train_datapath,
+                                                  test_datapath=test_datapath,
+                                                  valid_datapath=valid_datapath,
+                                                  loadpath=loadpath,
+                                                  savepath=savepath,
+                                                  batch_size=batch_size)
 
     # Start training
     autoencoder_trainer.train(epochs=epochs)

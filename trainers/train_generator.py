@@ -1,5 +1,5 @@
 from trainers.base_trainer import *
-from utils.utils import *
+from utils.utils import get_the_data_loaders
 from models.generator import *
 import os
 from torch.optim import lr_scheduler
@@ -26,8 +26,6 @@ class GeneratorTrainer(Trainer):
         # Loss function
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
-
-        self.is_autoencoder = False
 
     def train(self, epochs):
         """
@@ -104,7 +102,7 @@ class GeneratorTrainer(Trainer):
         Loads the model(s), optimizer(s), scheduler(s) and losses
         :return: None
         """
-        checkpoint = torch.load(self.loadpath)
+        checkpoint = torch.load(self.loadpath, map_location=self.device)
         self.epoch = checkpoint['epoch']
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -114,7 +112,7 @@ class GeneratorTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def create_genarator(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
+def get_genarator_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
     # Create the datasets
     train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
                                                                    batch_size)
@@ -130,12 +128,12 @@ def create_genarator(train_datapath, test_datapath, valid_datapath, loadpath, sa
 
 def train_generator(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size):
     # Instantiate the trainer class
-    generator_trainer = create_genarator(train_datapath=train_datapath,
-                                         test_datapath=test_datapath,
-                                         valid_datapath=valid_datapath,
-                                         loadpath=loadpath,
-                                         savepath=savepath,
-                                         batch_size=batch_size)
+    generator_trainer = get_genarator_trainer(train_datapath=train_datapath,
+                                              test_datapath=test_datapath,
+                                              valid_datapath=valid_datapath,
+                                              loadpath=loadpath,
+                                              savepath=savepath,
+                                              batch_size=batch_size)
 
     # Start training
     generator_trainer.train(epochs)
