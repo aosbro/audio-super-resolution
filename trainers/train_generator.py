@@ -32,9 +32,6 @@ class GeneratorTrainer(Trainer):
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
 
-        # Boolean indicating if the model needs to be saved
-        self.need_saving = True
-
     def train(self, epochs):
         """
         Trains the model for a specified number of epochs on the train dataset
@@ -88,10 +85,6 @@ class GeneratorTrainer(Trainer):
             # Save the trainer state
             if self.need_saving:
                 self.save()
-
-    def check_improvement(self):
-        self.need_saving = np.less_equal(self.test_losses['time_l2'][-1], min(self.test_losses['time_l2'])) or \
-                           np.less_equal(self.test_losses['freq_l2'][-1], min(self.test_losses['freq_l2']))
 
     def eval(self):
         """

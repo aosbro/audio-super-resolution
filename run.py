@@ -16,22 +16,22 @@ def main():
     #                                       savepath=AUTOENCODER_L2T_PATH,
     #                                       batch_size=31)
 
-    # generator_trainer = get_genarator_trainer(train_datapath=TRAIN_DATAPATH,
-    #                                           test_datapath=TEST_DATAPATH,
-    #                                           valid_datapath=VALID_DATAPATH,
-    #                                           loadpath=GENERATOR_L2TF_NO_WINDOW_PATH,
-    #                                           savepath=GENERATOR_L2TF_NO_WINDOW_PATH,
-    #                                           batch_size=31)
+    generator_trainer = get_genarator_trainer(train_datapath=TRAIN_DATAPATH,
+                                              test_datapath=TEST_DATAPATH,
+                                              valid_datapath=VALID_DATAPATH,
+                                              loadpath=GENERATOR_L2TF_NO_WINDOW_PATH,
+                                              savepath=GENERATOR_L2TF_NO_WINDOW_PATH,
+                                              batch_size=31)
 
-    gan_trainer = get_gan_trainer(train_datapath=TRAIN_DATAPATH,
-                                  test_datapath=TEST_DATAPATH,
-                                  valid_datapath=VALID_DATAPATH,
-                                  loadpath=GAN_PATH,
-                                  savepath=GAN_PATH,
-                                  batch_size=31,
-                                  generator_path=None)
+    # gan_trainer = get_gan_trainer(train_datapath=TRAIN_DATAPATH,
+    #                               test_datapath=TEST_DATAPATH,
+    #                               valid_datapath=VALID_DATAPATH,
+    #                               loadpath=GAN_PATH,
+    #                               savepath=GAN_PATH,
+    #                               batch_size=31,
+    #                               generator_path=None)
 
-    generate_high_resolution_sample(gan_trainer, 120)
+    generate_high_resolution_sample(generator_trainer, 120)
 
 
 if __name__ == '__main__':

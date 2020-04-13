@@ -7,9 +7,9 @@ from trainers.base_trainer import Trainer
 from torch.optim import lr_scheduler
 from torch import nn
 from torch.nn.utils import clip_grad_norm_
-from torch.nn.functional import normalize
 import torch
 from torchaudio.transforms import Spectrogram
+import numpy as np
 
 
 class GanTrainer(Trainer):
@@ -32,9 +32,9 @@ class GanTrainer(Trainer):
         # Optimizers and schedulers
         self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
         self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(), lr=lr)
-        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=1000, gamma=0.3)
-        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=1000,
-                                                           gamma=0.3)
+        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=3, gamma=0.5)
+        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=3,
+                                                           gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -55,6 +55,9 @@ class GanTrainer(Trainer):
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
 
+        # Boolean indicating if the model needs to be saved
+        self.need_saving = True
+
     def load_pretrained_generator(self, generator_path):
         checkpoint = torch.load(generator_path, map_location=self.device)
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
@@ -63,8 +66,10 @@ class GanTrainer(Trainer):
         for epoch in range(epochs):
             self.generator.train()
             self.discriminator.train()
-            for i, local_batch in enumerate(self.train_loader):
+            train_loader_iter = iter(self.train_loader)
+            for i in range(TRAIN_BATCH_ITERATIONS):
                 # Transfer to GPU
+                local_batch = next(train_loader_iter)
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
                 batch_size = x_h_batch.shape[0]
 
@@ -100,8 +105,8 @@ class GanTrainer(Trainer):
                 self.generator_optimizer.zero_grad()
 
                 # Get the spectrogram
-                specgram_h_batch = normalize(self.amplitude_to_db(self.spectrogram(x_h_batch)))
-                specgram_fake_batch = normalize(self.amplitude_to_db(self.spectrogram(fake_batch)))
+                specgram_h_batch = self.spectrogram(x_h_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
@@ -120,7 +125,7 @@ class GanTrainer(Trainer):
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
-                clip_grad_norm_(parameters=self.generator.parameters(), max_norm=GENERATOR_CLIP_VALUE)
+                # clip_grad_norm_(parameters=self.generator.parameters(), max_norm=GENERATOR_CLIP_VALUE)
                 self.generator_optimizer.step()
 
                 # Print message
@@ -139,12 +144,52 @@ class GanTrainer(Trainer):
 
             # Increment epoch counter
             self.epoch += 1
+            self.generator_scheduler.step()
+            self.discriminator_scheduler.step()
+
+            # Evaluate the model
+            with torch.no_grad():
+                self.eval()
 
             # Save the trainer state
-            self.save()
+            if self.need_saving:
+                self.save()
 
-    def eval(self, epoch):
-        pass
+    def eval(self):
+        self.generator.eval()
+        self.discriminator.eval()
+        batch_losses = {'time_l2': [], 'freq_l2': []}
+        test_loader_iter = iter(self.test_loader)
+        for i in range(TEST_BATCH_ITERATIONS):
+            # Transfer to GPU
+            local_batch = next(test_loader_iter)
+            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+
+            fake_batch = self.generator(x_l_batch)
+
+            # Get the spectrogram
+            specgram_h_batch = self.spectrogram(x_h_batch)
+            specgram_fake_batch = self.spectrogram(fake_batch)
+
+            loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
+            batch_losses['time_l2'].append(loss_generator_time.item())
+            loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
+            batch_losses['freq_l2'].append(loss_generator_frequency)
+
+        # Store test losses
+        self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
+
+        # Display test loss
+        message = 'Epoch {}: \n' \
+                  '\t Time: {} \n' \
+                  '\t Frequency: {} \n'.format(self.epoch,
+                                               np.mean(np.mean(batch_losses['time_l2'])),
+                                               np.mean(np.mean(batch_losses['freq_l2'])))
+        print(message)
+
+        # Check if the loss is decreasing
+        self.check_improvement()
 
     def save(self):
         """
@@ -211,13 +256,13 @@ def train_gan(train_datapath, test_datapath, valid_datapath, loadpath, savepath,
     return gan_trainer
 
 
-# if __name__ == '__main__':
-#     gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
-#                             test_datapath=TEST_DATAPATH,
-#                             valid_datapath=VALID_DATAPATH,
-#                             loadpath=GAN_PATH,
-#                             savepath=GAN_PATH,
-#                             epochs=1,
-#                             batch_size=16,
-#                             generator_path=GENERATOR_L2TF_PATH)
+if __name__ == '__main__':
+    gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
+                            test_datapath=TEST_DATAPATH,
+                            valid_datapath=VALID_DATAPATH,
+                            loadpath=GAN_PATH,
+                            savepath=GAN_PATH,
+                            epochs=1,
+                            batch_size=16,
+                            generator_path=GENERATOR_L2T_PATH)
 

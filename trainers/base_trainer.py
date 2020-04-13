@@ -58,7 +58,11 @@ class Trainer(abc.ABC):
         self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
         self.amplitude_to_db = AmplitudeToDB()
 
+        # Boolean indicting if autoencoder of generator
         self.is_autoencoder = False
+
+        # Boolean indicating if the model needs to be saved
+        self.need_saving = True
 
     def generate_single_test_batch(self, model):
         model.eval()
@@ -69,6 +73,10 @@ class Trainer(abc.ABC):
         if self.is_autoencoder:
             return x_h_batch, fake_batch[0]
         return x_h_batch, fake_batch
+
+    def check_improvement(self):
+        self.need_saving = np.less_equal(self.test_losses['time_l2'][-1], min(self.test_losses['time_l2'])) or \
+                           np.less_equal(self.test_losses['freq_l2'][-1], min(self.test_losses['freq_l2']))
 
     def plot_reconstruction_time_domain(self, index, model):
         """
@@ -123,10 +131,9 @@ class Trainer(abc.ABC):
         """
 
     @abc.abstractmethod
-    def eval(self, epoch):
+    def eval(self):
         """
         Evaluates the model on the test dataset
-        :param epoch: Current epoch, used to print status information
         :return: None
         """
 
