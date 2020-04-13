@@ -33,11 +33,12 @@ class GeneratorTrainer(Trainer):
         :param epochs: Number of iterations over the complete dataset to perform
         :return: None
         """
+        train_loader_iter = iter(self.train_loader)
         for epoch in range(epochs):
             self.generator.train()
             for i in range(TRAIN_BATCH_ITERATIONS):
                 # Get the next batch
-                local_batch = next(iter(self.train_loader))
+                local_batch = next(train_loader_iter)
                 # Transfer to GPU
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
@@ -76,6 +77,7 @@ class GeneratorTrainer(Trainer):
 
             with torch.no_grad():
                 self.eval()
+
             # Save the trainer state
             self.save()
 
@@ -86,6 +88,7 @@ class GeneratorTrainer(Trainer):
         :return: None
         """
         self.generator.eval()
+
         for i in range(TEST_BATCH_ITERATIONS):
             # Get the next batch
             local_batch = next(iter(self.test_loader))
