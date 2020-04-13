@@ -35,8 +35,9 @@ class GeneratorTrainer(Trainer):
         """
         for epoch in range(epochs):
             self.generator.train()
-            for i, local_batch in enumerate(self.train_loader):
-
+            for i in range(TRAIN_BATCH_ITERATIONS):
+                # Get the next batch
+                local_batch = next(iter(self.train_loader))
                 # Transfer to GPU
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
@@ -65,22 +66,52 @@ class GeneratorTrainer(Trainer):
 
                 # Print message
                 if not (i % 10):
-                    message = 'Batch {}, time l2: {}, freq l2: {}'.format(i, time_l2_loss.item(), freq_l2_loss.item())
+                    message = 'Batch {}: \n' \
+                              '\t Time: {} \n' \
+                              '\t Frequency: {} \n' .format(i, time_l2_loss.item(), freq_l2_loss.item())
                     print(message)
 
             # Increment epoch counter
             self.epoch += 1
 
+            with torch.no_grad():
+                self.eval()
             # Save the trainer state
             self.save()
 
-    def eval(self, epoch):
+    def eval(self):
         """
         Evaluates the model on the test dataset
         :param epoch: Current epoch, used to print status information
         :return: None
         """
-        pass
+        self.generator.eval()
+        for i in range(TEST_BATCH_ITERATIONS):
+            # Get the next batch
+            local_batch = next(iter(self.test_loader))
+            # Transfer to GPU
+            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+
+            # Generates a fake batch
+            fake_batch = self.generator(x_l_batch)
+
+            # Get the spectrogram
+            x_h_batch_freq = self.spectrogram(x_h_batch)
+            fake_batch_freq = self.spectrogram(fake_batch)
+
+            # Compute and store the loss
+            time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
+            freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+            self.test_losses['time_l2'].append(time_l2_loss.item())
+            self.test_losses['freq_l2'].append(freq_l2_loss.item())
+
+        # Display test loss
+        message = 'Epoch {}: \n' \
+                  '\t Time: {} \n' \
+                  '\t Frequency: {} \n'.format(self.epoch,
+                                               np.mean(self.test_losses['time_l2'][-TEST_BATCH_ITERATIONS:]),
+                                               np.mean(self.test_losses['freq_l2'][-TEST_BATCH_ITERATIONS:]))
+        print(message)
 
     def save(self):
         """

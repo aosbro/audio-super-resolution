@@ -5,9 +5,11 @@ from models.generator import Generator
 from models.discriminator import Discriminator
 from trainers.base_trainer import Trainer
 from torch.optim import lr_scheduler
+from torch import nn
 from torch.nn.utils import clip_grad_norm_
 from torch.nn.functional import normalize
 import torch
+from torchaudio.transforms import Spectrogram
 
 
 class GanTrainer(Trainer):

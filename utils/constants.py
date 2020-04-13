@@ -5,8 +5,8 @@ BATCH_SIZE = 10
 NUM_WORKERS = 6
 
 TRAIN_SHUFFLE = True
-TEST_SHUFFLE = False
-VALID_SHUFFLE = False
+TEST_SHUFFLE = True
+VALID_SHUFFLE = True
 
 TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train.npy'
 TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test.npy'
@@ -79,3 +79,5 @@ GENERATOR_L2TF_NO_WINDOW_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gen
 # ...
 LAMBDA_ADVERSARIAL = 1e-3
 GENERATOR_CLIP_VALUE = 1000
+TRAIN_BATCH_ITERATIONS = 100
+TEST_BATCH_ITERATIONS = 20
