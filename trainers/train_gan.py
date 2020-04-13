@@ -174,7 +174,7 @@ class GanTrainer(Trainer):
             loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
             batch_losses['time_l2'].append(loss_generator_time.item())
             loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
-            batch_losses['freq_l2'].append(loss_generator_frequency)
+            batch_losses['freq_l2'].append(loss_generator_frequency.item())
 
         # Store test losses
         self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
