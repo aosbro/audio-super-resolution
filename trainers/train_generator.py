@@ -66,12 +66,10 @@ class GeneratorTrainer(Trainer):
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
-                # loss = time_l2_loss
 
                 # Backward pass
                 loss.backward()
                 self.optimizer.step()
-                self.scheduler.step()
 
                 # Print message
                 if not (i % 10):
@@ -82,6 +80,7 @@ class GeneratorTrainer(Trainer):
 
             # Increment epoch counter
             self.epoch += 1
+            self.scheduler.step()
 
             with torch.no_grad():
                 self.eval()
@@ -113,12 +112,12 @@ class GeneratorTrainer(Trainer):
             fake_batch = self.generator(x_l_batch)
 
             # Get the spectrogram
-            x_h_batch_freq = self.spectrogram(x_h_batch)
-            fake_batch_freq = self.spectrogram(fake_batch)
+            specgram_h_batch = normalize(self.amplitude_to_db(self.spectrogram(x_h_batch)))
+            specgram_fake_batch = normalize(self.amplitude_to_db(self.spectrogram(fake_batch)))
 
             # Compute and store the loss
             time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-            freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+            freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_h_batch)
             batch_losses['time_l2'].append(time_l2_loss.item())
             batch_losses['freq_l2'].append(freq_l2_loss.item())
 

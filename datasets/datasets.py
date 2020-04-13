@@ -8,7 +8,7 @@ from scipy.signal import butter, filtfilt
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=True):
+    def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=False):
         """
         Initializes the class DatasetBeethoven
         :param datapath: path to raw .npy file

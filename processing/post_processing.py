@@ -7,7 +7,7 @@ import numpy as np
 from scipy.io.wavfile import write
 
 
-def overlap_and_add_samples(batch, overlap=0.5):
+def overlap_and_add_samples(batch, overlap=0.5, use_windowing=False):
     """
     Re-construct a full sample from its sub-parts using the OLA algorithm
     :param overlap: proportion of the overlap between contiguous signals
@@ -24,7 +24,10 @@ def overlap_and_add_samples(batch, overlap=0.5):
     for window_index in range(N):
         window_start = int(window_index * (1 - overlap) * WINDOW_LENGTH)
         window_end = window_start + WINDOW_LENGTH
-        full_sample[window_start: window_end] += batch[window_index].squeeze()
+        local_sample = batch[window_index].squeeze()
+        if use_windowing:
+            local_sample *= torch.from_numpy(np.hanning(WINDOW_LENGTH))
+        full_sample[window_start: window_end] += local_sample
     return full_sample
 
 
@@ -57,7 +60,6 @@ def generate_high_resolution_sample(trainer, index):
     batch = [dataset.__getitem__(i + index * dataset.window_number) for i in range(dataset.window_number)]
     batch_h, batch_l = map(list, zip(*batch))
     batch_h, batch_l = torch.cat(batch_h), torch.cat(batch_l)
-    print(batch_h.mean())
     B, W = batch_l.size()
     batch_l = batch_l.view(B, 1, W)
     batch_h = batch_h.view(B, 1, W)
@@ -67,24 +69,27 @@ def generate_high_resolution_sample(trainer, index):
     else:
         generator = trainer.generator
         fake_batch = generator(batch_l)
-    full_sample_l = overlap_and_add_samples(batch_l)
-    full_sample_h = overlap_and_add_samples(batch_h)
-    full_sample_fake = overlap_and_add_samples(fake_batch.detach())
+    full_sample_l = overlap_and_add_samples(batch_l, overlap=dataset.overlap, use_windowing=not dataset.use_windowing)
+    full_sample_h = overlap_and_add_samples(batch_h, overlap=dataset.overlap, use_windowing=not dataset.use_windowing)
+    full_sample_fake = overlap_and_add_samples(fake_batch.detach(), overlap=dataset.overlap,
+                                               use_windowing=not dataset.use_windowing)
 
-    # plt.plot(full_sample_fake.numpy()[2000:4000])
-    # plt.plot(full_sample_h.numpy()[2000:4000])
+    full_sample_fake = dataset.butter_lowpass_filter(full_sample_fake.numpy(), cutoff_frequency=5000, order=10)
+    # plt.plot(full_sample_fake[4000:5000])
+    plt.plot(full_sample_h.numpy()[4000:5000])
+    plt.plot(full_sample_l.numpy()[4000:5000])
     # plt.plot(batch_h[11].squeeze().numpy())
-    plt.plot(fake_batch[11].squeeze().detach().numpy())
+    # plt.plot(fake_batch[11].squeeze().detach().numpy())
     plt.show()
 
     scaled_l = np.int16(full_sample_l.numpy() / np.max(np.abs(full_sample_l.numpy()) * 32767))
-    write('../samples/test_l.wav', 16000, full_sample_l.numpy())
+    write('./samples/test_l_gen_no_window.wav', 16000, full_sample_l.numpy())
 
     scaled_h = np.int16(full_sample_h.numpy() / np.max(np.abs(full_sample_h.numpy()) * 32767))
-    write('../samples/test_h.wav', 16000, full_sample_h.numpy())
+    write('./samples/test_h_gen_no_window.wav', 16000, full_sample_h.numpy())
 
-    scaled_fake = np.int16(full_sample_fake.numpy() / np.max(np.abs(full_sample_fake.numpy()) * 32767))
-    write('../samples/test_fake_gen.wav', 16000, full_sample_fake.numpy())
+    scaled_fake = np.int16(full_sample_fake / np.max(np.abs(full_sample_fake) * 32767))
+    write('./samples/test_fake_gen_no_window.wav', 16000, full_sample_fake)
 
 
 # def main():
