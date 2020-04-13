@@ -101,6 +101,7 @@ class GeneratorTrainer(Trainer):
         """
         self.generator.eval()
         test_loader_iter = iter(self.test_loader)
+        batch_losses = {'time_l2': [], 'freq_l2': []}
         for i in range(TEST_BATCH_ITERATIONS):
             # Get the next batch
             local_batch = next(test_loader_iter)
@@ -117,15 +118,19 @@ class GeneratorTrainer(Trainer):
             # Compute and store the loss
             time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
             freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
-            self.test_losses['time_l2'].append(time_l2_loss.item())
-            self.test_losses['freq_l2'].append(freq_l2_loss.item())
+            batch_losses['time_l2'].append(time_l2_loss.item())
+            batch_losses['freq_l2'].append(freq_l2_loss.item())
+
+        # Store test losses
+        self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
         # Display test loss
         message = 'Epoch {}: \n' \
                   '\t Time: {} \n' \
                   '\t Frequency: {} \n'.format(self.epoch,
-                                               np.mean(self.test_losses['time_l2'][-TEST_BATCH_ITERATIONS:]),
-                                               np.mean(self.test_losses['freq_l2'][-TEST_BATCH_ITERATIONS:]))
+                                               np.mean(np.mean(batch_losses['time_l2'])),
+                                               np.mean(np.mean(batch_losses['freq_l2'])))
         print(message)
 
         # Check if the loss is deacreasing
