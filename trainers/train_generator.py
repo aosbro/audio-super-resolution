@@ -7,6 +7,7 @@ from torch.optim import lr_scheduler
 import numpy as np
 import torch
 from torch import nn
+from torch.nn.functional import normalize
 
 
 class GeneratorTrainer(Trainer):
@@ -21,7 +22,7 @@ class GeneratorTrainer(Trainer):
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=4, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -56,12 +57,12 @@ class GeneratorTrainer(Trainer):
                 fake_batch = self.generator(x_l_batch)
 
                 # Get the spectrogram
-                x_h_batch_freq = self.spectrogram(x_h_batch)
-                fake_batch_freq = self.spectrogram(fake_batch)
+                specgram_h_batch = normalize(self.amplitude_to_db(self.spectrogram(x_h_batch)))
+                specgram_fake_batch = normalize(self.amplitude_to_db(self.spectrogram(fake_batch)))
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-                freq_l2_loss = self.frequency_criterion(fake_batch_freq, x_h_batch_freq)
+                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_h_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
@@ -133,7 +134,7 @@ class GeneratorTrainer(Trainer):
                                                np.mean(np.mean(batch_losses['freq_l2'])))
         print(message)
 
-        # Check if the loss is deacreasing
+        # Check if the loss is decreasing
         self.check_improvement()
 
     def save(self):

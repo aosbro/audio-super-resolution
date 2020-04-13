@@ -62,7 +62,6 @@ def generate_high_resolution_sample(trainer, index):
     batch_l = batch_l.view(B, 1, W)
     batch_h = batch_h.view(B, 1, W)
     if trainer.is_autoencoder:
-        print(batch_l.shape)
         autoencoder = trainer.autoencoder
         fake_batch, _ = autoencoder(batch_l)
     else:
@@ -72,10 +71,10 @@ def generate_high_resolution_sample(trainer, index):
     full_sample_h = overlap_and_add_samples(batch_h)
     full_sample_fake = overlap_and_add_samples(fake_batch.detach())
 
-    plt.plot(full_sample_fake.numpy()[2000:4000])
-    plt.plot(full_sample_h.numpy()[2000:4000])
+    # plt.plot(full_sample_fake.numpy()[2000:4000])
+    # plt.plot(full_sample_h.numpy()[2000:4000])
     # plt.plot(batch_h[11].squeeze().numpy())
-    # plt.plot(fake_batch[11].squeeze().detach().numpy())
+    plt.plot(fake_batch[11].squeeze().detach().numpy())
     plt.show()
 
     scaled_l = np.int16(full_sample_l.numpy() / np.max(np.abs(full_sample_l.numpy()) * 32767))

@@ -8,7 +8,7 @@ from scipy.signal import butter, filtfilt
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, ratio=4, overlap=0.5):
+    def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=True):
         """
         Initializes the class DatasetBeethoven
         :param datapath: path to raw .npy file
@@ -22,6 +22,7 @@ class DatasetBeethoven(data.Dataset):
         self.window_number = self.compute_window_number()
         self.hanning_length = HANNING_WINDOW_LENGTH
         self.fs = 16000
+        self.use_windowing = use_windowing
 
     def compute_window_number(self):
         """
@@ -85,7 +86,8 @@ class DatasetBeethoven(data.Dataset):
             x_h = self.pad_signal(x_h)
 
         # Apply hanning window over the whole window to avoid aliasing and for reconstruction
-        # x_h *= np.hanning(WINDOW_LENGTH)
+        if self.use_windowing:
+            x_h *= np.hanning(WINDOW_LENGTH)
 
         x_l = upsample(downsample(x_h, self.ratio), self.ratio)
         return torch.from_numpy(np.expand_dims(x_h, axis=0)).float(), \
