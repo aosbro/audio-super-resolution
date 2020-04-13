@@ -1,8 +1,12 @@
-from trainers.base_trainer import *
+from trainers.base_trainer import Trainer
 from utils.utils import get_the_data_loaders
-from models.generator import *
+from models.generator import Generator
 import os
+from utils.constants import *
 from torch.optim import lr_scheduler
+import numpy as np
+import torch
+from torch import nn
 
 
 class GeneratorTrainer(Trainer):
@@ -27,15 +31,18 @@ class GeneratorTrainer(Trainer):
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
 
+        # Boolean indicating if the model needs to be saved
+        self.need_saving = True
+
     def train(self, epochs):
         """
         Trains the model for a specified number of epochs on the train dataset
         :param epochs: Number of iterations over the complete dataset to perform
         :return: None
         """
-        train_loader_iter = iter(self.train_loader)
         for epoch in range(epochs):
             self.generator.train()
+            train_loader_iter = iter(self.train_loader)
             for i in range(TRAIN_BATCH_ITERATIONS):
                 # Get the next batch
                 local_batch = next(train_loader_iter)
@@ -79,7 +86,12 @@ class GeneratorTrainer(Trainer):
                 self.eval()
 
             # Save the trainer state
-            self.save()
+            if self.need_saving:
+                self.save()
+
+    def check_improvement(self):
+        self.need_saving = np.less_equal(self.test_losses['time_l2'][-1], min(self.test_losses['time_l2'])) or \
+                           np.less_equal(self.test_losses['freq_l2'][-1], min(self.test_losses['freq_l2']))
 
     def eval(self):
         """
@@ -88,10 +100,10 @@ class GeneratorTrainer(Trainer):
         :return: None
         """
         self.generator.eval()
-
+        test_loader_iter = iter(self.test_loader)
         for i in range(TEST_BATCH_ITERATIONS):
             # Get the next batch
-            local_batch = next(iter(self.test_loader))
+            local_batch = next(test_loader_iter)
             # Transfer to GPU
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
@@ -115,6 +127,9 @@ class GeneratorTrainer(Trainer):
                                                np.mean(self.test_losses['time_l2'][-TEST_BATCH_ITERATIONS:]),
                                                np.mean(self.test_losses['freq_l2'][-TEST_BATCH_ITERATIONS:]))
         print(message)
+
+        # Check if the loss is deacreasing
+        self.check_improvement()
 
     def save(self):
         """
