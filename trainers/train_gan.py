@@ -1,11 +1,13 @@
 import os
-from utils.utils import *
-from models.generator import *
-from models.discriminator import *
-from trainers.base_trainer import *
+from utils.utils import get_the_data_loaders
+from utils.constants import *
+from models.generator import Generator
+from models.discriminator import Discriminator
+from trainers.base_trainer import Trainer
 from torch.optim import lr_scheduler
 from torch.nn.utils import clip_grad_norm_
 from torch.nn.functional import normalize
+import torch
 
 
 class GanTrainer(Trainer):
@@ -207,13 +209,13 @@ def train_gan(train_datapath, test_datapath, valid_datapath, loadpath, savepath,
     return gan_trainer
 
 
-if __name__ == '__main__':
-    gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
-                            test_datapath=TEST_DATAPATH,
-                            valid_datapath=VALID_DATAPATH,
-                            loadpath=GAN_PATH,
-                            savepath=GAN_PATH,
-                            epochs=1,
-                            batch_size=16,
-                            generator_path=GENERATOR_L2TF_PATH)
+# if __name__ == '__main__':
+#     gan_trainer = train_gan(train_datapath=TRAIN_DATAPATH,
+#                             test_datapath=TEST_DATAPATH,
+#                             valid_datapath=VALID_DATAPATH,
+#                             loadpath=GAN_PATH,
+#                             savepath=GAN_PATH,
+#                             epochs=1,
+#                             batch_size=16,
+#                             generator_path=GENERATOR_L2TF_PATH)
 

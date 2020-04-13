@@ -1,5 +1,5 @@
 # # from trainers.train_autoencoder import *
-# from trainers.train_generator import *
+from trainers.train_generator import *
 import torch
 from utils.constants import *
 import matplotlib.pyplot as plt
@@ -87,9 +87,9 @@ def generate_high_resolution_sample(trainer, index):
     scaled_fake = np.int16(full_sample_fake.numpy() / np.max(np.abs(full_sample_fake.numpy()) * 32767))
     write('../samples/test_fake_gen.wav', 16000, full_sample_fake.numpy())
 
-#
+
 # def main():
-#
+# 
 #     # autoencoder_trainer = get_autoencoder(train_datapath=TRAIN_DATAPATH,
 #     #                                       test_datapath=TEST_DATAPATH,
 #     #                                       valid_datapath=VALID_DATAPATH,

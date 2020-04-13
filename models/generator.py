@@ -1,5 +1,7 @@
-from blocks.down_block import *
-from blocks.up_block import *
+from blocks.down_block import DownBlock
+from blocks.up_block import UpBlock
+from utils.constants import *
+from torch import nn
 
 
 class Generator(nn.Module):

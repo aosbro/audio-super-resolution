@@ -1,8 +1,11 @@
-from models.autoencoder import *
-from utils.utils import *
+from models.autoencoder import AutoEncoder
+from utils.utils import get_the_data_loaders
+from utils.constants import *
 import os
-from trainers.base_trainer import *
+from trainers.base_trainer import Trainer
+import torch
 from torch.optim import lr_scheduler
+from torch import nn
 
 
 class AutoEncoderTrainer(Trainer):
@@ -147,11 +150,11 @@ def train_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, s
     return autoencoder_trainer
 
 
-if __name__ == '__main__':
-    train_autoencoder(train_datapath=TRAIN_DATAPATH,
-                      test_datapath=TEST_DATAPATH,
-                      valid_datapath=VALID_DATAPATH,
-                      loadpath=AUTOENCODER_L2T_PATH,
-                      savepath=AUTOENCODER_L2T_PATH,
-                      epochs=1,
-                      batch_size=16)
+# if __name__ == '__main__':
+#     train_autoencoder(train_datapath=TRAIN_DATAPATH,
+#                       test_datapath=TEST_DATAPATH,
+#                       valid_datapath=VALID_DATAPATH,
+#                       loadpath=AUTOENCODER_L2T_PATH,
+#                       savepath=AUTOENCODER_L2T_PATH,
+#                       epochs=1,
+#                       batch_size=16)

@@ -1,5 +1,6 @@
-from blocks.discriminator_block import *
+from blocks.discriminator_block import DiscriminatorInput, DiscriminatorBlock, DiscriminatorOutput
 from utils.constants import *
+from torch import nn
 
 
 class Discriminator(nn.Module):

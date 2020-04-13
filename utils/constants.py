@@ -67,10 +67,14 @@ GAN_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 GENERATOR_L2T_PATH = '../objects/generator_trainer_l2.tar'
 GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
 
-
 # Generator trained with the L2 criterion in time and frequency domain
 GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
 GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
+
+# Generator trained with the L2 criterion in time and frequency domain
+GENERATOR_L2TF_NO_WINDOW_PATH = '../objects/generator_trainer_l2tf_no_window.tar'
+GENERATOR_L2TF_NO_WINDOW_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf_no_window.tar'
+
 
 # ...
 LAMBDA_ADVERSARIAL = 1e-3

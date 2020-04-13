@@ -1,6 +1,7 @@
-from layers.superpixel import *
-from blocks.base_block import *
+from layers.superpixel import SuperPixel1D
+from blocks.base_block import BaseBlock
 from utils.constants import *
+from torch import nn
 
 
 class DiscriminatorBlock(BaseBlock):

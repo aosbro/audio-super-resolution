@@ -1,6 +1,7 @@
-from blocks.down_block import *
-from blocks.up_block import *
+from blocks.down_block import DownBlock
+from blocks.up_block import UpBlock
 from utils.constants import *
+from torch import nn
 
 
 class AutoEncoder(nn.Module):
@@ -61,18 +62,3 @@ class AutoEncoder(nn.Module):
         # Output
         x = self.output_conv(x)
         return x, phi
-
-
-def main():
-    x = torch.randn(10, 1, 8192)
-    kernel_sizes = [3, 9, 27, 81]
-    channel_sizes_min = [24, 24, 8, 8]
-    p = 0.2
-    n_blocks = 4
-    A = AutoEncoder(kernel_sizes, channel_sizes_min, p, n_blocks)
-    y,_ = A(x)
-    print(y.shape)
-
-
-if __name__ == '__main__':
-    main()
