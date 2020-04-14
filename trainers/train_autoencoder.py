@@ -35,7 +35,9 @@ class AutoEncoderTrainer(Trainer):
     def train(self, epochs):
         for epoch in range(epochs):
             self.autoencoder.train()
-            for i, local_batch in enumerate(self.train_loader):
+            train_loader_iter = iter(self.train_loader)
+            for i in range(TRAIN_BATCH_ITERATIONS):
+                local_batch = next(train_loader_iter)
                 # Transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
@@ -62,7 +64,6 @@ class AutoEncoderTrainer(Trainer):
                 # Backward pass
                 loss.backward()
                 self.optimizer.step()
-                self.scheduler.step()
 
             # Increment epoch counter
             self.epoch += 1
