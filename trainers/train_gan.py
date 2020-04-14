@@ -2,6 +2,7 @@ import os
 from utils.utils import get_the_data_loaders
 from utils.constants import *
 from models.generator import Generator
+from models.autoencoder import AutoEncoder
 from models.discriminator import Discriminator
 from trainers.base_trainer import Trainer
 from torch.optim import lr_scheduler
@@ -13,10 +14,19 @@ import numpy as np
 
 
 class GanTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, generator_path=None):
+    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, autoencoder_path,
+                 generator_path=None):
         super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Models
+        # Load the auto-encoder
+        self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
+                                       channel_sizes_min=CHANNEL_SIZES_MIN,
+                                       p=DROPOUT_PROBABILITY,
+                                       n_blocks=N_BLOCKS_AUTOENCODER)
+        self.load_pretrained_autoencoder(autoencoder_path)
+
+        # Load the generator
         self.generator = Generator(kernel_sizes=KERNEL_SIZES,
                                    channel_sizes_min=CHANNEL_SIZES_MIN,
                                    p=DROPOUT_PROBABILITY,
@@ -44,6 +54,7 @@ class GanTrainer(Trainer):
         self.adversarial_criterion = nn.BCEWithLogitsLoss()
         self.generator_time_criterion = nn.MSELoss()
         self.generator_frequency_criterion = nn.MSELoss()
+        self.generator_autoencoder_criterion = nn.MSELoss()
 
         # Define labels
         self.real_label = 1
@@ -61,6 +72,10 @@ class GanTrainer(Trainer):
     def load_pretrained_generator(self, generator_path):
         checkpoint = torch.load(generator_path, map_location=self.device)
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
+
+    def load_pretrained_autoencoder(self, autoencoder_path):
+        checkpoint = torch.load(autoencoder_path, map_location=self.device)
+        self.autoencoder.load_state_dict(checkpoint['autoencoder_state_dict'])
 
     def train(self, epochs):
         for epoch in range(epochs):
@@ -108,6 +123,10 @@ class GanTrainer(Trainer):
                 specgram_h_batch = self.spectrogram(x_h_batch)
                 specgram_fake_batch = self.spectrogram(fake_batch)
 
+                # Get the embeddings
+                _, embedding_h_batch = self.autoencoder(x_h_batch)
+                _, embedding_fake_batch = self.autoencoder(fake_batch)
+
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
@@ -118,10 +137,13 @@ class GanTrainer(Trainer):
                 loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
                 self.train_losses['time_l2'].append(loss_generator_time.item())
                 loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
-                self.train_losses['freq_l2'].append(loss_generator_frequency)
+                self.train_losses['freq_l2'].append(loss_generator_frequency.item())
+                loss_generator_autoencoder = self.generator_autoencoder_criterion(embedding_fake_batch,
+                                                                                  embedding_h_batch)
+                self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
 
                 loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                                 loss_generator_frequency
+                                 loss_generator_frequency + loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
