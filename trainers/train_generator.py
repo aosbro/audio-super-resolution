@@ -54,8 +54,8 @@ class GeneratorTrainer(Trainer):
                 fake_batch = self.generator(x_l_batch)
 
                 # Get the spectrogram
-                specgram_h_batch = normalize(self.amplitude_to_db(self.spectrogram(x_h_batch)))
-                specgram_fake_batch = normalize(self.amplitude_to_db(self.spectrogram(fake_batch)))
+                specgram_h_batch = self.spectrogram(x_h_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
@@ -105,8 +105,8 @@ class GeneratorTrainer(Trainer):
             fake_batch = self.generator(x_l_batch)
 
             # Get the spectrogram
-            specgram_h_batch = normalize(self.amplitude_to_db(self.spectrogram(x_h_batch)))
-            specgram_fake_batch = normalize(self.amplitude_to_db(self.spectrogram(fake_batch)))
+            specgram_h_batch = self.spectrogram(x_h_batch)
+            specgram_fake_batch = self.spectrogram(fake_batch)
 
             # Compute and store the loss
             time_l2_loss = self.time_criterion(fake_batch, x_h_batch)

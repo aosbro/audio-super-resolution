@@ -20,7 +20,7 @@ class AutoEncoderTrainer(Trainer):
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.autoencoder.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=1000, gamma=0.3)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=15, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -46,12 +46,12 @@ class AutoEncoderTrainer(Trainer):
                 fake_batch, _ = self.autoencoder.forward(local_batch)
 
                 # Get the spectrogram
-                local_batch_freq = self.spectrogram(local_batch)
-                fake_batch_freq = self.spectrogram(fake_batch)
+                specgram_local_batch = self.spectrogram(local_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(fake_batch, local_batch)
-                freq_l2_loss = self.frequency_criterion(fake_batch_freq, local_batch_freq)
+                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_local_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
@@ -67,16 +67,24 @@ class AutoEncoderTrainer(Trainer):
 
             # Increment epoch counter
             self.epoch += 1
+            self.scheduler.step()
+
+            with torch.no_grad():
+                self.eval()
 
             # Save the trainer state
-            self.save()
+            if self.need_saving:
+                self.save()
 
     def eval(self):
         with torch.no_grad():
             self.autoencoder.eval()
-            batch_losses = []
-            for i, local_batch in enumerate(self.test_loader):
+            test_loader_iter = iter(self.test_loader)
+            batch_losses = {'time_l2': [], 'freq_l2': []}
+            # for i, local_batch in enumerate(self.test_loader):
+            for i in range(TEST_BATCH_ITERATIONS):
                 # Transfer to GPU
+                local_batch = next(test_loader_iter)
                 local_batch = torch.cat(local_batch).to(self.device)
 
                 # Forward pass
