@@ -14,17 +14,20 @@ import numpy as np
 
 
 class GanTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, autoencoder_path,
+    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, autoencoder_path=None,
                  generator_path=None):
         super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Models
         # Load the auto-encoder
-        self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
-                                       channel_sizes_min=CHANNEL_SIZES_MIN,
-                                       p=DROPOUT_PROBABILITY,
-                                       n_blocks=N_BLOCKS_AUTOENCODER)
-        self.load_pretrained_autoencoder(autoencoder_path)
+        self.use_autoencoder = False
+        if autoencoder_path:
+            self.use_autoencoder = True
+            self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
+                                           channel_sizes_min=CHANNEL_SIZES_MIN,
+                                           p=DROPOUT_PROBABILITY,
+                                           n_blocks=N_BLOCKS_AUTOENCODER)
+            self.load_pretrained_autoencoder(autoencoder_path)
 
         # Load the generator
         self.generator = Generator(kernel_sizes=KERNEL_SIZES,
@@ -123,10 +126,6 @@ class GanTrainer(Trainer):
                 specgram_h_batch = self.spectrogram(x_h_batch)
                 specgram_fake_batch = self.spectrogram(fake_batch)
 
-                # Get the embeddings
-                _, embedding_h_batch = self.autoencoder(x_h_batch)
-                _, embedding_fake_batch = self.autoencoder(fake_batch)
-
                 # Fake labels are real for the generator cost
                 label.fill_(self.real_label)
                 output = self.discriminator(fake_batch)
@@ -138,12 +137,19 @@ class GanTrainer(Trainer):
                 self.train_losses['time_l2'].append(loss_generator_time.item())
                 loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
                 self.train_losses['freq_l2'].append(loss_generator_frequency.item())
-                loss_generator_autoencoder = self.generator_autoencoder_criterion(embedding_fake_batch,
-                                                                                  embedding_h_batch)
-                self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
 
                 loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                                 loss_generator_frequency + loss_generator_autoencoder
+                                 loss_generator_frequency
+
+                # Add the auto-encoder loss if needed
+                if self.use_autoencoder:
+                    # Get the embeddings
+                    _, embedding_h_batch = self.autoencoder(x_h_batch)
+                    _, embedding_fake_batch = self.autoencoder(fake_batch)
+                    loss_generator_autoencoder = self.generator_autoencoder_criterion(embedding_fake_batch,
+                                                                                      embedding_h_batch)
+                    self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
+                    loss_generator += loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
@@ -249,7 +255,8 @@ class GanTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def get_gan_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size, generator_path):
+def get_gan_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size, generator_path,
+                    autoencoder_path):
     # Create the datasets
     train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
                                                                    batch_size)
@@ -260,18 +267,21 @@ def get_gan_trainer(train_datapath, test_datapath, valid_datapath, loadpath, sav
                              lr=LEARNING_RATE,
                              loadpath=loadpath,
                              savepath=savepath,
-                             generator_path=generator_path)
+                             generator_path=generator_path,
+                             autoencoder_path=autoencoder_path)
     return gan_trainer
 
 
-def train_gan(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size, generator_path):
+def train_gan(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size, generator_path,
+              autoencoder_path):
     gan_trainer = get_gan_trainer(train_datapath=train_datapath,
                                   test_datapath=test_datapath,
                                   valid_datapath=valid_datapath,
                                   loadpath=loadpath,
                                   savepath=savepath,
                                   batch_size=batch_size,
-                                  generator_path=generator_path)
+                                  generator_path=generator_path,
+                                  autoencoder_path=autoencoder_path)
 
     # Start training
     gan_trainer.train(epochs=epochs)
@@ -286,5 +296,6 @@ if __name__ == '__main__':
                             savepath=GAN_PATH,
                             epochs=1,
                             batch_size=16,
-                            generator_path=GENERATOR_L2T_PATH)
+                            generator_path=GENERATOR_L2T_PATH,
+                            autoencoder_path=AUTOENCODER_L2TF_PATH)
 
