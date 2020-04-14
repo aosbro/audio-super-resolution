@@ -58,8 +58,10 @@ class AutoEncoderTrainer(Trainer):
                 loss = time_l2_loss + freq_l2_loss
 
                 # Print message
-                if not(i % 10):
-                    message = 'Batch {}, time l2: {}, freq l2: {}'.format(i, time_l2_loss.item(), freq_l2_loss.item())
+                if not (i % 10):
+                    message = 'Batch {}: \n' \
+                              '\t Time: {} \n' \
+                              '\t Frequency: {} \n' .format(i, time_l2_loss.item(), freq_l2_loss.item())
                     print(message)
 
                 # Backward pass
