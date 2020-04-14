@@ -32,8 +32,8 @@ class GanTrainer(Trainer):
         # Optimizers and schedulers
         self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
         self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(), lr=lr)
-        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=10, gamma=0.5)
-        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=10,
+        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=15, gamma=0.5)
+        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=15,
                                                            gamma=0.5)
 
         # Load saved states
