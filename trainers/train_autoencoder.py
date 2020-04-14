@@ -6,6 +6,7 @@ from trainers.base_trainer import Trainer
 import torch
 from torch.optim import lr_scheduler
 from torch import nn
+import numpy as np
 
 
 class AutoEncoderTrainer(Trainer):
@@ -88,19 +89,32 @@ class AutoEncoderTrainer(Trainer):
                 local_batch = torch.cat(local_batch).to(self.device)
 
                 # Forward pass
-                x_tilde, _ = self.autoencoder.forward(local_batch)
-                loss = self.time_criterion(input=x_tilde, target=local_batch)
+                fake_batch, _ = self.autoencoder.forward(local_batch)
 
-                # Store the batch loss
-                batch_losses.append(loss.item())
+                # Get the spectrogram
+                specgram_local_batch = self.spectrogram(local_batch)
+                specgram_fake_batch = self.spectrogram(fake_batch)
 
-                # Print message
-                if not(i % 100):
-                    message = 'Batch {}, test loss: {}'.format(i, np.mean(batch_losses[-100:]))
-                    print(message)
+                # Compute and store the loss
+                time_l2_loss = self.time_criterion(fake_batch, local_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_local_batch)
+                batch_losses['time_l2'].append(time_l2_loss.item())
+                batch_losses['freq_l2'].append(freq_l2_loss.item())
 
-            # Add the current epoch's average mean to the train losses
-            self.test_losses.append(np.mean(batch_losses))
+            # Store test losses
+            self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+            self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
+
+            # Display test loss
+            message = 'Epoch {}: \n' \
+                      '\t Time: {} \n' \
+                      '\t Frequency: {} \n'.format(self.epoch,
+                                                   np.mean(np.mean(batch_losses['time_l2'])),
+                                                   np.mean(np.mean(batch_losses['freq_l2'])))
+            print(message)
+
+            # Check if the loss is decreasing
+            self.check_improvement()
 
     def save(self):
         """
