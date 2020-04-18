@@ -74,7 +74,7 @@ class GanTrainer(Trainer):
         self.need_saving = True
 
         # Boolean if the generator receives the feedback from the discriminator
-        self.use_adversarial = False
+        self.use_adversarial = True
 
     def load_pretrained_generator(self, generator_path):
         checkpoint = torch.load(generator_path, map_location=self.device)
@@ -188,10 +188,10 @@ class GanTrainer(Trainer):
                     print(message)
 
             # Activate the coupling between discriminator and generator
-            if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
-                self.use_adversarial = True
-                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX:
-                    self.lambda_adv *= 10
+            # if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
+            #     self.use_adversarial = True
+            #     if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX:
+            #         self.lambda_adv *= 10
 
             # Evaluate the model
             with torch.no_grad():
