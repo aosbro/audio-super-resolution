@@ -140,7 +140,7 @@ class AutoEncoderTrainer(Trainer):
         """
         checkpoint = torch.load(self.loadpath, map_location=self.device)
         self.epoch = checkpoint['epoch']
-        self.autoencoder.load_state_dict(checkpoint['generator_state_dict'])
+        self.autoencoder.load_state_dict(checkpoint['autoencoder_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.train_losses = checkpoint['train_losses']
