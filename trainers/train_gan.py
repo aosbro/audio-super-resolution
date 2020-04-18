@@ -73,6 +73,9 @@ class GanTrainer(Trainer):
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
 
+        # Boolean if the generator receives the feedback from the discriminator
+        self.use_adversarial = False
+
     def load_pretrained_generator(self, generator_path):
         checkpoint = torch.load(generator_path, map_location=self.device)
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
@@ -132,17 +135,22 @@ class GanTrainer(Trainer):
                 output = self.discriminator(fake_batch)
 
                 # Compute the generator loss on fake data
-                loss_generator_adversarial = self.adversarial_criterion(torch.squeeze(output), label)
+                # Get the adversarial loss
+                loss_generator_adversarial = torch.zeros(size=[1], device=self.device)
+                if self.use_adversarial:
+                    loss_generator_adversarial = self.adversarial_criterion(torch.squeeze(output), label)
                 self.train_losses['generator_adversarial'].append(loss_generator_adversarial.item())
+
+                # Get the L2 loss in time domain
                 loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
                 self.train_losses['time_l2'].append(loss_generator_time.item())
+
+                # Get the L2 loss in frequency domain
                 loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
                 self.train_losses['freq_l2'].append(loss_generator_frequency.item())
 
-                loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                                 loss_generator_frequency
-
-                # Add the auto-encoder loss if needed
+                # Get the L2 loss in embedding space
+                loss_generator_autoencoder = torch.zeros(size=[1], device=self.device)
                 if self.use_autoencoder:
                     # Get the embeddings
                     _, embedding_h_batch = self.autoencoder(x_h_batch)
@@ -150,7 +158,10 @@ class GanTrainer(Trainer):
                     loss_generator_autoencoder = self.generator_autoencoder_criterion(embedding_fake_batch,
                                                                                       embedding_h_batch)
                     self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
-                    loss_generator += loss_generator_autoencoder
+
+                # Combine the different losses
+                loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
+                                 loss_generator_frequency + loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
@@ -180,6 +191,10 @@ class GanTrainer(Trainer):
             self.epoch += 1
             self.generator_scheduler.step()
             self.discriminator_scheduler.step()
+
+            # Activate the coupling between discriminator and generator
+            if self.epoch == ADVERSARIAL_ACTIVATION_EPOCH:
+                self.use_adversarial =True
 
             # Evaluate the model
             with torch.no_grad():
