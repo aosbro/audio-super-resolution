@@ -107,28 +107,3 @@ class Generator(nn.Module):
         x = self.up_block_8(x, None)
         return self.tanh(self.output_conv(x) + x_l)
 
-
-# class GeneratorF(nn.Module):
-#     def __init__(self):
-#         super(GeneratorF, self).__init__()
-#         self.encoder = nn.Sequential(
-#             nn.ReplicationPad2d((15, 16, 15, 16)),
-#             nn.Conv2d(in_channels=2, out_channels=16, kernel_size=3, stride=2), nn.BatchNorm2d(16), nn.PReLU(),
-#             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2), nn.BatchNorm2d(32), nn.PReLU(),
-#             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2), nn.BatchNorm2d(64), nn.PReLU(),
-#             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=2), nn.BatchNorm2d(128), nn.PReLU(),
-#             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2), nn.BatchNorm2d(256), nn.PReLU(),
-#         )
-#         self.decoder = nn.Sequential(
-#             nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=3, stride=2), nn.BatchNorm2d(128), nn.PReLU(),
-#             nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=3, stride=2), nn.BatchNorm2d(64), nn.PReLU(),
-#             nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=3, stride=2), nn.BatchNorm2d(32), nn.PReLU(),
-#             nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2), nn.BatchNorm2d(16), nn.PReLU(),
-#             nn.ConvTranspose2d(in_channels=16, out_channels=2, kernel_size=3, stride=2), nn.BatchNorm2d(2), nn.Tanh(),
-#         )
-#
-#     def forward(self, x):
-#         x = torch.stft(torch.squeeze(x), n_fft=256, normalized=True)
-#         B, H, W, C = x.size()
-#         x = self.decoder(self.encoder(x.reshape(B, C, H, W)))[:, :, 15: -15, 15: -15]
-#         return torch.unsqueeze(istft(x.reshape(B, H, W, C), n_fft=256, normalized=True), dim=1)
