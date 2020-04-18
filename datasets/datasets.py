@@ -41,6 +41,13 @@ class DatasetBeethoven(data.Dataset):
         return self.data.shape[0] * self.window_number
 
     def butter_lowpass_filter(self, x_h, cutoff_frequency, order):
+        """
+        Applies a butterworth low-pass filter to the high resolution signal
+        :param x_h: high resolution signal as a numpy array
+        :param cutoff_frequency: desired max frequency of the filtered signal
+        :param order: shapness of the filter
+        :return: filtered signal as a numpy array
+        """
         nyquist_frequency = self.fs / 2
         normalised_cutoff_frequency = cutoff_frequency / nyquist_frequency
 
