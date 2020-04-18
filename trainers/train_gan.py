@@ -190,7 +190,7 @@ class GanTrainer(Trainer):
             # Activate the coupling between discriminator and generator
             if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
                 self.use_adversarial = True
-                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX and not self.epoch % 3:
+                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX:
                     self.lambda_adv *= 10
 
             # Evaluate the model

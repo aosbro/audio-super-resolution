@@ -87,7 +87,7 @@ GENERATOR_L2TF_NO_WINDOW_DB_PATH = '../objects/generator_trainer_l2tf_no_window_
 GENERATOR_L2TF_NO_WINDOW_DB_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf_no_window_db.tar'
 
 # ...
-LAMBDA_ADVERSARIAL_MAX = 1e-3
+LAMBDA_ADVERSARIAL_MAX = 1e-4
 LAMBDA_ADVERSARIAL_MIN = 1e-8
 GENERATOR_CLIP_VALUE = 1000
 TRAIN_BATCH_ITERATIONS = 100
