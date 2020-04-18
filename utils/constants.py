@@ -66,6 +66,9 @@ GAN_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 GAN_EMBEDDING_PATH = '../objects/gan_trainer_embedding.tar'
 GAN_EMBEDDING_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding.tar'
 
+GAN_EMBEDDING2_PATH = '../objects/gan_trainer_embedding2.tar'
+GAN_EMBEDDING2_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding2.tar'
+
 GAN_EMBEDDING_ADV_PATH = '../objects/gan_trainer_embedding_adv.tar'
 GAN_EMBEDDING_ADV_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding_adv.tar'
 
