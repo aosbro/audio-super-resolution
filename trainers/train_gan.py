@@ -26,7 +26,7 @@ class GanTrainer(Trainer):
             self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
                                            channel_sizes_min=CHANNEL_SIZES_MIN,
                                            p=DROPOUT_PROBABILITY,
-                                           n_blocks=N_BLOCKS_AUTOENCODER)
+                                           n_blocks=N_BLOCKS_AUTOENCODER).to(self.device)
             self.load_pretrained_autoencoder(autoencoder_path)
             self.autoencoder.eval()
 
