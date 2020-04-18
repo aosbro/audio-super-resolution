@@ -18,7 +18,8 @@ class GeneratorTrainer(Trainer):
         self.generator = AutoEncoder(kernel_sizes=KERNEL_SIZES,
                                      channel_sizes_min=CHANNEL_SIZES_MIN,
                                      p=DROPOUT_PROBABILITY,
-                                     n_blocks=N_BLOCKS_GENERATOR).to(self.device)
+                                     n_blocks=N_BLOCKS_GENERATOR,
+                                     return_embedding=False).to(self.device)
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)

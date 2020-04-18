@@ -5,7 +5,7 @@ from torch import nn
 
 
 class AutoEncoder(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks):
+    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, return_embedding=True):
         super(AutoEncoder, self).__init__()
 
         # Compute channel sizes at each level
@@ -52,6 +52,9 @@ class AutoEncoder(nn.Module):
         self.output_conv = nn.Conv1d(in_channels=sum(channel_sizes[0]) // 2, out_channels=1,
                                      kernel_size=kernel_size, padding=padding)
 
+        # Boolean indicating if the auto-encoder should return the latent space representation
+        self.return_embedding = return_embedding
+
     def forward(self, x):
         # Encoder
         phi = self.encoder(x)
@@ -61,4 +64,6 @@ class AutoEncoder(nn.Module):
 
         # Output
         x = self.output_conv(x)
-        return x, phi
+        if self.return_embedding:
+            return x, phi
+        return x
