@@ -1,6 +1,6 @@
 from trainers.base_trainer import Trainer
 from utils.utils import get_the_data_loaders
-from models.generator import Generator
+from models.generator import Generator, GeneratorF
 import os
 from utils.constants import *
 from torch.optim import lr_scheduler
@@ -14,10 +14,11 @@ class GeneratorTrainer(Trainer):
         super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Model
-        self.generator = Generator(kernel_sizes=KERNEL_SIZES,
-                                   channel_sizes_min=CHANNEL_SIZES_MIN,
-                                   p=DROPOUT_PROBABILITY,
-                                   n_blocks=N_BLOCKS_GENERATOR).to(self.device)
+        # self.generator = Generator(kernel_sizes=KERNEL_SIZES,
+        #                            channel_sizes_min=CHANNEL_SIZES_MIN,
+        #                            p=DROPOUT_PROBABILITY,
+        #                            n_blocks=N_BLOCKS_GENERATOR).to(self.device)
+        self.generator = GeneratorF()
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
@@ -190,8 +191,8 @@ if __name__ == '__main__':
     generator_trainer = train_generator(train_datapath=TRAIN_DATAPATH,
                                         test_datapath=TEST_DATAPATH,
                                         valid_datapath=VALID_DATAPATH,
-                                        loadpath=GENERATOR_L2T_PATH,
-                                        savepath=GENERATOR_L2T_PATH,
+                                        loadpath=GENERATOR_F_PATH,
+                                        savepath=GENERATOR_F_PATH,
                                         epochs=1,
                                         batch_size=4)
 
