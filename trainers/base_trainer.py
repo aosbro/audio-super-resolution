@@ -112,8 +112,6 @@ class Trainer(abc.ABC):
         # Get a pair of low quality and fake samples batches
         x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
 
-        print(fake_batch[1].shape)
-
         specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
         specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch))
 
