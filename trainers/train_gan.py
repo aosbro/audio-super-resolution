@@ -187,11 +187,6 @@ class GanTrainer(Trainer):
                                                        loss_discriminator_fake.item())
                     print(message)
 
-            # Increment epoch counter
-            self.epoch += 1
-            self.generator_scheduler.step()
-            self.discriminator_scheduler.step()
-
             # Activate the coupling between discriminator and generator
             if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
                 self.use_adversarial = True
@@ -201,6 +196,11 @@ class GanTrainer(Trainer):
             # Evaluate the model
             with torch.no_grad():
                 self.eval()
+
+            # Increment epoch counter
+            self.epoch += 1
+            self.generator_scheduler.step()
+            self.discriminator_scheduler.step()
 
             # Save the trainer state
             if self.need_saving:
