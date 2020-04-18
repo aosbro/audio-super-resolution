@@ -28,6 +28,7 @@ class GanTrainer(Trainer):
                                            p=DROPOUT_PROBABILITY,
                                            n_blocks=N_BLOCKS_AUTOENCODER)
             self.load_pretrained_autoencoder(autoencoder_path)
+            self.autoencoder.eval()
 
         # Load the generator
         self.generator = Generator(kernel_sizes=KERNEL_SIZES,
@@ -162,12 +163,17 @@ class GanTrainer(Trainer):
                               '\t Genarator: \n' \
                               '\t\t Time: {} \n' \
                               '\t\t Frequency: {} \n' \
+                              '\t\t Autoencoder {} \n' \
                               '\t\t Adversarial: {} \n' \
                               '\t Discriminator: \n' \
                               '\t\t Real {} \n' \
-                              '\t\t Fake {} \n'.format(i, loss_generator_time.item(), loss_generator_frequency.item(),
-                                                       loss_generator_adversarial, loss_discriminator_real,
-                                                       loss_discriminator_fake)
+                              '\t\t Fake {} \n'.format(i,
+                                                       loss_generator_time.item(),
+                                                       loss_generator_frequency.item(),
+                                                       loss_generator_autoencoder.item() if self.use_autoencoder else 0,
+                                                       loss_generator_adversarial.item(),
+                                                       loss_discriminator_real.item(),
+                                                       loss_discriminator_fake.item())
                     print(message)
 
             # Increment epoch counter

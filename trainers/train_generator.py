@@ -7,7 +7,6 @@ from torch.optim import lr_scheduler
 import numpy as np
 import torch
 from torch import nn
-from torch.nn.functional import normalize
 
 
 class GeneratorTrainer(Trainer):
