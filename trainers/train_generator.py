@@ -1,6 +1,7 @@
 from trainers.base_trainer import Trainer
 from utils.utils import get_the_data_loaders
-from models.generator import Generator, GeneratorF
+from models.generator import Generator
+from models.autoencoder import AutoEncoder
 import os
 from utils.constants import *
 from torch.optim import lr_scheduler
@@ -14,16 +15,14 @@ class GeneratorTrainer(Trainer):
         super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
 
         # Model
-        # self.generator = Generator(kernel_sizes=KERNEL_SIZES,
-        #                            channel_sizes_min=CHANNEL_SIZES_MIN,
-        #                            p=DROPOUT_PROBABILITY,
-        #                            n_blocks=N_BLOCKS_GENERATOR).to(self.device)
-
-        self.generator = GeneratorF().to(self.device)
+        self.generator = AutoEncoder(kernel_sizes=KERNEL_SIZES,
+                                     channel_sizes_min=CHANNEL_SIZES_MIN,
+                                     p=DROPOUT_PROBABILITY,
+                                     n_blocks=N_BLOCKS_GENERATOR).to(self.device)
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=4, gamma=0.5)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=15, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):

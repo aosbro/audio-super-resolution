@@ -90,6 +90,9 @@ GENERATOR_L2TF_NO_WINDOW_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gen
 GENERATOR_F_PATH = '../objects/generator_f_trainer.tar'
 GENERATOR_F_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_f_trainer.tar'
 
+GENERATOR_NO_SKIP_PATH = '../objects/generator_no_skip_trainer.tar'
+GENERATOR_NO_SKIP_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_no_skip_trainer.tar'
+
 # Generator trained with the L2 criterion in time and frequency (dB) domain
 GENERATOR_L2TF_NO_WINDOW_DB_PATH = '../objects/generator_trainer_l2tf_no_window_db.tar'
 GENERATOR_L2TF_NO_WINDOW_DB_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf_no_window_db.tar'
