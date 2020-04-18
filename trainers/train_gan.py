@@ -65,7 +65,7 @@ class GanTrainer(Trainer):
         self.fake_label = 0
 
         # Loss scaling factors
-        self.lambda_adv = LAMBDA_ADVERSARIAL
+        self.lambda_adv = LAMBDA_ADVERSARIAL_MIN
 
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
@@ -193,8 +193,10 @@ class GanTrainer(Trainer):
             self.discriminator_scheduler.step()
 
             # Activate the coupling between discriminator and generator
-            if self.epoch == ADVERSARIAL_ACTIVATION_EPOCH:
-                self.use_adversarial =True
+            if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
+                self.use_adversarial = True
+                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX:
+                    self.lambda_adv *= 10
 
             # Evaluate the model
             with torch.no_grad():
