@@ -18,7 +18,7 @@ class GeneratorTrainer(Trainer):
         #                            channel_sizes_min=CHANNEL_SIZES_MIN,
         #                            p=DROPOUT_PROBABILITY,
         #                            n_blocks=N_BLOCKS_GENERATOR).to(self.device)
-        self.generator = GeneratorF()
+        self.generator = GeneratorF().to(self.device)
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
