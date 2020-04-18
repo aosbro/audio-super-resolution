@@ -181,7 +181,7 @@ class GanTrainer(Trainer):
                               '\t\t Fake {} \n'.format(i,
                                                        loss_generator_time.item(),
                                                        loss_generator_frequency.item(),
-                                                       loss_generator_autoencoder.item() if self.use_autoencoder else 0,
+                                                       loss_generator_autoencoder.item(),
                                                        loss_generator_adversarial.item(),
                                                        loss_discriminator_real.item(),
                                                        loss_discriminator_fake.item())
@@ -190,7 +190,7 @@ class GanTrainer(Trainer):
             # Activate the coupling between discriminator and generator
             if self.epoch >= ADVERSARIAL_ACTIVATION_EPOCH:
                 self.use_adversarial = True
-                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX:
+                if self.lambda_adv < LAMBDA_ADVERSARIAL_MAX and not self.epoch % 3:
                     self.lambda_adv *= 10
 
             # Evaluate the model
