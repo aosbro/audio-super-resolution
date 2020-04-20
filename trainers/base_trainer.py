@@ -65,14 +65,20 @@ class Trainer(abc.ABC):
         self.need_saving = True
 
     def generate_single_test_batch(self, model):
+        """
+        Loads a batch
+        :param model: pre-trained model used to generate the fake samples
+        :return: low resolution, high resolution and fake sample as torch tensor with dimension [B, 1, W]
+        """
         model.eval()
         with torch.no_grad():
             local_batch = next(iter(self.test_loader))
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
             fake_batch = model(x_l_batch)
         if self.is_autoencoder:
-            return x_h_batch, fake_batch[0]
-        return x_h_batch, fake_batch
+            # Avoid returning the latent space
+            return x_h_batch, x_l_batch, fake_batch[0]
+        return x_h_batch, x_l_batch, fake_batch
 
     def check_improvement(self):
         self.need_saving = np.less_equal(self.test_losses['time_l2'][-1], min(self.test_losses['time_l2'])) or \
@@ -89,7 +95,7 @@ class Trainer(abc.ABC):
         index = index % batch_size
 
         # Get a pair of high quality and fake samples batches
-        x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
+        x_h_batch, x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
 
         # Plot
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
@@ -99,25 +105,49 @@ class Trainer(abc.ABC):
         axes[1].set_title('Fake high quality sample', fontsize=16)
         plt.show()
 
-    def plot_reconstruction_frequency_domain(self, index, model):
+    def plot_reconstruction_frequency_domain(self, index, model, fs=16000, savepath=None):
         """
         Plots real samples against fake sample in frequency domain
         :param model: model used to generate a fake batch (auto-encoder or generator)
         :param index:
+        :param fs:
         :return:
         """
         batch_size = self.test_loader.batch_size
         index = index % batch_size
 
-        # Get a pair of low quality and fake samples batches
-        x_h_batch, fake_batch = self.generate_single_test_batch(model=model)
+        # Get high resolution, low resolution and fake batches
+        x_h_batch, x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
 
+        # Get the power spectrogram in decibels
         specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
+        specgram_l_db = self.amplitude_to_db(self.spectrogram(x_l_batch))
         specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch))
 
-        fig, axes = plt.subplots(1, 2)
-        axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0))
-        axes[1].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0))
+        # Define the extent
+        f_min = 0
+        f_max = specgram_h_db.shape[-2]
+        k_min = 0
+        k_max = specgram_h_db.shape[-1]
+
+        # Plot
+        fig, axes = plt.subplots(1, 3, figsize=(11, 7))
+        axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+        axes[0].set_title('High resolution', fontsize=16)
+        axes[0].set_xlabel('Window index', fontsize=14)
+        axes[0].set_ylabel('Frequency index', fontsize=14)
+        axes[1].imshow(np.flip(specgram_l_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+        axes[1].set_title('Low resolution', fontsize=16)
+        axes[1].set_xlabel('Window index', fontsize=14)
+        axes[1].set_ylabel('Frequency index', fontsize=14)
+        axes[2].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+        axes[2].set_title('Fake', fontsize=16)
+        axes[2].set_xlabel('Window index', fontsize=14)
+        axes[2].set_ylabel('Frequency index', fontsize=14)
+
+        # Save plot if needed
+        if savepath:
+            plt.savefig(savepath)
         plt.show()
 
     @abc.abstractmethod

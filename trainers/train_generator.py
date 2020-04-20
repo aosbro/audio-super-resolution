@@ -7,6 +7,8 @@ from torch.optim import lr_scheduler
 import numpy as np
 import torch
 from torch import nn
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class GeneratorTrainer(Trainer):

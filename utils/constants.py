@@ -53,48 +53,48 @@ AUTOENCODER_LEARNING_RATE = 1e-3
 
 # Saving constants
 # Auto-encoder trained with the L2 criterion in time domain
-AUTOENCODER_L2T_PATH = '../objects/autoencoder_trainer_l2t.tar'
+AUTOENCODER_L2T_PATH = './objects/autoencoder_trainer_l2t.tar'
 AUTOENCODER_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer_l2t.tar'
 
 # Auto-encoder trained with the L2 criterion in time and frequency domain
-AUTOENCODER_L2TF_PATH = '../objects/autoencoder_trainer_l2tf.tar'
+AUTOENCODER_L2TF_PATH = './objects/autoencoder_trainer_l2tf.tar'
 AUTOENCODER_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/autoencoder_trainer_l2tf.tar'
 
-GAN_PATH = '../objects/gan_trainer.tar'
+GAN_PATH = './objects/gan_trainer.tar'
 GAN_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer.tar'
 
-GAN_EMBEDDING_PATH = '../objects/gan_trainer_embedding.tar'
+GAN_EMBEDDING_PATH = './objects/gan_trainer_embedding.tar'
 GAN_EMBEDDING_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding.tar'
 
-GAN_EMBEDDING2_PATH = '../objects/gan_trainer_embedding2.tar'
+GAN_EMBEDDING2_PATH = './objects/gan_trainer_embedding2.tar'
 GAN_EMBEDDING2_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding2.tar'
 
-GAN_EMBEDDING_W_PATH = '../objects/gan_trainer_embedding_w.tar'
+GAN_EMBEDDING_W_PATH = './objects/gan_trainer_embedding_w.tar'
 GAN_EMBEDDING_W_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding_w.tar'
 
-GAN_EMBEDDING_ADV_PATH = '../objects/gan_trainer_embedding_adv.tar'
+GAN_EMBEDDING_ADV_PATH = './objects/gan_trainer_embedding_adv.tar'
 GAN_EMBEDDING_ADV_PATH_DRIVE = '/content/drive/My Drive/audio_objects/gan_trainer_embedding_adv.tar'
 
 # Generator trained with the L2 criterion in time domain
-GENERATOR_L2T_PATH = '../objects/generator_trainer_l2.tar'
+GENERATOR_L2T_PATH = './objects/generator_trainer_l2.tar'
 GENERATOR_L2T_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2.tar'
 
 # Generator trained with the L2 criterion in time and frequency domain
-GENERATOR_L2TF_PATH = '../objects/generator_trainer_l2tf.tar'
+GENERATOR_L2TF_PATH = './objects/generator_trainer_l2tf.tar'
 GENERATOR_L2TF_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf.tar'
 
 # Generator trained with the L2 criterion in time and frequency domain
 GENERATOR_L2TF_NO_WINDOW_PATH = './objects/generator_trainer_l2tf_no_window.tar'
 GENERATOR_L2TF_NO_WINDOW_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf_no_window.tar'
 
-GENERATOR_F_PATH = '../objects/generator_f_trainer.tar'
+GENERATOR_F_PATH = './objects/generator_f_trainer.tar'
 GENERATOR_F_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_f_trainer.tar'
 
-GENERATOR_NO_SKIP_PATH = '../objects/generator_no_skip_trainer.tar'
+GENERATOR_NO_SKIP_PATH = './objects/generator_no_skip_trainer.tar'
 GENERATOR_NO_SKIP_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_no_skip_trainer.tar'
 
 # Generator trained with the L2 criterion in time and frequency (dB) domain
-GENERATOR_L2TF_NO_WINDOW_DB_PATH = '../objects/generator_trainer_l2tf_no_window_db.tar'
+GENERATOR_L2TF_NO_WINDOW_DB_PATH = './objects/generator_trainer_l2tf_no_window_db.tar'
 GENERATOR_L2TF_NO_WINDOW_DB_PATH_DRIVE = '/content/drive/My Drive/audio_objects/generator_trainer_l2tf_no_window_db.tar'
 
 # ...

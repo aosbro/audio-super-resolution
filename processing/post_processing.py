@@ -74,22 +74,20 @@ def generate_high_resolution_sample(trainer, index):
     full_sample_fake = overlap_and_add_samples(fake_batch.detach(), overlap=dataset.overlap,
                                                use_windowing=not dataset.use_windowing)
 
-    full_sample_fake = dataset.butter_lowpass_filter(full_sample_fake.numpy(), cutoff_frequency=5000, order=10)
-    # plt.plot(full_sample_fake[4000:5000])
-    plt.plot(full_sample_h.numpy()[4000:5000])
-    plt.plot(full_sample_l.numpy()[4000:5000])
-    # plt.plot(batch_h[11].squeeze().numpy())
-    # plt.plot(fake_batch[11].squeeze().detach().numpy())
+    plt.plot(full_sample_fake[4000:5000], label='fake')
+    plt.plot(full_sample_h.numpy()[4000:5000], label='high')
+    plt.legend()
     plt.show()
 
-    scaled_l = np.int16(full_sample_l.numpy() / np.max(np.abs(full_sample_l.numpy()) * 32767))
-    write('./samples/test_l_gen_no_window.wav', 16000, full_sample_l.numpy())
+    full_sample_fake = full_sample_fake.numpy()
+    # scaled_l = np.int16(full_sample_l.numpy() / np.max(np.abs(full_sample_l.numpy()) * 32767))
+    write('./samples/gan_l_3.wav', 16000, full_sample_l.numpy())
 
-    scaled_h = np.int16(full_sample_h.numpy() / np.max(np.abs(full_sample_h.numpy()) * 32767))
-    write('./samples/test_h_gen_no_window.wav', 16000, full_sample_h.numpy())
+    # scaled_h = np.int16(full_sample_h.numpy() / np.max(np.abs(full_sample_h.numpy()) * 32767))
+    write('./samples/gan_h_3.wav', 16000, full_sample_h.numpy())
 
-    scaled_fake = np.int16(full_sample_fake / np.max(np.abs(full_sample_fake) * 32767))
-    write('./samples/test_fake_gen_no_window.wav', 16000, full_sample_fake)
+    # scaled_fake = np.int16(full_sample_fake / np.max(np.abs(full_sample_fake) * 32767))
+    write('./samples/gan_fake_3.wav', 16000, full_sample_fake)
 
 
 # def main():

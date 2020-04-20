@@ -2,6 +2,7 @@ from datasets.datasets import DatasetBeethoven
 from utils.constants import *
 import torch
 from torch.utils import data
+import matplotlib.pyplot as plt
 
 
 def get_the_data_loaders(train_datapath, test_datapath, valid_datapath, batch_size):
@@ -37,3 +38,28 @@ def get_consecutive_samples(dataset, index):
     batch_h, batch_l = map(list, zip(*batch))
     batch_h, batch_l = torch.cat(batch_h), torch.cat(batch_l)
     return batch_h, batch_l
+
+
+def plot_losses(losses, names, is_training, savepath=None):
+    """
+    Display the different losses accumulated throughout train and test phases
+    :param losses: dictionary containing the different losses
+    :param names: keys of the dictionary to select the desired losses
+    :param is_training: boolean indicating the desired phase (train/test) needed for proper labels
+    :return: None
+    """
+    title = ('Train losses' if is_training else 'Test losses')
+    xlabel = ('Gradient update' if is_training else 'Epoch')
+    for name in names:
+        if isinstance(losses[name], dict):
+            for key, value in losses[name].items():
+                plt.semilogy(value, label=key)
+        else:
+            plt.semilogy(losses[name], label=name)
+    plt.title(title, fontsize=16)
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel('Losses', fontsize=14)
+    plt.legend()
+    if savepath:
+        plt.savefig(savepath)
+    plt.show()
