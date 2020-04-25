@@ -26,8 +26,8 @@ class DatasetBeethoven(data.Dataset):
 
     def compute_window_number(self):
         """
-        Computes the number of overlapping windows in a audio signal
-        :return:
+        Computes the number of overlapping windows in a single track
+        :return: the number of windows in the track
         """
         num = self.data.shape[1] - self.window_length
         den = self.window_length * (1 - self.overlap)
@@ -100,3 +100,13 @@ class DatasetBeethoven(data.Dataset):
         return torch.from_numpy(np.expand_dims(x_h, axis=0)).float(), \
                torch.from_numpy(np.expand_dims(x_l, axis=0)).float()
 
+
+class DatasetMaestro(data.Dataset):
+    def __init__(self, phase, file):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __getitem__(self, item):
+        pass

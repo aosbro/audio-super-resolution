@@ -1,6 +1,4 @@
-# import matplotlib.pyplot as plt
 from datasets.datasets import DatasetBeethoven
-# import numpy as np
 from trainers.train_gan import get_gan_trainer
 from trainers.train_autoencoder import get_autoencoder_trainer
 from trainers.train_generator import get_genarator_trainer
@@ -10,7 +8,6 @@ from utils.utils import get_consecutive_samples
 import torch
 from utils.metrics import snr, lsd
 from processing.post_processing import generate_high_resolution_sample
-
 
 def main():
     # autoencoder_trainer = get_autoencoder_trainer(train_datapath=TRAIN_DATAPATH,
@@ -27,18 +24,18 @@ def main():
     #                                           savepath=GENERATOR_L2TF_PATH,
     #                                           batch_size=31)
 
-    gan_trainer = get_gan_trainer(train_datapath=TRAIN_DATAPATH,
-                                  test_datapath=TEST_DATAPATH,
-                                  valid_datapath=VALID_DATAPATH,
-                                  loadpath=GAN_EMBEDDING2_PATH,
-                                  savepath=GAN_EMBEDDING2_PATH,
-                                  batch_size=31,
-                                  generator_path=None,
-                                  autoencoder_path=None)
-
-    gan_trainer.plot_reconstruction_frequency_domain(index=10,
-                                                     model=gan_trainer.generator,
-                                                     savepath='./figures/generator_specgram.png')
+    # gan_trainer = get_gan_trainer(train_datapath=TRAIN_DATAPATH,
+    #                               test_datapath=TEST_DATAPATH,
+    #                               valid_datapath=VALID_DATAPATH,
+    #                               loadpath=GAN_EMBEDDING2_PATH,
+    #                               savepath=GAN_EMBEDDING2_PATH,
+    #                               batch_size=31,
+    #                               generator_path=None,
+    #                               autoencoder_path=None)
+    #
+    # gan_trainer.plot_reconstruction_frequency_domain(index=10,
+    #                                                  model=gan_trainer.generator,
+    #                                                  savepath='./figures/generator_specgram.png')
 
     # plot_losses(losses=gan_trainer.train_losses,
                 # names=['time_l2', 'freq_l2', 'autoencoder_l2'],
@@ -50,7 +47,8 @@ def main():
     #             is_training=True,
     #             savepath='./figures/gan_train_losses.png')
 
-    generate_high_resolution_sample(gan_trainer, 40)
+    # generate_high_resolution_sample(autoencoder_trainer, 40)
+    # print(len(autoencoder_trainer.train_loader.dataset) / 31)
 
     # dataset = DatasetBeethoven(datapath=TRAIN_DATAPATH,
     #                            ratio=4,

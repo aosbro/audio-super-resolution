@@ -46,6 +46,7 @@ def plot_losses(losses, names, is_training, savepath=None):
     :param losses: dictionary containing the different losses
     :param names: keys of the dictionary to select the desired losses
     :param is_training: boolean indicating the desired phase (train/test) needed for proper labels
+    :param savepath: string path indicating where to save the plot
     :return: None
     """
     title = ('Train losses' if is_training else 'Test losses')

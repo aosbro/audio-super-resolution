@@ -81,33 +81,11 @@ def generate_high_resolution_sample(trainer, index):
 
     full_sample_fake = full_sample_fake.numpy()
     # scaled_l = np.int16(full_sample_l.numpy() / np.max(np.abs(full_sample_l.numpy()) * 32767))
-    write('./samples/gan_l_3.wav', 16000, full_sample_l.numpy())
+    write('./samples/gan_l_4.wav', 16000, full_sample_l.numpy())
 
     # scaled_h = np.int16(full_sample_h.numpy() / np.max(np.abs(full_sample_h.numpy()) * 32767))
-    write('./samples/gan_h_3.wav', 16000, full_sample_h.numpy())
+    write('./samples/gan_h_4.wav', 16000, full_sample_h.numpy())
 
     # scaled_fake = np.int16(full_sample_fake / np.max(np.abs(full_sample_fake) * 32767))
-    write('./samples/gan_fake_3.wav', 16000, full_sample_fake)
+    write('./samples/gan_fake_4.wav', 16000, full_sample_fake)
 
-
-# def main():
-# 
-#     # autoencoder_trainer = get_autoencoder(train_datapath=TRAIN_DATAPATH,
-#     #                                       test_datapath=TEST_DATAPATH,
-#     #                                       valid_datapath=VALID_DATAPATH,
-#     #                                       loadpath=AUTOENCODER_L2T_PATH,
-#     #                                       savepath=AUTOENCODER_L2T_PATH,
-#     #                                       batch_size=31)
-#
-#     generator_trainer = get_genarator_trainer(train_datapath=TRAIN_DATAPATH,
-#                                               test_datapath=TEST_DATAPATH,
-#                                               valid_datapath=VALID_DATAPATH,
-#                                               loadpath=GENERATOR_L2TF_PATH,
-#                                               savepath=GENERATOR_L2TF_PATH,
-#                                               batch_size=31)
-#
-#     generate_high_resolution_sample(generator_trainer, 11)
-#
-#
-# if __name__ == '__main__':
-#     main()

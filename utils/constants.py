@@ -1,13 +1,13 @@
-# Datasets constants
+# Data constants
 WINDOW_LENGTH = 8192
 HANNING_WINDOW_LENGTH = 101
 BATCH_SIZE = 10
 NUM_WORKERS = 6
 
-TRAIN_SHUFFLE = True
-TEST_SHUFFLE = True
-VALID_SHUFFLE = True
+# Maestro dataset
+MAESTRO_PATH = '/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0'
 
+# Beethoven dataset
 TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train.npy'
 TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test.npy'
 VALID_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_valid.npy'
@@ -18,6 +18,11 @@ VALID_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_valid.npy'
 
 DOWNSCALE_FACTOR = 2
 UPSCALE_FACTOR = 2
+
+# Data-loaders constants
+TRAIN_SHUFFLE = True
+TEST_SHUFFLE = True
+VALID_SHUFFLE = True
 
 # Fully connected constants
 FC1_OUTPUT_FEATURES = 64
