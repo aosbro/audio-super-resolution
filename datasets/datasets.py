@@ -5,6 +5,10 @@ import numpy as np
 import math
 import torch
 from scipy.signal import butter, filtfilt
+import h5py
+from pysndfx import AudioEffectsChain
+import time
+import rtmidi
 
 
 class DatasetBeethoven(data.Dataset):
@@ -102,11 +106,102 @@ class DatasetBeethoven(data.Dataset):
 
 
 class DatasetMaestro(data.Dataset):
-    def __init__(self, phase, file):
-        pass
+    def __init__(self, hdf5_filepath, phase, noise_params, batch_size):
+        self.hdf5_filepath = hdf5_filepath
+        self.phase = phase
+        self.noise_params = noise_params
+        self.batch_size = batch_size
+
+        # Initialize cache to store in RAM
+        self.cache = None
+        self.cache_size = 20 * batch_size
+        self.cache_min_index = None
+        self.load_chunk_to_cache(0)
 
     def __len__(self):
-        pass
+        with h5py.File(self.hdf5_filepath, 'r') as hdf:
+            length = hdf[self.phase]['original'].shape[0]
+        return length
 
-    def __getitem__(self, item):
-        pass
+    def is_in_cache(self, index):
+        return index in set(range(self.cache_min_index, self.cache_min_index + self.cache_size))
+
+    def load_chunk_to_cache(self, index):
+        print('cache miss')
+        with h5py.File(self.hdf5_filepath, 'r') as hdf:
+            self.cache = hdf[self.phase]['original'][index: index + self.cache_size]
+            self.cache_min_index = index
+
+    def __getitem__(self, index):
+        if not self.is_in_cache(index):
+            self.load_chunk_to_cache(index)
+        x = self.cache[index % self.cache_size]
+        # with h5py.File(self.hdf5_filepath, 'r') as hdf:
+        #     x = hdf[self.phase]['original'][index]
+        return x, self.simulate_noisy_recording(x)
+
+    def simulate_noisy_recording(self, x):
+        fx = (
+            AudioEffectsChain().reverb(
+                reverberance=self.noise_params['reverberance'],
+                hf_damping=self.noise_params['hf_damping'],
+                room_scale=self.noise_params['room_scale'],
+                pre_delay=self.noise_params['pre_delay'],
+                wet_gain=self.noise_params['wet_gain']
+            ).reverb(
+                reverberance=self.noise_params['reverberance'],
+                hf_damping=self.noise_params['hf_damping'],
+                room_scale=self.noise_params['room_scale'],
+                pre_delay=self.noise_params['pre_delay'],
+                wet_gain=self.noise_params['wet_gain']
+            ).reverb(
+                reverberance=self.noise_params['reverberance'],
+                hf_damping=self.noise_params['hf_damping'],
+                room_scale=self.noise_params['room_scale'],
+                pre_delay=self.noise_params['pre_delay'],
+                wet_gain=self.noise_params['wet_gain']
+            ).gain(
+                db=self.noise_params['saturation_gain']
+            ).gain(
+                db=-self.noise_params['saturation_gain']
+            ).highpass(
+                frequency=self.noise_params['high_pass_cutoff']
+            ).lowpass(
+                frequency=self.noise_params['low_pass_cutoff']
+            ).normalize()
+        )
+        return fx(np.squeeze(x)).reshape((1, -1))
+
+
+def main():
+    noise_params = {
+        'reverberance': 40,
+        'hf_damping': 20,
+        'room_scale': 40,
+        'pre_delay': 20,
+        'wet_gain': -1,
+        'saturation_gain': 17,
+        'high_pass_cutoff': 200,
+        'low_pass_cutoff': 10000
+    }
+    dataset = DatasetMaestro(hdf5_filepath='/media/thomas/Samsung_T5/VITA/data/maestro_data.h5',
+                             phase='valid',
+                             noise_params=noise_params,
+                             batch_size=64)
+    params = {'batch_size': 64,
+              'shuffle': False,
+              'num_workers': 6}
+
+    loader = data.DataLoader(dataset, **params)
+
+    start_time = time.time()
+    loader_iter = iter(loader)
+    for i in range(50):
+        print(i)
+        local_batch = next(loader_iter)
+    end_time = time.time()
+    print('done', end_time - start_time)
+
+
+if __name__ == '__main__':
+    main()

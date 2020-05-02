@@ -105,12 +105,12 @@ class Trainer(abc.ABC):
         axes[1].set_title('Fake high quality sample', fontsize=16)
         plt.show()
 
-    def plot_reconstruction_frequency_domain(self, index, model, fs=16000, savepath=None):
+    def plot_reconstruction_frequency_domain(self, index, model, savepath=None):
         """
         Plots real samples against fake sample in frequency domain
         :param model: model used to generate a fake batch (auto-encoder or generator)
         :param index:
-        :param fs:
+        :param savepath
         :return:
         """
         batch_size = self.test_loader.batch_size
