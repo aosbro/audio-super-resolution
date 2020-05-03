@@ -5,6 +5,9 @@ from scipy.io import wavfile
 from mido import MidiFile, MidiTrack
 from subprocess import call
 import shutil
+import matplotlib.pyplot as plt
+from scipy import signal
+
 
 def sample_dataset(dataset_path, n_train, n_test, n_valid):
     """
@@ -20,7 +23,8 @@ def sample_dataset(dataset_path, n_train, n_test, n_valid):
     for root, dirs, files in os.walk(dataset_path):
         for name in files:
             if name.endswith('.wav'):
-                wavfiles.append(os.path.join(root, name))
+                if os.path.split(root)[-1] in ['2015', '2017']:
+                    wavfiles.append(os.path.join(root, name))
 
     n_total = n_train + n_test + n_valid
     selected_wavfiles = np.random.choice(wavfiles, size=n_total, replace=False)
@@ -43,16 +47,25 @@ def compute_window_number(track_length, window_length=8192, overlap=0.5):
     return int(num // den + 2)
 
 
+def allign_tracks(track_original, track_modified):
+    track_original = (track_original - np.mean(track_original)) / np.std(track_original)
+    track_modified = (track_modified - np.mean(track_modified)) / np.std(track_modified)
+    N = track_original.shape[0]
+    window_length = 1000
+    plt.plot(track_original[N // 2: N // 2 + window_length])
+    plt.plot(track_modified[N // 2: N // 2 + window_length])
+    plt.show()
+
 def cut_track_and_stack(track_path, window_length=8192, overlap=0.5):
     """
     Cuts a given track in overlapping windows and stacks them along a new axis
     :param track_path: path to .wav track to apply the function on
     :param window_length: number of samples per window (scalar int)
     :param overlap: ratio of overlapping samples for consecutive samples (scalar int in [0, 1))
-    :return: processed track as a numpy array with dimension [window_number, 1, window_length]
+    :return: processed track as a numpy array with dimension [window_number, 1, window_length], sampling frequency
     """
     # Load a single track
-    _, track = wavfile.read(track_path)
+    fs, track = wavfile.read(track_path)
 
     # Get rid of identical second channel
     track = (track[:, 0] / np.iinfo(np.int16).max).astype('float32')
@@ -71,10 +84,10 @@ def cut_track_and_stack(track_path, window_length=8192, overlap=0.5):
             padding = window_length - window.shape[0]
             window = np.concatenate([window, np.zeros(padding)])
         cut_track[i] = window
-    return cut_track.reshape((window_number, 1, window_length))
+    return cut_track.reshape((window_number, 1, window_length)), fs
 
 
-def create_hdf5_file(data_root, hdf5_path, window_length, n_train, n_test, n_valid):
+def create_hdf5_file(wavfiles, temporary_directory_path, hdf5_path, window_length):
     """
     Parses the root folder to find all .wav files and randomly select disjoint sets for the 'train', 'test'
     and 'valid' phases.
@@ -86,29 +99,49 @@ def create_hdf5_file(data_root, hdf5_path, window_length, n_train, n_test, n_val
     :param n_valid: number of valid tracks to select
     :return: None
     """
-    wavfiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
+    # wavfiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
     with h5py.File(hdf5_path, 'w') as hdf:
         # Create the groups inside the files
         for phase in ['train', 'test', 'valid']:
             hdf.create_group(name=phase)
             for i, file in enumerate(wavfiles[phase]):
                 # Get a stacked track
-                data = cut_track_and_stack(file, window_length=window_length)
+                data_original, fs = cut_track_and_stack(file, window_length=window_length)
+
+                # Create the new wavfile using correct sampling frequency
+                phase_directory = os.path.join(temporary_directory_path, phase)
+                midi_filepath = os.path.join(phase_directory, os.path.split(file)[-1].rsplit('.', 1)[0] + '.midi')
+                wav_savepath = os.path.join(phase_directory, os.path.split(file)[-1])
+
+                # Convert the midi file to .wav and save it
+                convert_midi_to_wav(midi_filepath, wav_savepath, fs)
+
+                # Get the modified data
+                # data_mofified, fs = cut_track_and_stack(wav_savepath, window_length=window_length)
+
+                # Load a single track
+                fs_original, track_original = wavfile.read(file)
+                # Load a single track
+                fs_modified, track_modified = wavfile.read(wav_savepath)
+
+                print(fs_original, fs_modified)
+                print(track_original.shape, track_modified.shape)
 
                 # Create the datasets for each group
-                if i == 0:
-                    hdf[phase].create_hdf5_file(name='original', data=data, maxshape=(None, 1, window_length))
-                else:
-                    # Resize and append dataset
-                    hdf[phase]['original'].resize((hdf[phase]['original'].shape[0] + data.shape[0]), axis=0)
-                    hdf[phase]['original'][-data.shape[0]:] = data
+                # if i == 0:
+                #     hdf[phase].create_hdf5_file(name='original', data=data_original, maxshape=(None, 1, window_length))
+                # else:
+                #     # Resize and append dataset
+                #     hdf[phase]['original'].resize((hdf[phase]['original'].shape[0] + data_original.shape[0]), axis=0)
+                #     hdf[phase]['original'][-data_original.shape[0]:] = data_original
 
 
-def modify_file(midi_filepath, midi_savepath, instrument=None, velocity=None, control=False, control_value=None):
+def create_modified_midifile(midi_filepath, midi_savepath, instrument=None, velocity=None, control=False,
+                             control_value=None):
     """
     Modifies a .midi file according to the given parameters. The new .midi file is saved in a user specified location.
     Information regarding the codes for instruments and control is available here:
-    http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html
+        http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html
     All information is coded on 8-bit therefore the values must lie in [0 - 127]
     :param midi_filepath: path to the input .midi file (string)
     :param midi_savepath: path to the outout .midi file (string)
@@ -125,14 +158,16 @@ def modify_file(midi_filepath, midi_savepath, instrument=None, velocity=None, co
     mid_new = MidiFile()
 
     # Iterate over messages and apply transformation
-    for i, track_old in enumerate(mid_old.tracks):
+    for track_old in mid_old.tracks:
         track_new = MidiTrack()
-        for j, msg_old in enumerate(track_old):
+        for msg_old in track_old:
+
             # Append new message to new track
             msg_new = msg_old.copy()
             if instrument and msg_old.type == 'program_change':
                 msg_new.program = instrument
             if velocity and msg_old.type == 'note_on':
+
                 # Do not modify messages with velocity 0 as they correspond to 'note_off' (stops the note from playing)
                 if msg_old.velocity != 0:
                     msg_new.velocity = velocity
@@ -145,34 +180,51 @@ def modify_file(midi_filepath, midi_savepath, instrument=None, velocity=None, co
     mid_new.save(midi_savepath)
 
 
-def convert_midi_to_wav(midi_filepath, wav_savepath, f_s):
-    command = 'timidity {} -s {}Hz -Ow -o {}'.format(midi_filepath, wav_savepath, f_s)
+def convert_midi_to_wav(midi_filepath, wav_savepath, fs):
+    command = 'timidity {} -s {} -Ow -o {}'.format(midi_filepath, fs, wav_savepath)
     call(command.split())
 
 
-def create_npy_file(data_root, temporary_directory_path, file_path, window_length, n_train, n_test, n_valid):
+def create_maestro_dataset(data_root, temporary_directory_path, file_path, window_length, n_train, n_test, n_valid):
     # Randomly select the required number of tracks for each phase
     wavfiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
 
     # Create a directory to store the temporary files (.midi and .wav)
     if os.path.exists(temporary_directory_path):
-        os.rmdir(temporary_directory_path)
+        shutil.rmtree(temporary_directory_path)
         os.mkdir(temporary_directory_path)
 
     # Create the new .midi files
-    input_midifiles = [wavfile.rsplit('.', 1)[0] + '.midi' for wavfile in wavfiles['train']]
-    output_midifiles = [os.path.join(temporary_directory_path, os.path.split(wavfile)[-1].rsplit('.', 1)[0] + '.midi')
-                 for wavfile in wavfiles['train']]
-    [modify_file(input_midifile, output_midifile, velocity=64, control=True, control_value=0)
-     for input_midifile, output_midifile in zip(input_midifiles, output_midifiles)]
+    for phase in ['train', 'test', 'valid']:
+        # Create sub-directories for each phase
+        phase_directory = os.path.join(temporary_directory_path, phase)
+        os.mkdir(phase_directory)
+
+        # Process and store the new .midi files
+        input_midifiles = [wavfile.rsplit('.', 1)[0] + '.midi' for wavfile in wavfiles[phase]]
+        output_midifiles = [os.path.join(phase_directory, os.path.split(wavfile)[-1].rsplit('.', 1)[0] + '.midi')
+                            for wavfile in wavfiles[phase]]
+        [create_modified_midifile(input_midifile, output_midifile, velocity=64, control=True, control_value=0)
+         for input_midifile, output_midifile in zip(input_midifiles, output_midifiles)]
+
+    # Loop over all selected files and add them to the dataset
+    create_hdf5_file(wavfiles, temporary_directory_path, hdf5_path='data/maestro/test.h5', window_length=8192)
+
 
 if __name__ == '__main__':
-    create_npy_file(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
-                    temporary_directory_path='data/maestro',
-                    file_path=None,
-                    window_length=None,
-                    n_train=3,
-                    n_test=1,
-                    n_valid=1)
+    # create_maestro_dataset(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
+    #                        temporary_directory_path='data/maestro',
+    #                        file_path=None,
+    #                        window_length=None,
+    #                        n_train=1,
+    #                        n_test=0,
+    #                        n_valid=0)
+
+    path_original = '/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2017/MIDI-Unprocessed_070_PIANO070_MID--AUDIO-split_07-08-17_Piano-e_1-02_wav--1.wav'
+    path_modified ='data/maestro/train/MIDI-Unprocessed_070_PIANO070_MID--AUDIO-split_07-08-17_Piano-e_1-02_wav--1.wav'
+    _, track_original = wavfile.read(path_original)
+    _, track_modified = wavfile.read(path_modified)
+    print(np.min(track_original))
+    allign_tracks(track_original[:, 0], track_modified[:, 0])
     # create_hdf5_file(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
     #                  hdf5_path='/media/thomas/Samsung_T5/VITA/data/maestro_data.h5')
