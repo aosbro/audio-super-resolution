@@ -3,7 +3,8 @@ import numpy as np
 import h5py
 from scipy.io import wavfile
 from mido import MidiFile, MidiTrack
-
+from subprocess import call
+import shutil
 
 def sample_dataset(dataset_path, n_train, n_test, n_valid):
     """
@@ -103,7 +104,20 @@ def create_hdf5_file(data_root, hdf5_path, window_length, n_train, n_test, n_val
                     hdf[phase]['original'][-data.shape[0]:] = data
 
 
-def modify_file(midi_filepath, instrument=None, velocity=None, control=None, control_value=None):
+def modify_file(midi_filepath, midi_savepath, instrument=None, velocity=None, control=False, control_value=None):
+    """
+    Modifies a .midi file according to the given parameters. The new .midi file is saved in a user specified location.
+    Information regarding the codes for instruments and control is available here:
+    http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html
+    All information is coded on 8-bit therefore the values must lie in [0 - 127]
+    :param midi_filepath: path to the input .midi file (string)
+    :param midi_savepath: path to the outout .midi file (string)
+    :param instrument: code of the new instrument (scalar int)
+    :param velocity: value of the velocity to set for all notes (scalar int)
+    :param control: boolean indicating if control should be modified (only pedal control with code 64 is used)
+    :param control_value: new value of the control (set to 0 to remove the control) (scalar int)
+    :return: None
+    """
     # Load the original midi file
     mid_old = MidiFile(midi_filepath)
 
@@ -119,24 +133,42 @@ def modify_file(midi_filepath, instrument=None, velocity=None, control=None, con
             if instrument and msg_old.type == 'program_change':
                 msg_new.program = instrument
             if velocity and msg_old.type == 'note_on':
-                msg_new.velocity = velocity
+                # Do not modify messages with velocity 0 as they correspond to 'note_off' (stops the note from playing)
+                if msg_old.velocity != 0:
+                    msg_new.velocity = velocity
             if control and msg_old.type == 'control_change':
-                msg_new.control = control
                 msg_new.value = control_value
             track_new.append(msg_new)
 
         # Append the new track to new file
         mid_new.tracks.append(track_new)
-    mid_new.save('../../tracks/no_veclocity_no_control.midi')
+    mid_new.save(midi_savepath)
 
 
-def create_npy_file(data_root, file_path, window_length, n_train, n_test, n_valid):
+def convert_midi_to_wav(midi_filepath, wav_savepath, f_s):
+    command = 'timidity {} -s {}Hz -Ow -o {}'.format(midi_filepath, wav_savepath, f_s)
+    call(command.split())
+
+
+def create_npy_file(data_root, temporary_directory_path, file_path, window_length, n_train, n_test, n_valid):
+    # Randomly select the required number of tracks for each phase
     wavfiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
-    print(wavfiles['train'])
 
+    # Create a directory to store the temporary files (.midi and .wav)
+    if os.path.exists(temporary_directory_path):
+        os.rmdir(temporary_directory_path)
+        os.mkdir(temporary_directory_path)
+
+    # Create the new .midi files
+    input_midifiles = [wavfile.rsplit('.', 1)[0] + '.midi' for wavfile in wavfiles['train']]
+    output_midifiles = [os.path.join(temporary_directory_path, os.path.split(wavfile)[-1].rsplit('.', 1)[0] + '.midi')
+                 for wavfile in wavfiles['train']]
+    [modify_file(input_midifile, output_midifile, velocity=64, control=True, control_value=0)
+     for input_midifile, output_midifile in zip(input_midifiles, output_midifiles)]
 
 if __name__ == '__main__':
     create_npy_file(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
+                    temporary_directory_path='data/maestro',
                     file_path=None,
                     window_length=None,
                     n_train=3,
