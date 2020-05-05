@@ -1,14 +1,3 @@
-from datasets.datasets import DatasetBeethoven
-from trainers.train_gan import get_gan_trainer
-from trainers.train_autoencoder import get_autoencoder_trainer
-from trainers.train_generator import get_genarator_trainer
-from utils.constants import *
-from utils.utils import plot_losses
-from utils.utils import get_consecutive_samples
-import torch
-from utils.metrics import snr, lsd
-from processing.post_processing import generate_high_resolution_sample
-
 def main():
     # autoencoder_trainer = get_autoencoder_trainer(train_datapath=TRAIN_DATAPATH,
     #                                               test_datapath=TEST_DATAPATH,

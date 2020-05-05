@@ -133,36 +133,37 @@ class DatasetMaestro(data.Dataset):
             self.cache_min_index = index
 
     def __getitem__(self, index):
-        if not self.is_in_cache(index):
-            self.load_chunk_to_cache(index)
-        x_original = self.cache['original'][index % self.cache_size]
-        x_modified = self.cache['modified'][index % self.cache_size]
-        # else:
-        #     with h5py.File(self.hdf5_filepath, 'r') as hdf:
-        #         x_original = hdf[self.phase]['original'][index]
-        #         x_modified = hdf[self.phase]['modified'][index]
+        if self.use_cache:
+            if not self.is_in_cache(index):
+                self.load_chunk_to_cache(index)
+            x_original = self.cache['original'][index % self.cache_size]
+            x_modified = self.cache['modified'][index % self.cache_size]
+        else:
+            with h5py.File(self.hdf5_filepath, 'r') as hdf:
+                x_original = hdf[self.phase]['original'][index]
+                x_modified = hdf[self.phase]['modified'][index]
         return x_original, x_modified
 
 
-def main():
-    dataset = DatasetMaestro(hdf5_filepath='../data/maestro/maestro.h5',
-                             phase='train',
-                             batch_size=64,
-                             use_cache=True)
-    params = {'batch_size': 64,
-              'shuffle': False,
-              'num_workers': 2}
-
-    loader = data.DataLoader(dataset, **params)
-
-    for i in range(2):
-        loader_iter = iter(loader)
-        start_time = time.time()
-        for j in range(100):
-            local_batch = next(loader_iter)
-        end_time = time.time()
-        print('done', end_time - start_time)
-
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     dataset = DatasetMaestro(hdf5_filepath='../data/maestro.h5',
+#                              phase='train',
+#                              batch_size=64,
+#                              use_cache=False)
+#     params = {'batch_size': 64,
+#               'shuffle': False,
+#               'num_workers': 8}
+#
+#     loader = data.DataLoader(dataset, **params)
+#
+#     for i in range(2):
+#         loader_iter = iter(loader)
+#         start_time = time.time()
+#         for j in range(100):
+#             local_batch = next(loader_iter)
+#         end_time = time.time()
+#         print('done', end_time - start_time)
+#
+#
+# if __name__ == '__main__':
+#     main()

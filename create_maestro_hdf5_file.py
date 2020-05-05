@@ -55,7 +55,7 @@ def cut_track_and_stack(track_path, window_length=8192, overlap=0.5):
     # Load a single track
     fs, track = wavfile.read(track_path)
 
-    # Get rid of identical second channel
+    # Select left channel (do not use the right channel (track[:, 1]) as Timidity++ introduces distorsions in it)
     track = (track[:, 0] / np.iinfo(np.int16).max).astype('float32')
 
     # Get number of windows and prepare empty array
@@ -213,9 +213,6 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
             # Add files location to dict
             file_dict[phase][status] = output_midifiles
 
-            # Set the instrument
-            # instrument = (0 if status == 'original' else 4)
-
             [create_modified_midifile(input_midifile, output_midifile, **transformations[status])
              for input_midifile, output_midifile in zip(midifiles[phase], output_midifiles)]
 
@@ -229,8 +226,8 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
 
 def main():
     # Specify transformation to apply to the original and modified tracks
-    transformations = {'original': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None},
-                       'modified': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None}}
+    transformations = {'original': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
+                       'modified': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
 
     # Create the .h5 file
     create_maestro_dataset(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',

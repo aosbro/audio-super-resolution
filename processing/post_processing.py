@@ -1,5 +1,4 @@
 # # from trainers.train_autoencoder import *
-from trainers.train_generator import *
 import torch
 from utils.constants import *
 import matplotlib.pyplot as plt
