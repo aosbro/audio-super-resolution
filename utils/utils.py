@@ -1,7 +1,7 @@
-from datasets.datasets import DatasetBeethoven
+from datasets.datasets import DatasetBeethoven, DatasetMaestro
 from utils.constants import *
 import torch
-from torch.utils import data
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 
@@ -21,10 +21,28 @@ def get_the_data_loaders(train_datapath, test_datapath, valid_datapath, batch_si
                     'shuffle': VALID_SHUFFLE,
                     'num_workers': NUM_WORKERS}
 
-    train_loader = data.DataLoader(train_dataset, **train_params)
-    test_loader = data.DataLoader(test_dataset, **test_params)
-    valid_loader = data.DataLoader(valid_dataset, **valid_params)
+    train_loader = DataLoader(train_dataset, **train_params)
+    test_loader = DataLoader(test_dataset, **test_params)
+    valid_loader = DataLoader(valid_dataset, **valid_params)
     return train_loader, test_loader, valid_loader
+
+
+def get_the_maestro_data_loaders(datapath, datasets_parameters, loaders_parameters):
+    """
+    Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
+    loaders_parameters[phase]. The datapath is unique as the .hdf5 file contains the dataset for each phase.
+    :param datapath: location of .hdf5 file (string).
+    :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
+    :return: one data loader for each phase (torch DataLoader)
+    """
+    datasets = {phase: DatasetMaestro(datapath, phase, **datasets_parameters[phase]) for phase in ['train', 'test', 'valid']}
+    data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
+
+    # train_loader = DataLoader(train_dataset, **loaders_parameters['train'])
+    # test_loader = DataLoader(test_dataset, **loaders_parameters['test'])
+    # valid_loader = data.DataLoader(valid_dataset, **loaders_parameters['valid'])
+    # return train_loader, test_loader, valid_loader
+    return tuple(data_loaders)
 
 
 def get_consecutive_samples(dataset, index):

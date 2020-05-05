@@ -1,5 +1,5 @@
 from models.autoencoder import AutoEncoder
-from utils.utils import get_the_data_loaders
+from utils.utils import get_the_maestro_data_loaders
 from utils.constants import *
 import os
 from trainers.base_trainer import Trainer
@@ -7,6 +7,7 @@ import torch
 from torch.optim import lr_scheduler
 from torch import nn
 import numpy as np
+from itertools import cycle
 
 
 class AutoEncoderTrainer(Trainer):
@@ -31,14 +32,18 @@ class AutoEncoderTrainer(Trainer):
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
 
+        # Boolean to differentiate generator from auto-encoder
         self.is_autoencoder = True
+
+        # Iterators to cycle over the datasets
+        self.train_loader_iter = cycle(iter(self.train_loader))
+        self.test_loader_iter = cycle(iter(self.test_loader))
 
     def train(self, epochs):
         for epoch in range(epochs):
             self.autoencoder.train()
-            train_loader_iter = iter(self.train_loader)
             for i in range(TRAIN_BATCH_ITERATIONS):
-                local_batch = next(train_loader_iter)
+                local_batch = next(self.train_loader_iter)
                 # Transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
@@ -82,12 +87,11 @@ class AutoEncoderTrainer(Trainer):
     def eval(self):
         with torch.no_grad():
             self.autoencoder.eval()
-            test_loader_iter = iter(self.test_loader)
             batch_losses = {'time_l2': [], 'freq_l2': []}
             # for i, local_batch in enumerate(self.test_loader):
             for i in range(TEST_BATCH_ITERATIONS):
                 # Transfer to GPU
-                local_batch = next(test_loader_iter)
+                local_batch = next(self.test_loader_iter)
                 local_batch = torch.cat(local_batch).to(self.device)
 
                 # Forward pass
@@ -148,38 +152,31 @@ class AutoEncoderTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def get_autoencoder_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
-    # Create the datasets
-    train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
-                                                                   batch_size)
+def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters, loaders_parameters):
+    # Get the data loader for each phase
+    train_loader, test_loader, valid_loader = get_the_maestro_data_loaders(datapath, datasets_parameters, loaders_parameters)
 
+    # Load the train class which will automatically resume previous state from 'loadpath'
     autoencoder_trainer = AutoEncoderTrainer(train_loader=train_loader,
                                              test_loader=test_loader,
                                              valid_loader=valid_loader,
                                              lr=AUTOENCODER_LEARNING_RATE,
                                              loadpath=loadpath,
                                              savepath=savepath)
-    return autoencoder_trainer
-
-
-def train_autoencoder(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size):
-    autoencoder_trainer = get_autoencoder_trainer(train_datapath=train_datapath,
-                                                  test_datapath=test_datapath,
-                                                  valid_datapath=valid_datapath,
-                                                  loadpath=loadpath,
-                                                  savepath=savepath,
-                                                  batch_size=batch_size)
 
     # Start training
     autoencoder_trainer.train(epochs=epochs)
     return autoencoder_trainer
 
 
-# if __name__ == '__main__':
-#     train_autoencoder(train_datapath=TRAIN_DATAPATH,
-#                       test_datapath=TEST_DATAPATH,
-#                       valid_datapath=VALID_DATAPATH,
-#                       loadpath=AUTOENCODER_L2T_PATH,
-#                       savepath=AUTOENCODER_L2T_PATH,
-#                       epochs=1,
-#                       batch_size=16)
+if __name__ == '__main__':
+    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
+    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
+                          for phase in ['train', 'test', 'valid']}
+
+    train_autoencoder(datapath='data/maestro.h5',
+                      loadpath='',
+                      savepath=None,
+                      epochs=1,
+                      datasets_parameters=datasets_parameters,
+                      loaders_parameters=loaders_parameters)

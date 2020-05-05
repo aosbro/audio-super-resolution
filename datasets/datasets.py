@@ -104,7 +104,7 @@ class DatasetBeethoven(data.Dataset):
 
 
 class DatasetMaestro(data.Dataset):
-    def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=20):
+    def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=40):
         self.hdf5_filepath = hdf5_filepath
         self.phase = phase
         self.batch_size = batch_size
@@ -145,25 +145,32 @@ class DatasetMaestro(data.Dataset):
         return x_original, x_modified
 
 
-# def main():
-#     dataset = DatasetMaestro(hdf5_filepath='../data/maestro.h5',
-#                              phase='train',
-#                              batch_size=64,
-#                              use_cache=False)
-#     params = {'batch_size': 64,
-#               'shuffle': False,
-#               'num_workers': 8}
-#
-#     loader = data.DataLoader(dataset, **params)
-#
-#     for i in range(2):
-#         loader_iter = iter(loader)
-#         start_time = time.time()
-#         for j in range(100):
-#             local_batch = next(loader_iter)
-#         end_time = time.time()
-#         print('done', end_time - start_time)
-#
-#
-# if __name__ == '__main__':
-#     main()
+def main():
+    dataset = DatasetMaestro(hdf5_filepath='../data/maestro.h5',
+                             phase='train',
+                             batch_size=64,
+                             use_cache=True)
+
+    params = {'batch_size': 64,
+              'shuffle': False,
+              'num_workers': 2}
+
+    loader = data.DataLoader(dataset, **params)
+
+    # loader_iter = iter(loader)
+    # for i in range(1):
+    #     start_time = time.time()
+    #     for j in range(3000):
+    #         local_batch = next(loader_iter)
+    #     end_time = time.time()
+    #     print('done', end_time - start_time)
+    # print(len(dataset))
+
+    l = [1, 2, 3]
+    iterator = cycle(iter(l))
+    for i in range(10):
+        print(next(iterator))
+
+
+if __name__ == '__main__':
+    main()
