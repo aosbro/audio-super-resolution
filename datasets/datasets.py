@@ -104,7 +104,7 @@ class DatasetBeethoven(data.Dataset):
 
 
 class DatasetMaestro(data.Dataset):
-    def __init__(self, hdf5_filepath, phase, batch_size, use_cache):
+    def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=20):
         self.hdf5_filepath = hdf5_filepath
         self.phase = phase
         self.batch_size = batch_size
@@ -113,7 +113,7 @@ class DatasetMaestro(data.Dataset):
         self.use_cache = use_cache
         if self.use_cache:
             self.cache = {'original': None, 'modified': None}
-            self.cache_size = 20 * batch_size
+            self.cache_size = cache_size * batch_size
             self.cache_min_index = None
             self.load_chunk_to_cache(0)
 
