@@ -11,7 +11,9 @@ class DiscriminatorBlock(BaseBlock):
         self.batch_normalization = nn.BatchNorm1d(sum(channel_sizes))
         self.dropout = nn.Dropout(p)
         self.activation = nn.LeakyReLU(negative_slope=LEAKY_RELU_SLOPE)
-        self.superpixel = SuperPixel1D(downscale_factor=DOWNSCALE_FACTOR)
+        self.superpixel = SuperPixel1D(in_channels=sum(channel_sizes),
+                                       out_channels=2 * sum(channel_sizes),
+                                       downscale_factor=DOWNSCALE_FACTOR)
 
     def forward(self, x):
         x = self.forward_base(x)

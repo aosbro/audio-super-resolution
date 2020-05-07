@@ -33,7 +33,7 @@ def pixel_shuffle_1d(x, upscale_factor):
 
 
 class SubPixel(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, upscale_factor, use_convolution):
+    def __init__(self, in_channels, out_channels, kernel_size, upscale_factor, use_convolution=True):
         super(SubPixel, self).__init__()
         self.upscale_factor = upscale_factor
         self.use_convolution = use_convolution
@@ -54,9 +54,21 @@ class SubPixel(nn.Module):
 
 
 class SubPixel1D(nn.Module):
-    def __init__(self, upscale_factor):
+    def __init__(self, in_channels, out_channels, upscale_factor, kernel_size=9, use_convolution=True):
         super(SubPixel1D, self).__init__()
         self.upscale_factor = upscale_factor
+        self.use_convolution = use_convolution
+        self.padding = (kernel_size - 1) // 2
+        self.conv_layer = nn.Conv1d(in_channels=in_channels,
+                                    out_channels=out_channels * upscale_factor,
+                                    kernel_size=kernel_size,
+                                    padding=self.padding)
 
     def forward(self, x):
-        return pixel_shuffle_1d(x, self.upscale_factor)
+        # Convolution in LR space
+        if self.use_convolution:
+            x = self.conv_layer(x)
+
+        # Pixel shuffling
+        x = pixel_shuffle_1d(x, self.upscale_factor)
+        return x

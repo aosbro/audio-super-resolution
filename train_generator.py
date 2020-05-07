@@ -1,14 +1,12 @@
 from trainers.base_trainer import Trainer
 from utils.utils import get_the_data_loaders
 from models.generator import Generator
-import os
 from utils.constants import *
 from torch.optim import lr_scheduler
 import numpy as np
 import torch
 from torch import nn
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class GeneratorTrainer(Trainer):

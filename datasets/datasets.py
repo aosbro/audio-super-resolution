@@ -8,6 +8,7 @@ from scipy.signal import butter, filtfilt
 import h5py
 from itertools import cycle
 import time
+import matplotlib.pyplot as plt
 
 
 class DatasetBeethoven(data.Dataset):
@@ -176,7 +177,13 @@ class DatasetMaestroNPY(data.Dataset):
 
 
 def main():
-    pass
+    dataset = DatasetMaestroNPY('../data/train.npy')
+    test = dataset.__getitem__(3000)
+    print(test[0].shape, test[1].shape)
+
+    plt.plot(test[0].squeeze().cpu().numpy())
+    plt.plot(test[1].squeeze().cpu().numpy())
+    plt.show()
 
 
 if __name__ == '__main__':

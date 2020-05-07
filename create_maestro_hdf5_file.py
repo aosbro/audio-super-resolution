@@ -104,7 +104,7 @@ def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_leng
 
                 # Get the data as a numpy array with shape [window_number, 1, window_length]
                 original_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
-                modified_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
+                modified_data, _ = cut_track_and_stack(modified_wav_savepath, window_length=window_length)
 
                 print(original_data.shape, modified_data.shape)
 
@@ -140,18 +140,18 @@ def create_npy_files(file_dict, temporary_directory_path, savepath, window_lengt
 
             # Get the data as a numpy array with shape [window_number, 1, window_length]
             original_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
-            modified_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
+            modified_data, _ = cut_track_and_stack(modified_wav_savepath, window_length=window_length)
 
             # Create the datasets for each group
+            window_number = min(original_data.shape[0], modified_data.shape[0])
             if i == 0:
-                window_number = original_data.shape[0]
                 phase_data = np.zeros((window_number, 2, window_length))
 
                 # Store the data in the new data in the phase array
-                phase_data[:, 0, :] = np.squeeze(original_data)
-                phase_data[:, 1, :] = np.squeeze(modified_data)
+                phase_data[:, 0, :] = np.squeeze(original_data[:window_number])
+                phase_data[:, 1, :] = np.squeeze(modified_data[:window_number])
             else:
-                temp_data = np.concatenate([original_data, modified_data], axis=1)
+                temp_data = np.concatenate([original_data[:window_number], modified_data[:window_number]], axis=1)
                 phase_data = np.concatenate([phase_data, temp_data], axis=0)
 
         # Save array to disk

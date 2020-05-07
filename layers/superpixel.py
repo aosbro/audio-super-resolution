@@ -34,30 +34,44 @@ def pixel_unshuffle_1d(x, downscale_factor):
 
 
 class SuperPixel(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, downscale_factor, use_convolution):
+    def __init__(self, in_channels, out_channels, kernel_size, downscale_factor, use_convolution=True):
         super(SuperPixel, self).__init__()
         self.downscale_factor = downscale_factor
         self.use_convolution = use_convolution
-        self.padding = (kernel_size - 1) // 2
+        padding = (kernel_size - 1) // 2
         self.conv_layer = nn.Conv2d(in_channels=in_channels * downscale_factor ** 2,
                                     out_channels=out_channels,
                                     kernel_size=kernel_size,
-                                    padding=self.padding)
+                                    padding=padding)
 
     def forward(self, x):
         # Pixel un-shuffling
         x = pixel_unshuffle(x, self.downscale_factor)
 
-        # Convolution in HR space
+        # Convolution in LR space
         if self.use_convolution:
             x = self.conv_layer(x)
         return x
 
 
 class SuperPixel1D(nn.Module):
-    def __init__(self, downscale_factor):
+    def __init__(self, in_channels, out_channels, downscale_factor, kernel_size=9, use_convolution=True):
         super(SuperPixel1D, self).__init__()
         self.downscale_factor = downscale_factor
+        self.use_convolution = use_convolution
+        padding = (kernel_size - 1) // 2
+        self.conv_layer = nn.Conv1d(in_channels=in_channels * downscale_factor,
+                                    out_channels=out_channels,
+                                    kernel_size=kernel_size,
+                                    padding=padding)
 
     def forward(self, x):
-        return pixel_unshuffle_1d(x, self.downscale_factor)
+        # Pixel un-shuffling
+        x = pixel_unshuffle_1d(x, self.downscale_factor)
+
+        # Convolution in LR space
+        if self.use_convolution:
+            x = self.conv_layer(x)
+        return x
+
+

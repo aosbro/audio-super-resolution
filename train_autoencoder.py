@@ -174,6 +174,8 @@ def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters,
 
 
 if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
     datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
     datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
