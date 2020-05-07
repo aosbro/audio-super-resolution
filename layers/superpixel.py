@@ -4,10 +4,10 @@ from torch import nn
 def pixel_unshuffle(x, downscale_factor):
     """
     Shuffles the pixels inside the tensor x to change the shape from [B, C, r * H, r * W] to [B, r^2 * C, H, W]
-    where r is the upscale factor
-    :param x: Original input signal with surface [r * H, r * W]
-    :param downscale_factor: Factor to decrease the height and width of x
-    :return: Reshaped tensor
+    where r is the upscale factor.
+    :param x: original input signal with surface [r * H, r * W].
+    :param downscale_factor: factor to decrease the height and width of x
+    :return: reshaped tensor
     """
     B_in, C_in, H_in, W_in = x.size()
 
@@ -22,6 +22,13 @@ def pixel_unshuffle(x, downscale_factor):
 
 
 def pixel_unshuffle_1d(x, downscale_factor):
+    """
+    Shuffles the pixels inside the tensor x to change the shape from [B, C, r * W] to [B, r * C, W]
+    where r is the upscale factor
+    :param x: original input signal with surface [r * H, r * W]
+    :param downscale_factor: factor to decrease the height and width of x
+    :return: reshaped tensor
+    """
     B_in, C_in, W_in = x.size()
 
     C_out = C_in * downscale_factor
@@ -34,7 +41,16 @@ def pixel_unshuffle_1d(x, downscale_factor):
 
 
 class SuperPixel(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, downscale_factor, use_convolution=True):
+    def __init__(self, in_channels, out_channels, kernel_size, downscale_factor, use_convolution=False):
+        """
+        Initializes the class SuperPixel that implements the pixel shuffle operation that moves pixels from the channel
+        dimension to the width and height dimensions followed by a convolution in the low-resolution space (LR).
+        :param in_channels: number of channels of the input tensor (scalar int).
+        :param out_channels: number of channels of the output tensor (scalar int).
+        :param kernel_size: size of the filter of the convolution (scalar int).
+        :param downscale_factor: factor by which the height and width should be decreased (scalar int).
+        :param use_convolution: boolean indicating whether or not to use convolution before shuffling.
+        """
         super(SuperPixel, self).__init__()
         self.downscale_factor = downscale_factor
         self.use_convolution = use_convolution
@@ -45,6 +61,10 @@ class SuperPixel(nn.Module):
                                     padding=padding)
 
     def forward(self, x):
+        """
+        :param x: input feature map.
+        :return: output feature map
+        """
         # Pixel un-shuffling
         x = pixel_unshuffle(x, self.downscale_factor)
 
@@ -55,7 +75,16 @@ class SuperPixel(nn.Module):
 
 
 class SuperPixel1D(nn.Module):
-    def __init__(self, in_channels, out_channels, downscale_factor, kernel_size=9, use_convolution=True):
+    def __init__(self, in_channels, out_channels, downscale_factor, kernel_size=9, use_convolution=False):
+        """
+        Initializes the class SuperPixel1D that implements the pixel shuffle operation that moves pixels from the channel
+        dimension to the width dimension followed by a convolution in the low-resolution space (LR).
+        :param in_channels: number of channels of the input tensor (scalar int).
+        :param out_channels: number of channels of the output tensor (scalar int).
+        :param kernel_size: size of the filter of the convolution (scalar int).
+        :param downscale_factor: factor by which the height and width should be decreased (scalar int).
+        :param use_convolution: boolean indicating whether or not to use convolution before shuffling.
+        """
         super(SuperPixel1D, self).__init__()
         self.downscale_factor = downscale_factor
         self.use_convolution = use_convolution
@@ -66,6 +95,10 @@ class SuperPixel1D(nn.Module):
                                     padding=padding)
 
     def forward(self, x):
+        """
+        :param x: input feature map.
+        :return: output feature map
+        """
         # Pixel un-shuffling
         x = pixel_unshuffle_1d(x, self.downscale_factor)
 

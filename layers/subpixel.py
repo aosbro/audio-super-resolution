@@ -40,15 +40,15 @@ def pixel_shuffle_1d(x, upscale_factor):
 
 
 class SubPixel(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, upscale_factor, use_convolution=True):
+    def __init__(self, in_channels, out_channels, kernel_size, upscale_factor, use_convolution=False):
         """
         Initializes the class SubPixel that implements a convolution in the low-resolution space (LR) followed by the
-        pixel shuffle operation that moves pixels from the channel dimension to the width dimension.
-        :param in_channels:
-        :param out_channels:
-        :param kernel_size:
-        :param upscale_factor:
-        :param use_convolution:
+        pixel shuffle operation that moves pixels from the channel dimension to the width and height dimensions.
+        :param in_channels: number of channels of the input tensor (scalar int).
+        :param out_channels: number of channels of the output tensor (scalar int).
+        :param kernel_size: size of the filter of the convolution (scalar int).
+        :param upscale_factor: factor by which the height and width should be increased (scalar int).
+        :param use_convolution: boolean indicating whether or not to use convolution before shuffling.
         """
         super(SubPixel, self).__init__()
         self.upscale_factor = upscale_factor
@@ -60,6 +60,10 @@ class SubPixel(nn.Module):
                                     padding=self.padding)
 
     def forward(self, x):
+        """
+        :param x: input feature map.
+        :return: output feature map
+        """
         # Convolution in LR space
         if self.use_convolution:
             x = self.conv_layer(x)
@@ -70,7 +74,16 @@ class SubPixel(nn.Module):
 
 
 class SubPixel1D(nn.Module):
-    def __init__(self, in_channels, out_channels, upscale_factor, kernel_size=9, use_convolution=True):
+    def __init__(self, in_channels, out_channels, upscale_factor, kernel_size=9, use_convolution=False):
+        """
+        Initializes the class SubPixel1D that implements a convolution in the low-resolution space (LR) followed by the
+        pixel shuffle operation that moves pixels from the channel dimension to the width dimension.
+        :param in_channels: number of channels of the input tensor (scalar int).
+        :param out_channels: number of channels of the output tensor (scalar int).
+        :param kernel_size: size of the filter of the convolution (scalar int).
+        :param upscale_factor: factor by which the width should be increased (scalar int).
+        :param use_convolution: boolean indicating whether or not to use convolution before shuffling.
+        """
         super(SubPixel1D, self).__init__()
         self.upscale_factor = upscale_factor
         self.use_convolution = use_convolution
@@ -81,6 +94,10 @@ class SubPixel1D(nn.Module):
                                     padding=self.padding)
 
     def forward(self, x):
+        """
+        :param x: input feature map.
+        :return: output feature map
+        """
         # Convolution in LR space
         if self.use_convolution:
             x = self.conv_layer(x)
