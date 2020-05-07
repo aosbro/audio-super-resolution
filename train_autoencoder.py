@@ -167,9 +167,6 @@ def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters,
                                              lr=AUTOENCODER_LEARNING_RATE,
                                              loadpath=loadpath,
                                              savepath=savepath)
-
-    # Start training
-    autoencoder_trainer.train(epochs=epochs)
     return autoencoder_trainer
 
 
@@ -188,3 +185,5 @@ if __name__ == '__main__':
                       datasets_parameters=datasets_parameters,
                       loaders_parameters=loaders_parameters,
                       use_hdf5=False)
+
+
