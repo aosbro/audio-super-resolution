@@ -6,6 +6,7 @@ import math
 import torch
 from scipy.signal import butter, filtfilt
 import h5py
+from itertools import cycle
 import time
 
 
@@ -103,8 +104,8 @@ class DatasetBeethoven(data.Dataset):
                torch.from_numpy(np.expand_dims(x_l, axis=0)).float()
 
 
-class DatasetMaestro(data.Dataset):
-    def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=40):
+class DatasetMaestroHDF(data.Dataset):
+    def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=30):
         self.hdf5_filepath = hdf5_filepath
         self.phase = phase
         self.batch_size = batch_size
@@ -115,29 +116,46 @@ class DatasetMaestro(data.Dataset):
             self.cache = {'original': None, 'modified': None}
             self.cache_size = cache_size * batch_size
             self.cache_min_index = None
+            self.cache_max_index = None
             self.load_chunk_to_cache(0)
 
     def __len__(self):
+        """
+        returns the total length of the dataset
+        :return: length of the dataset (scalar int)
+        """
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
             length = hdf[self.phase]['original'].shape[0]
         return length
 
     def is_in_cache(self, index):
-        return index in set(range(self.cache_min_index, self.cache_min_index + self.cache_size))
+        """
+        Checks if the queried data is in cache.
+        :param index: index of the sample to load (scalar int)
+        :return: boolean indicating if the data is available in cache
+        """
+        return index in set(range(self.cache_min_index, self.cache_max_index))
 
     def load_chunk_to_cache(self, index):
+        """
+        Loads a chunk of data in cache from disk. The chunk of data is the block of size self.size_cache and contains
+        the samples following the current index. This is only efficient if data is not shuffled.
+        :param index: index of a single sample that is currently being queried
+        :return: None
+        """
         print('cache miss')
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
-            self.cache['original'] = hdf[self.phase]['original'][index: index + self.cache_size]
-            self.cache['modified'] = hdf[self.phase]['modified'][index: index + self.cache_size]
             self.cache_min_index = index
+            self.cache_max_index = min(len(self), index + self.cache_size)
+            self.cache['original'] = hdf[self.phase]['original'][self.cache_min_index: self.cache_max_index]
+            self.cache['modified'] = hdf[self.phase]['modified'][self.cache_min_index: self.cache_max_index]
 
     def __getitem__(self, index):
         if self.use_cache:
             if not self.is_in_cache(index):
                 self.load_chunk_to_cache(index)
-            x_original = self.cache['original'][index % self.cache_size]
-            x_modified = self.cache['modified'][index % self.cache_size]
+            x_original = self.cache['original'][index - self.cache_min_index]
+            x_modified = self.cache['modified'][index - self.cache_min_index]
         else:
             with h5py.File(self.hdf5_filepath, 'r') as hdf:
                 x_original = hdf[self.phase]['original'][index]
@@ -145,31 +163,20 @@ class DatasetMaestro(data.Dataset):
         return x_original, x_modified
 
 
+class DatasetMaestroNPY(data.Dataset):
+    def __init__(self, datapath):
+        self.data = np.load(datapath)
+
+    def __len__(self):
+        return self.data.shape[0]
+
+    def __getitem__(self, index):
+        x_original, x_modified = self.data[index, 0, :][None], self.data[index, 1, :][None]
+        return torch.from_numpy(x_original).float(), torch.from_numpy(x_modified).float()
+
+
 def main():
-    dataset = DatasetMaestro(hdf5_filepath='../data/maestro.h5',
-                             phase='train',
-                             batch_size=64,
-                             use_cache=True)
-
-    params = {'batch_size': 64,
-              'shuffle': False,
-              'num_workers': 2}
-
-    loader = data.DataLoader(dataset, **params)
-
-    # loader_iter = iter(loader)
-    # for i in range(1):
-    #     start_time = time.time()
-    #     for j in range(3000):
-    #         local_batch = next(loader_iter)
-    #     end_time = time.time()
-    #     print('done', end_time - start_time)
-    # print(len(dataset))
-
-    l = [1, 2, 3]
-    iterator = cycle(iter(l))
-    for i in range(10):
-        print(next(iterator))
+    pass
 
 
 if __name__ == '__main__':

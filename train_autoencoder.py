@@ -1,5 +1,5 @@
 from models.autoencoder import AutoEncoder
-from utils.utils import get_the_maestro_data_loaders
+from utils.utils import get_the_maestro_data_loaders_hdf, get_the_maestro_data_loaders_npy
 from utils.constants import *
 import os
 from trainers.base_trainer import Trainer
@@ -152,9 +152,13 @@ class AutoEncoderTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters, loaders_parameters):
+def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters, loaders_parameters, use_hdf5):
     # Get the data loader for each phase
-    train_loader, test_loader, valid_loader = get_the_maestro_data_loaders(datapath, datasets_parameters, loaders_parameters)
+    if use_hdf5:
+        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
+                                                                                   loaders_parameters)
+    else:
+        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_npy(datapath, loaders_parameters)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
     autoencoder_trainer = AutoEncoderTrainer(train_loader=train_loader,
@@ -170,13 +174,15 @@ def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters,
 
 
 if __name__ == '__main__':
+    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
     datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
                           for phase in ['train', 'test', 'valid']}
 
-    train_autoencoder(datapath='data/maestro.h5',
+    train_autoencoder(datapath=datapath,
                       loadpath='',
                       savepath=None,
                       epochs=1,
                       datasets_parameters=datasets_parameters,
-                      loaders_parameters=loaders_parameters)
+                      loaders_parameters=loaders_parameters,
+                      use_hdf5=False)

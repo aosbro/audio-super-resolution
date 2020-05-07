@@ -1,4 +1,4 @@
-from datasets.datasets import DatasetBeethoven, DatasetMaestro
+from datasets.datasets import DatasetBeethoven, DatasetMaestroHDF, DatasetMaestroNPY
 from utils.constants import *
 import torch
 from torch.utils.data import DataLoader
@@ -27,7 +27,7 @@ def get_the_data_loaders(train_datapath, test_datapath, valid_datapath, batch_si
     return train_loader, test_loader, valid_loader
 
 
-def get_the_maestro_data_loaders(datapath, datasets_parameters, loaders_parameters):
+def get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_parameters):
     """
     Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
     loaders_parameters[phase]. The datapath is unique as the .hdf5 file contains the dataset for each phase.
@@ -35,13 +35,21 @@ def get_the_maestro_data_loaders(datapath, datasets_parameters, loaders_paramete
     :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
     :return: one data loader for each phase (torch DataLoader)
     """
-    datasets = {phase: DatasetMaestro(datapath, phase, **datasets_parameters[phase]) for phase in ['train', 'test', 'valid']}
+    datasets = {phase: DatasetMaestroHDF(datapath, phase, **datasets_parameters[phase]) for phase in ['train', 'test', 'valid']}
     data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
+    return tuple(data_loaders)
 
-    # train_loader = DataLoader(train_dataset, **loaders_parameters['train'])
-    # test_loader = DataLoader(test_dataset, **loaders_parameters['test'])
-    # valid_loader = data.DataLoader(valid_dataset, **loaders_parameters['valid'])
-    # return train_loader, test_loader, valid_loader
+
+def get_the_maestro_data_loaders_npy(datapath, loaders_parameters):
+    """
+    Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
+    loaders_parameters[phase]. The datapaths are contained in dictionary, there is a single file for each phase
+    :param datapath: dictionary containing the locations for each phase.
+    :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
+    :return: one data loader for each phase (torch DataLoader)
+    """
+    datasets = {phase: DatasetMaestroNPY(datapath[phase]) for phase in ['train', 'test', 'valid']}
+    data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
     return tuple(data_loaders)
 
 
