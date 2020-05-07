@@ -22,7 +22,7 @@ class AutoEncoderTrainer(Trainer):
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.autoencoder.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=15, gamma=0.5)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=100, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):

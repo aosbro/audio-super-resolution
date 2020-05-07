@@ -22,6 +22,13 @@ def pixel_shuffle(x, upscale_factor):
 
 
 def pixel_shuffle_1d(x, upscale_factor):
+    """
+    Shuffles the pixels inside the tensor x to change the shape from [B, r * C, W] to [B, C, r * W]
+    where r is the upscale factor
+    :param x: Original input signal with r * C channels
+    :param upscale_factor: Factor to increase the width of x
+    :return: Reshaped tensor
+    """
     B_in, C_in, W_in = x.size()
     C_out = C_in // upscale_factor
     W_out = W_in * upscale_factor
@@ -34,6 +41,15 @@ def pixel_shuffle_1d(x, upscale_factor):
 
 class SubPixel(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, upscale_factor, use_convolution=True):
+        """
+        Initializes the class SubPixel that implements a convolution in the low-resolution space (LR) followed by the
+        pixel shuffle operation that moves pixels from the channel dimension to the width dimension.
+        :param in_channels:
+        :param out_channels:
+        :param kernel_size:
+        :param upscale_factor:
+        :param use_convolution:
+        """
         super(SubPixel, self).__init__()
         self.upscale_factor = upscale_factor
         self.use_convolution = use_convolution

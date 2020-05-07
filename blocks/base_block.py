@@ -11,6 +11,7 @@ class BaseBlock(nn.Module):
         :param channel_sizes: Number of output channel, one entry per scale
         :param bottleneck_channels: Number of output channel of the intermediate convolution used to reduce
         computational cost
+        :param use_bottleneck: boolean indicating whether to use the bottleneck channels or not.
         """
         super(BaseBlock, self).__init__()
         paddings = [(kernel_size - 1) // 2 for kernel_size in kernel_sizes]
@@ -38,8 +39,8 @@ class BaseBlock(nn.Module):
 
     def forward_base(self, x):
         """
-        :param x: Input feature map
-        :return: Stacked 
+        :param x: Input feature map.
+        :return: Stacked output of the multi-scale convolutions.
         """
         if self.use_bottleneck:
             x = [conv_layer(x) for conv_layer in self.conv_layers_1]
