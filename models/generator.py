@@ -1,14 +1,14 @@
 from blocks.down_block import DownBlock
 from blocks.up_block import UpBlock
 from utils.constants import *
-import torch
 from torch import nn
-from torchaudio.functional import istft
 
 
 class Generator(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks):
+    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, use_additive_skip=False):
         super(Generator, self).__init__()
+        # Specify if the last additive skip connection must be used
+        self.use_additive_skip = use_additive_skip
 
         # Compute channel sizes at each level
         channel_sizes = [list(map(lambda c_size: (2 ** min(i, GENERATOR_CHANNEL_FACTOR_MAX)) * c_size, channel_sizes_min))
@@ -105,5 +105,7 @@ class Generator(nn.Module):
         x = self.up_block_6(x, d2)
         x = self.up_block_7(x, d1)
         x = self.up_block_8(x, None)
-        return self.tanh(self.output_conv(x) + x_l)
+        if self.use_additive_skip:
+            return self.tanh(self.output_conv(x) + x_l)
+        return self.tanh(self.output_conv(x))
 

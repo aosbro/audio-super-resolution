@@ -15,11 +15,12 @@ class DatasetBeethoven(data.Dataset):
         Initializes the class DatasetBeethoven that store the original high quality data and applies the transformation
         to get the low quality audio signal on the fly. The raw data is stored as [n_tracks, track_length]. The track
         length is fixed and is equal to 128000. As the track length is too large to be fed directly in the models it is
-        further split in overlapping windows The transformation consists of a down-sampling in the time
-        domain followed by
-        :param datapath: path to raw .npy file
-        :param ratio: down-sampling ratio
-        :param overlap: overlap ratio with adjacent windows
+        further split in overlapping windows, this split is done on the fly. The transformation applied on the original
+        signal is a down-sampling in the time domain by 'ratio'.
+        :param datapath: path to raw .npy file (string).
+        :param ratio: down-sampling ratio (scalar int).
+        :param overlap: overlap ratio with adjacent windows (float in [0, 1)).
+        :param use_windowing: boolean indicating if a Hanning window must be applied on the input tensors.
         """
         self.data = np.load(datapath)
         self.ratio = ratio
@@ -32,8 +33,8 @@ class DatasetBeethoven(data.Dataset):
 
     def compute_window_number(self):
         """
-        Computes the number of overlapping windows in a single track
-        :return: the number of windows in the track
+        Computes the number of overlapping windows in a single track.
+        :return: the number of windows in the track.
         """
         num = self.data.shape[1] - self.window_length
         den = self.window_length * (1 - self.overlap)
@@ -41,18 +42,18 @@ class DatasetBeethoven(data.Dataset):
 
     def __len__(self):
         """
-        Returns the total number of samples in the dataset
-        :return: number of samples
+        Returns the total number of samples in the dataset: n_tracks * (windows per track).
+        :return: number of samples.
         """
         return self.data.shape[0] * self.window_number
 
     def butter_lowpass_filter(self, x_h, cutoff_frequency, order):
         """
-        Applies a butterworth low-pass filter to the high resolution signal
-        :param x_h: high resolution signal as a numpy array
-        :param cutoff_frequency: desired max frequency of the filtered signal
-        :param order: shapness of the filter
-        :return: filtered signal as a numpy array
+        Applies a butterworth low-pass filter to the high resolution signal.
+        :param x_h: high resolution signal as a numpy array.
+        :param cutoff_frequency: desired max frequency of the filtered signal.
+        :param order: shapness of the filter.
+        :return: filtered signal as a numpy array.
         """
         nyquist_frequency = self.fs / 2
         normalised_cutoff_frequency = cutoff_frequency / nyquist_frequency
@@ -64,9 +65,9 @@ class DatasetBeethoven(data.Dataset):
 
     def pad_signal(self, x):
         """
-        Adds zero-padding at the end of the last window
-        :param x: Signal with length smaller than the window length
-        :return: Padded signal
+        Adds zero-padding at the end of the last window.
+        :param x: Signal with length smaller than the window length.
+        :return: Padded signal.
         """
         # Apply hanning window before padding to avoid aliasing
         half_hanning = np.hanning(self.hanning_length)[self.hanning_length // 2:]
@@ -77,7 +78,7 @@ class DatasetBeethoven(data.Dataset):
 
     def __getitem__(self, index):
         """
-        Loads a single pair (x_h, x_l) of length 8192 sampled at 16 kHz for x_l
+        Loads a single pair (x_h, x_l) of length 8192 sampled at 16 kHz for x_h
         :param index: index of the sample to load
         :return: corresponding image
         """

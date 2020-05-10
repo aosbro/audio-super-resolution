@@ -106,9 +106,9 @@ class Trainer(abc.ABC):
         # Plot
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
         axes[0].plot(x_h_batch[index].cpu().detach().numpy().squeeze())
-        axes[0].set_title('Real high quality sample', fontsize=16)
+        axes[0].set_title('Target', fontsize=16)
         axes[1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
-        axes[1].set_title('Fake high quality sample', fontsize=16)
+        axes[1].set_title('Generated', fontsize=16)
         plt.show()
 
     def plot_reconstruction_frequency_domain(self, index, model, savepath=None):
@@ -139,15 +139,15 @@ class Trainer(abc.ABC):
         # Plot
         fig, axes = plt.subplots(1, 3, figsize=(11, 7))
         axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[0].set_title('High resolution', fontsize=16)
+        axes[0].set_title('Target', fontsize=16)
         axes[0].set_xlabel('Window index', fontsize=14)
         axes[0].set_ylabel('Frequency index', fontsize=14)
         axes[1].imshow(np.flip(specgram_l_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[1].set_title('Low resolution', fontsize=16)
+        axes[1].set_title('Input', fontsize=16)
         axes[1].set_xlabel('Window index', fontsize=14)
         axes[1].set_ylabel('Frequency index', fontsize=14)
         axes[2].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[2].set_title('Fake', fontsize=16)
+        axes[2].set_title('Generated', fontsize=16)
         axes[2].set_xlabel('Window index', fontsize=14)
         axes[2].set_ylabel('Frequency index', fontsize=14)
 
