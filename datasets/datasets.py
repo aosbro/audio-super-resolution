@@ -14,7 +14,8 @@ class DatasetBeethoven(data.Dataset):
         """
         Initializes the class DatasetBeethoven that store the original high quality data and applies the transformation
         to get the low quality audio signal on the fly. The raw data is stored as [n_tracks, track_length]. The track
-        length is fixed and is equal to 128000The transformation consists of a down-sampling in the time
+        length is fixed and is equal to 128000. As the track length is too large to be fed directly in the models it is
+        further split in overlapping windows The transformation consists of a down-sampling in the time
         domain followed by
         :param datapath: path to raw .npy file
         :param ratio: down-sampling ratio

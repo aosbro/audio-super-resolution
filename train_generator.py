@@ -7,7 +7,6 @@ import numpy as np
 import torch
 from torch import nn
 import os
-from itertools import cycle
 
 
 class GeneratorTrainer(Trainer):
@@ -31,11 +30,6 @@ class GeneratorTrainer(Trainer):
         # Loss function
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
-
-        # Iterators to cycle over the datasets
-        self.train_loader_iter = cycle(iter(self.train_loader))
-        self.valid_loader_iter = cycle(iter(self.valid_loader))
-        self.test_loader_iter = cycle(iter(self.test_loader))
 
     def train(self, epochs):
         """

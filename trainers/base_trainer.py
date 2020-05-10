@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from torchaudio.transforms import Spectrogram, AmplitudeToDB
+from itertools import cycle
 
 
 class Trainer(abc.ABC):
@@ -14,6 +15,11 @@ class Trainer(abc.ABC):
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.valid_loader = valid_loader
+
+        # Iterators to cycle over the datasets
+        self.train_loader_iter = cycle(iter(self.train_loader))
+        self.valid_loader_iter = cycle(iter(self.valid_loader))
+        self.test_loader_iter = cycle(iter(self.test_loader))
 
         # Paths
         self.loadpath = loadpath
@@ -64,7 +70,7 @@ class Trainer(abc.ABC):
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
 
-    def generate_single_test_batch(self, model):
+    def generate_single_validation_batch(self, model):
         """
         Loads a batch
         :param model: pre-trained model used to generate the fake samples
@@ -72,7 +78,7 @@ class Trainer(abc.ABC):
         """
         model.eval()
         with torch.no_grad():
-            local_batch = next(iter(self.test_loader))
+            local_batch = next(self.valid_loader_iter)
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
             fake_batch = model(x_l_batch)
         if self.is_autoencoder:
@@ -81,21 +87,21 @@ class Trainer(abc.ABC):
         return x_h_batch, x_l_batch, fake_batch
 
     def check_improvement(self):
-        self.need_saving = np.less_equal(self.test_losses['time_l2'][-1], min(self.test_losses['time_l2'])) or \
-                           np.less_equal(self.test_losses['freq_l2'][-1], min(self.test_losses['freq_l2']))
+        self.need_saving = np.less_equal(self.valid_losses['time_l2'][-1], min(self.valid_losses['time_l2'])) or \
+                           np.less_equal(self.valid_losses['freq_l2'][-1], min(self.valid_losses['freq_l2']))
 
     def plot_reconstruction_time_domain(self, index, model):
         """
         Plots real samples against fake sample in time domain
         :param model:
-        :param index: index of the batch in the test generator to use
+        :param index: index of the batch in the validation generator to use
         :return: None
         """
-        batch_size = self.test_loader.batch_size
+        batch_size = self.valid_loader.batch_size
         index = index % batch_size
 
         # Get a pair of high quality and fake samples batches
-        x_h_batch, x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
+        x_h_batch, x_l_batch, fake_batch = self.generate_single_validation_batch(model=model)
 
         # Plot
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
@@ -113,11 +119,11 @@ class Trainer(abc.ABC):
         :param savepath
         :return:
         """
-        batch_size = self.test_loader.batch_size
+        batch_size = self.valid_loader.batch_size
         index = index % batch_size
 
         # Get high resolution, low resolution and fake batches
-        x_h_batch, x_l_batch, fake_batch = self.generate_single_test_batch(model=model)
+        x_h_batch, x_l_batch, fake_batch = self.generate_single_validation_batch(model=model)
 
         # Get the power spectrogram in decibels
         specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
@@ -161,7 +167,7 @@ class Trainer(abc.ABC):
     @abc.abstractmethod
     def eval(self):
         """
-        Evaluates the model on the test dataset
+        Evaluates the model on the validation dataset
         :return: None
         """
 

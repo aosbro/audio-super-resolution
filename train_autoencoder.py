@@ -7,7 +7,6 @@ import torch
 from torch.optim import lr_scheduler
 from torch import nn
 import numpy as np
-from itertools import cycle
 
 
 class AutoEncoderTrainer(Trainer):
@@ -34,11 +33,6 @@ class AutoEncoderTrainer(Trainer):
 
         # Boolean to differentiate generator from auto-encoder
         self.is_autoencoder = True
-
-        # Iterators to cycle over the datasets
-        self.train_loader_iter = cycle(iter(self.train_loader))
-        self.valid_loader_iter = cycle(iter(self.valid_loader))
-        self.test_loader_iter = cycle(iter(self.test_loader))
 
     def train(self, epochs):
         for epoch in range(epochs):
