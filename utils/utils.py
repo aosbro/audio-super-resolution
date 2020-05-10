@@ -35,7 +35,8 @@ def get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_para
     :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
     :return: one data loader for each phase (torch DataLoader)
     """
-    datasets = {phase: DatasetMaestroHDF(datapath, phase, **datasets_parameters[phase]) for phase in ['train', 'test', 'valid']}
+    datasets = {phase: DatasetMaestroHDF(datapath, phase, **datasets_parameters[phase]) for phase in ['train', 'test',
+                                                                                                      'valid']}
     data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
     return tuple(data_loaders)
 
@@ -43,7 +44,7 @@ def get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_para
 def get_the_maestro_data_loaders_npy(datapath, loaders_parameters):
     """
     Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
-    loaders_parameters[phase]. The datapaths are contained in dictionary, there is a single file for each phase
+    loaders_parameters[phase]. The data paths are contained in a dictionary, there is a single file for each phase
     :param datapath: dictionary containing the locations for each phase.
     :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
     :return: one data loader for each phase (torch DataLoader)

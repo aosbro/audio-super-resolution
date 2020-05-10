@@ -1,5 +1,5 @@
 from trainers.base_trainer import Trainer
-from utils.utils import get_the_data_loaders
+from utils.utils import get_the_maestro_data_loaders_hdf, get_the_maestro_data_loaders_npy
 from models.generator import Generator
 from utils.constants import *
 from torch.optim import lr_scheduler
@@ -158,40 +158,39 @@ class GeneratorTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def get_genarator_trainer(train_datapath, test_datapath, valid_datapath, loadpath, savepath, batch_size):
-    # Create the datasets
-    train_loader, test_loader, valid_loader = get_the_data_loaders(train_datapath, test_datapath, valid_datapath,
-                                                                   batch_size)
+def train_generator(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
+    # Get the data loader for each phase
+    if use_hdf5:
+        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
+                                                                                   loaders_parameters)
+    else:
+        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_npy(datapath, loaders_parameters)
 
+    # Load the train class which will automatically resume previous state from 'loadpath'
     generator_trainer = GeneratorTrainer(train_loader=train_loader,
                                          test_loader=test_loader,
                                          valid_loader=valid_loader,
                                          lr=LEARNING_RATE,
                                          loadpath=loadpath,
                                          savepath=savepath)
-    return generator_trainer
 
-
-def train_generator(train_datapath, test_datapath, valid_datapath, loadpath, savepath, epochs, batch_size):
-    # Instantiate the trainer class
-    generator_trainer = get_genarator_trainer(train_datapath=train_datapath,
-                                              test_datapath=test_datapath,
-                                              valid_datapath=valid_datapath,
-                                              loadpath=loadpath,
-                                              savepath=savepath,
-                                              batch_size=batch_size)
-
-    # Start training
-    generator_trainer.train(epochs)
     return generator_trainer
 
 
 if __name__ == '__main__':
-    generator_trainer = train_generator(train_datapath=TRAIN_DATAPATH,
-                                        test_datapath=TEST_DATAPATH,
-                                        valid_datapath=VALID_DATAPATH,
-                                        loadpath=GENERATOR_F_PATH,
-                                        savepath=GENERATOR_F_PATH,
-                                        epochs=1,
-                                        batch_size=4)
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
+    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
+    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
+                          for phase in ['train', 'test', 'valid']}
+
+    generator_trainer = train_generator(datapath=datapath,
+                                        loadpath='',
+                                        savepath='',
+                                        datasets_parameters=datasets_parameters,
+                                        loaders_parameters=loaders_parameters,
+                                        use_hdf5=False)
+    generator_trainer.train(epochs=1)
+
 

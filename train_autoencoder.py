@@ -152,7 +152,7 @@ class AutoEncoderTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters, loaders_parameters, use_hdf5):
+def get_autoencoder_trainer(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
     # Get the data loader for each phase
     if use_hdf5:
         train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
@@ -169,21 +169,5 @@ def train_autoencoder(datapath, loadpath, savepath, epochs, datasets_parameters,
                                              savepath=savepath)
     return autoencoder_trainer
 
-
-if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
-    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
-                          for phase in ['train', 'test', 'valid']}
-
-    train_autoencoder(datapath=datapath,
-                      loadpath='',
-                      savepath=None,
-                      epochs=1,
-                      datasets_parameters=datasets_parameters,
-                      loaders_parameters=loaders_parameters,
-                      use_hdf5=False)
 
 
