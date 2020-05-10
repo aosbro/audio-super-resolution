@@ -44,15 +44,15 @@ class AutoEncoderTrainer(Trainer):
                 self.optimizer.zero_grad()
 
                 # Forward pass
-                fake_batch, _ = self.autoencoder.forward(local_batch)
+                generated_batch, _ = self.autoencoder.forward(local_batch)
 
                 # Get the spectrogram
                 specgram_local_batch = self.spectrogram(local_batch)
-                specgram_fake_batch = self.spectrogram(fake_batch)
+                specgram_generated_batch = self.spectrogram(generated_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(fake_batch, local_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_local_batch)
+                time_l2_loss = self.time_criterion(generated_batch, local_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_local_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
@@ -83,30 +83,29 @@ class AutoEncoderTrainer(Trainer):
         with torch.no_grad():
             self.autoencoder.eval()
             batch_losses = {'time_l2': [], 'freq_l2': []}
-            # for i, data_batch in enumerate(self.test_loader):
-            for i in range(TEST_BATCH_ITERATIONS):
+            for i in range(VALID_BATCH_ITERATIONS):
                 # Transfer to GPU
-                data_batch = next(self.test_loader_iter)
+                data_batch = next(self.valid_loader_iter)
                 data_batch = torch.cat(data_batch).to(self.device)
 
                 # Forward pass
-                fake_batch, _ = self.autoencoder.forward(data_batch)
+                generated_batch, _ = self.autoencoder.forward(data_batch)
 
                 # Get the spectrogram
                 specgram_batch = self.spectrogram(data_batch)
-                specgram_fake_batch = self.spectrogram(fake_batch)
+                specgram_generated_batch = self.spectrogram(generated_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(fake_batch, data_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_batch)
+                time_l2_loss = self.time_criterion(generated_batch, data_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_batch)
                 batch_losses['time_l2'].append(time_l2_loss.item())
                 batch_losses['freq_l2'].append(freq_l2_loss.item())
 
-            # Store test losses
-            self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
-            self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
+            # Store the validation losses
+            self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+            self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
-            # Display test loss
+            # Display the validation loss
             message = 'Epoch {}: \n' \
                       '\t Time: {} \n' \
                       '\t Frequency: {} \n'.format(self.epoch,
@@ -165,4 +164,21 @@ def get_autoencoder_trainer(datapath, loadpath, savepath, datasets_parameters, l
     return autoencoder_trainer
 
 
+if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
+    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
+    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': True, 'num_workers': 2}
+                          for phase in ['train', 'test', 'valid']}
+
+    generator_trainer = get_autoencoder_trainer(datapath=datapath,
+                                                loadpath='',
+                                                savepath='',
+                                                datasets_parameters=datasets_parameters,
+                                                loaders_parameters=loaders_parameters,
+                                                use_hdf5=False)
+    generator_trainer.train(epochs=1)
+    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
+    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
 

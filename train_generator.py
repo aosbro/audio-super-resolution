@@ -49,14 +49,14 @@ class GeneratorTrainer(Trainer):
                 self.optimizer.zero_grad()
 
                 # Generates a fake batch
-                fake_batch = self.generator(input_batch)
+                generated_batch = self.generator(input_batch)
 
                 # Get the spectrogram
                 specgram_target_batch = self.spectrogram(target_batch)
-                specgram_fake_batch = self.spectrogram(fake_batch)
+                specgram_fake_batch = self.spectrogram(generated_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(fake_batch, target_batch)
+                time_l2_loss = self.time_criterion(generated_batch, target_batch)
                 freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
@@ -99,14 +99,14 @@ class GeneratorTrainer(Trainer):
             input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
             # Generates a fake batch
-            fake_batch = self.generator(input_batch)
+            generated_batch = self.generator(input_batch)
 
             # Get the spectrogram
             specgram_target_batch = self.spectrogram(target_batch)
-            specgram_fake_batch = self.spectrogram(fake_batch)
+            specgram_fake_batch = self.spectrogram(generated_batch)
 
             # Compute and store the loss
-            time_l2_loss = self.time_criterion(fake_batch, target_batch)
+            time_l2_loss = self.time_criterion(generated_batch, target_batch)
             freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
             batch_losses['time_l2'].append(time_l2_loss.item())
             batch_losses['freq_l2'].append(freq_l2_loss.item())
@@ -156,7 +156,7 @@ class GeneratorTrainer(Trainer):
         self.valid_losses = checkpoint['valid_losses']
 
 
-def train_generator(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
+def get_generator_trainer(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
     # Get the data loader for each phase
     if use_hdf5:
         train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
@@ -183,12 +183,12 @@ if __name__ == '__main__':
     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
                           for phase in ['train', 'test', 'valid']}
 
-    generator_trainer = train_generator(datapath=datapath,
-                                        loadpath='',
-                                        savepath='',
-                                        datasets_parameters=datasets_parameters,
-                                        loaders_parameters=loaders_parameters,
-                                        use_hdf5=False)
+    generator_trainer = get_generator_trainer(datapath=datapath,
+                                              loadpath='',
+                                              savepath='',
+                                              datasets_parameters=datasets_parameters,
+                                              loaders_parameters=loaders_parameters,
+                                              use_hdf5=False)
     generator_trainer.train(epochs=1)
 
 

@@ -49,10 +49,10 @@ class DatasetBeethoven(data.Dataset):
         """
         return self.data.shape[0] * self.window_number
 
-    def butter_lowpass_filter(self, x_h, cutoff_frequency, order):
+    def butter_lowpass_filter(self, x_target, cutoff_frequency, order):
         """
         Applies a butterworth low-pass filter to the high resolution signal.
-        :param x_h: high resolution signal as a numpy array.
+        :param x_target: high resolution signal as a numpy array.
         :param cutoff_frequency: desired max frequency of the filtered signal.
         :param order: shapness of the filter.
         :return: filtered signal as a numpy array.
@@ -62,8 +62,8 @@ class DatasetBeethoven(data.Dataset):
 
         # Get the filter coefficients
         coefficients = butter(N=order, Wn=normalised_cutoff_frequency, btype='lowpass', analog=False)
-        x_l = filtfilt(b=coefficients[0], a=coefficients[1], x=x_h)
-        return x_l.astype(np.float32)
+        x_input = filtfilt(b=coefficients[0], a=coefficients[1], x=x_target)
+        return x_input.astype(np.float32)
 
     def pad_signal(self, x):
         """
@@ -80,7 +80,7 @@ class DatasetBeethoven(data.Dataset):
 
     def __getitem__(self, index):
         """
-        Loads a single pair (x_h, x_input) of length 8192 sampled at 16 kHz for x_h
+        Loads a single pair (x_target, x_input) of length 8192 sampled at 16 kHz for x_target
         :param index: index of the sample to load
         :return: corresponding image
         """
@@ -95,19 +95,19 @@ class DatasetBeethoven(data.Dataset):
         window_start = int(window_index * (1 - self.overlap) * self.window_length)
 
         # Load the high quality signal containing WINDOW_LENGTH samples
-        x_h = signal[window_start: window_start + self.window_length]
+        x_target = signal[window_start: window_start + self.window_length]
 
         # Add padding for last window
-        if x_h.shape != self.window_length:
-            x_h = self.pad_signal(x_h)
+        if x_target.shape != self.window_length:
+            x_target = self.pad_signal(x_target)
 
         # Apply hanning window over the whole window to avoid aliasing and for reconstruction
         if self.use_windowing:
-            x_h *= np.hanning(WINDOW_LENGTH)
+            x_target *= np.hanning(WINDOW_LENGTH)
 
-        x_l = upsample(downsample(x_h, self.ratio), self.ratio)
-        return torch.from_numpy(np.expand_dims(x_h, axis=0)).float(), \
-               torch.from_numpy(np.expand_dims(x_l, axis=0)).float()
+        x_input = upsample(downsample(x_target, self.ratio), self.ratio)
+        return torch.from_numpy(np.expand_dims(x_input, axis=0)).float(), \
+               torch.from_numpy(np.expand_dims(x_target, axis=0)).float()
 
 
 class DatasetMaestroHDF(data.Dataset):

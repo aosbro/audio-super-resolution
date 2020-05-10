@@ -78,13 +78,13 @@ class Trainer(abc.ABC):
         """
         model.eval()
         with torch.no_grad():
-            local_batch = next(self.valid_loader_iter)
-            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
-            fake_batch = model(x_l_batch)
-        if self.is_autoencoder:
-            # Avoid returning the latent space
-            return x_h_batch, x_l_batch, fake_batch[0]
-        return x_h_batch, x_l_batch, fake_batch
+            data_batch = next(self.valid_loader_iter)
+            input_batch, target_batch = data_batch[0].to(self.device), data_batch[1].to(self.device)
+            if self.is_autoencoder:
+                generated_batch = model(torch.cat([input_batch, target_batch]))[0]
+            else:
+                generated_batch = model(input_batch)
+        return input_batch, target_batch, generated_batch
 
     def check_improvement(self):
         self.need_saving = np.less_equal(self.valid_losses['time_l2'][-1], min(self.valid_losses['time_l2'])) or \
@@ -101,15 +101,41 @@ class Trainer(abc.ABC):
         index = index % batch_size
 
         # Get a pair of high quality and fake samples batches
-        x_h_batch, x_l_batch, fake_batch = self.generate_single_validation_batch(model=model)
+        input_batch, target_batch, generated_batch = self.generate_single_validation_batch(model=model)
 
-        # Plot
-        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-        axes[0].plot(x_h_batch[index].cpu().detach().numpy().squeeze())
-        axes[0].set_title('Target', fontsize=16)
-        axes[1].plot(fake_batch[index].cpu().detach().numpy().squeeze())
-        axes[1].set_title('Generated', fontsize=16)
-        plt.show()
+        # Plot differently for generator than for the autoencoder
+        if self.is_autoencoder:
+            fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+            # Plot the input of the auto-encoder (input-like)
+            axes[0][0].plot(input_batch[index].cpu().detach().numpy().squeeze())
+            axes[0][0].set_title('Input (input-like)', fontsize=16)
+
+            # Plot the output of the auto-encoder (from an input-like signal)
+            axes[0][1].plot(generated_batch[index].cpu().detach().numpy().squeeze())
+            axes[0][1].set_title('Generated (from input-like)', fontsize=16)
+
+            # Plot the input of the auto-encoder (target-like)
+            axes[1][0].plot(target_batch[index].cpu().detach().numpy().squeeze())
+            axes[1][0].set_title('Input (target-like)', fontsize=16)
+
+            # Plot the output of the auto-encoder (from a target-like signal)
+            axes[1][1].plot(generated_batch[index + batch_size].cpu().detach().numpy().squeeze())
+            axes[1][1].set_title('Generated from (target-like)', fontsize=16)
+            plt.show()
+        else:
+            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+            # Plot the input signal
+            axes[0].plot(input_batch[index].cpu().detach().numpy().squeeze())
+            axes[0].set_title('Input', fontsize=16)
+
+            # Plot the target signal
+            axes[1].plot(target_batch[index].cpu().detach().numpy().squeeze())
+            axes[1].set_title('Target', fontsize=16)
+
+            # Plot the generated signal
+            axes[2].plot(generated_batch[index].cpu().detach().numpy().squeeze())
+            axes[2].set_title('Generated', fontsize=16)
+            plt.show()
 
     def plot_reconstruction_frequency_domain(self, index, model, savepath=None):
         """
@@ -123,33 +149,69 @@ class Trainer(abc.ABC):
         index = index % batch_size
 
         # Get high resolution, low resolution and fake batches
-        x_h_batch, x_l_batch, fake_batch = self.generate_single_validation_batch(model=model)
+        input_batch, target_batch, generated_batch = self.generate_single_validation_batch(model=model)
 
         # Get the power spectrogram in decibels
-        specgram_h_db = self.amplitude_to_db(self.spectrogram(x_h_batch))
-        specgram_l_db = self.amplitude_to_db(self.spectrogram(x_l_batch))
-        specgram_fake_db = self.amplitude_to_db(self.spectrogram(fake_batch))
+        specgram_input_db = self.amplitude_to_db(self.spectrogram(input_batch))
+        specgram_target_db = self.amplitude_to_db(self.spectrogram(target_batch))
+        specgram_generated_db = self.amplitude_to_db(self.spectrogram(generated_batch))
 
         # Define the extent
         f_min = 0
-        f_max = specgram_h_db.shape[-2]
+        f_max = specgram_input_db.shape[-2]
         k_min = 0
-        k_max = specgram_h_db.shape[-1]
+        k_max = specgram_input_db.shape[-1]
 
         # Plot
-        fig, axes = plt.subplots(1, 3, figsize=(11, 7))
-        axes[0].imshow(np.flip(specgram_h_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[0].set_title('Target', fontsize=16)
-        axes[0].set_xlabel('Window index', fontsize=14)
-        axes[0].set_ylabel('Frequency index', fontsize=14)
-        axes[1].imshow(np.flip(specgram_l_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[1].set_title('Input', fontsize=16)
-        axes[1].set_xlabel('Window index', fontsize=14)
-        axes[1].set_ylabel('Frequency index', fontsize=14)
-        axes[2].imshow(np.flip(specgram_fake_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
-        axes[2].set_title('Generated', fontsize=16)
-        axes[2].set_xlabel('Window index', fontsize=14)
-        axes[2].set_ylabel('Frequency index', fontsize=14)
+        if self.is_autoencoder:
+            fig, axes = plt.subplots(2, 2, figsize=(12, 15))
+
+            # Plot the input of the auto-encoder (input-like)
+            axes[0][0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0),
+                              extent=[k_min, k_max, f_min, f_max])
+            axes[0][0].set_title('Input (input-like)', fontsize=16)
+            axes[0][0].set_xlabel('Window index', fontsize=14)
+            axes[0][0].set_ylabel('Frequency index', fontsize=14)
+
+            # Plot the output of the auto-encoder (from an input-like signal)
+            axes[0][1].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0),
+                              extent=[k_min, k_max, f_min, f_max])
+            axes[0][1].set_title('Generated (from input-like)', fontsize=16)
+            axes[0][1].set_xlabel('Window index', fontsize=14)
+            axes[0][1].set_ylabel('Frequency index', fontsize=14)
+
+            # Plot the input of the auto-encoder (target-like)
+            axes[1][0].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0),
+                              extent=[k_min, k_max, f_min, f_max])
+            axes[1][0].set_title('Input (target-like)', fontsize=16)
+            axes[1][0].set_xlabel('Window index', fontsize=14)
+            axes[1][0].set_ylabel('Frequency index', fontsize=14)
+
+            # Plot the output of the auto-encoder (from a target-like signal)
+            axes[1][1].imshow(np.flip(specgram_generated_db[index + batch_size, 0].cpu().numpy(), axis=0),
+                              extent=[k_min, k_max, f_min, f_max])
+            axes[1][1].set_title('Generated (from target-like)', fontsize=16)
+            axes[1][1].set_xlabel('Window index', fontsize=14)
+            axes[1][1].set_ylabel('Frequency index', fontsize=14)
+        else:
+            fig, axes = plt.subplots(1, 3, figsize=(11, 7))
+            # Plot the input signal
+            axes[0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[0].set_title('Input', fontsize=16)
+            axes[0].set_xlabel('Window index', fontsize=14)
+            axes[0].set_ylabel('Frequency index', fontsize=14)
+
+            # Plot the target signal
+            axes[1].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[1].set_title('Target', fontsize=16)
+            axes[1].set_xlabel('Window index', fontsize=14)
+            axes[1].set_ylabel('Frequency index', fontsize=14)
+
+            # Plot the generated signal
+            axes[2].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[2].set_title('Generated', fontsize=16)
+            axes[2].set_xlabel('Window index', fontsize=14)
+            axes[2].set_ylabel('Frequency index', fontsize=14)
 
         # Save plot if needed
         if savepath:
