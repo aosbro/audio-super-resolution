@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch import nn
 import os
+from itertools import cycle
 
 
 class GeneratorTrainer(Trainer):
@@ -31,6 +32,11 @@ class GeneratorTrainer(Trainer):
         self.time_criterion = nn.MSELoss()
         self.frequency_criterion = nn.MSELoss()
 
+        # Iterators to cycle over the datasets
+        self.train_loader_iter = cycle(iter(self.train_loader))
+        self.valid_loader_iter = cycle(iter(self.valid_loader))
+        self.test_loader_iter = cycle(iter(self.test_loader))
+
     def train(self, epochs):
         """
         Trains the model for a specified number of epochs on the train dataset
@@ -39,10 +45,9 @@ class GeneratorTrainer(Trainer):
         """
         for epoch in range(epochs):
             self.generator.train()
-            train_loader_iter = iter(self.train_loader)
             for i in range(TRAIN_BATCH_ITERATIONS):
                 # Get the next batch
-                local_batch = next(train_loader_iter)
+                local_batch = next(self.train_loader_iter)
                 # Transfer to GPU
                 x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
@@ -87,16 +92,15 @@ class GeneratorTrainer(Trainer):
 
     def eval(self):
         """
-        Evaluates the model on the test dataset
+        Evaluates the model on the validation dataset
         :param epoch: Current epoch, used to print status information
         :return: None
         """
         self.generator.eval()
-        test_loader_iter = iter(self.test_loader)
         batch_losses = {'time_l2': [], 'freq_l2': []}
-        for i in range(TEST_BATCH_ITERATIONS):
+        for i in range(VALID_BATCH_ITERATIONS):
             # Get the next batch
-            local_batch = next(test_loader_iter)
+            local_batch = next(self.valid_loader_iter)
             # Transfer to GPU
             x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
@@ -113,11 +117,11 @@ class GeneratorTrainer(Trainer):
             batch_losses['time_l2'].append(time_l2_loss.item())
             batch_losses['freq_l2'].append(freq_l2_loss.item())
 
-        # Store test losses
-        self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
-        self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
+        # Store validation losses
+        self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
-        # Display test loss
+        # Display valid loss
         message = 'Epoch {}: \n' \
                   '\t Time: {} \n' \
                   '\t Frequency: {} \n'.format(self.epoch,

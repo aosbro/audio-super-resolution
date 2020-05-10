@@ -37,6 +37,7 @@ class AutoEncoderTrainer(Trainer):
 
         # Iterators to cycle over the datasets
         self.train_loader_iter = cycle(iter(self.train_loader))
+        self.valid_loader_iter = cycle(iter(self.valid_loader))
         self.test_loader_iter = cycle(iter(self.test_loader))
 
     def train(self, epochs):

@@ -6,15 +6,16 @@ import math
 import torch
 from scipy.signal import butter, filtfilt
 import h5py
-from itertools import cycle
-import time
 import matplotlib.pyplot as plt
 
 
 class DatasetBeethoven(data.Dataset):
     def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=False):
         """
-        Initializes the class DatasetBeethoven
+        Initializes the class DatasetBeethoven that store the original high quality data and applies the transformation
+        to get the low quality audio signal on the fly. The raw data is stored as [n_tracks, track_length]. The track
+        length is fixed and is equal to 128000The transformation consists of a down-sampling in the time
+        domain followed by
         :param datapath: path to raw .npy file
         :param ratio: down-sampling ratio
         :param overlap: overlap ratio with adjacent windows
