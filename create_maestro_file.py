@@ -91,67 +91,67 @@ def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_leng
         for phase in ['train', 'test', 'valid']:
             hdf.create_group(name=phase)
             phase_directory = os.path.join(temporary_directory_path, phase)
-            status_directories = {status: os.path.join(phase_directory, status) for status in ['original', 'modified']}
-            for i, (original_midifile, modified_midifile) in enumerate(zip(file_dict[phase]['original'],
-                                                                         file_dict[phase]['modified'])):
+            status_directories = {status: os.path.join(phase_directory, status) for status in ['input', 'target']}
+            for i, (input_midifile, target_midifile) in enumerate(zip(file_dict[phase]['input'],
+                                                                      file_dict[phase]['target'])):
                 # Create the new wavfiles
-                original_wav_savepath = os.path.join(status_directories['original'],
-                                                     os.path.split(original_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-                modified_wav_savepath = os.path.join(status_directories['modified'],
-                                                     os.path.split(modified_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-                convert_midi_to_wav(original_midifile, original_wav_savepath)
-                convert_midi_to_wav(modified_midifile, modified_wav_savepath)
+                input_wav_savepath = os.path.join(status_directories['input'],
+                                                     os.path.split(input_midifile)[-1].rsplit('.', 1)[0] + '.wav')
+                target_wav_savepath = os.path.join(status_directories['target'],
+                                                     os.path.split(target_midifile)[-1].rsplit('.', 1)[0] + '.wav')
+                convert_midi_to_wav(input_midifile, input_wav_savepath)
+                convert_midi_to_wav(target_midifile, target_wav_savepath)
 
                 # Get the data as a numpy array with shape [window_number, 1, window_length]
-                original_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
-                modified_data, _ = cut_track_and_stack(modified_wav_savepath, window_length=window_length)
+                input_data, _ = cut_track_and_stack(input_wav_savepath, window_length=window_length)
+                target_data, _ = cut_track_and_stack(target_wav_savepath, window_length=window_length)
 
-                print(original_data.shape, modified_data.shape)
+                print(input_data.shape, target_data.shape)
 
                 # Create the datasets for each group
                 if i == 0:
-                    hdf[phase].create_dataset(name='original', data=original_data, maxshape=(None, 1, window_length),
+                    hdf[phase].create_dataset(name='input', data=input_data, maxshape=(None, 1, window_length),
                                               chunks=(32, 1, window_length))
-                    hdf[phase].create_dataset(name='modified', data=modified_data, maxshape=(None, 1, window_length),
+                    hdf[phase].create_dataset(name='target', data=target_data, maxshape=(None, 1, window_length),
                                               chunks=(32, 1, window_length))
                 else:
                     # Resize and append dataset
-                    hdf[phase]['original'].resize((hdf[phase]['original'].shape[0] + original_data.shape[0]), axis=0)
-                    hdf[phase]['original'][-original_data.shape[0]:] = original_data
-                    hdf[phase]['modified'].resize((hdf[phase]['modified'].shape[0] + modified_data.shape[0]), axis=0)
-                    hdf[phase]['modified'][-modified_data.shape[0]:] = modified_data
+                    hdf[phase]['input'].resize((hdf[phase]['input'].shape[0] + input_data.shape[0]), axis=0)
+                    hdf[phase]['input'][-input_data.shape[0]:] = input_data
+                    hdf[phase]['target'].resize((hdf[phase]['target'].shape[0] + target_data.shape[0]), axis=0)
+                    hdf[phase]['target'][-target_data.shape[0]:] = target_data
 
 
 def create_npy_files(file_dict, temporary_directory_path, savepath, window_length=8192):
     # Iterate over the phases
     for phase in ['train', 'test', 'valid']:
         phase_directory = os.path.join(temporary_directory_path, phase)
-        status_directories = {status: os.path.join(phase_directory, status) for status in ['original', 'modified']}
+        status_directories = {status: os.path.join(phase_directory, status) for status in ['input', 'target']}
         # Iterate all selected files
-        for i, (original_midifile, modified_midifile) in enumerate(zip(file_dict[phase]['original'],
-                                                                       file_dict[phase]['modified'])):
+        for i, (input_midifile, target_midifile) in enumerate(zip(file_dict[phase]['input'],
+                                                                  file_dict[phase]['target'])):
             # Create the new wavfiles
-            original_wav_savepath = os.path.join(status_directories['original'],
-                                                 os.path.split(original_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-            modified_wav_savepath = os.path.join(status_directories['modified'],
-                                                 os.path.split(modified_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-            convert_midi_to_wav(original_midifile, original_wav_savepath)
-            convert_midi_to_wav(modified_midifile, modified_wav_savepath)
+            input_wav_savepath = os.path.join(status_directories['input'],
+                                                 os.path.split(input_midifile)[-1].rsplit('.', 1)[0] + '.wav')
+            target_wav_savepath = os.path.join(status_directories['target'],
+                                                 os.path.split(target_midifile)[-1].rsplit('.', 1)[0] + '.wav')
+            convert_midi_to_wav(input_midifile, input_wav_savepath)
+            convert_midi_to_wav(target_midifile, target_wav_savepath)
 
             # Get the data as a numpy array with shape [window_number, 1, window_length]
-            original_data, _ = cut_track_and_stack(original_wav_savepath, window_length=window_length)
-            modified_data, _ = cut_track_and_stack(modified_wav_savepath, window_length=window_length)
+            input_data, _ = cut_track_and_stack(input_wav_savepath, window_length=window_length)
+            target_data, _ = cut_track_and_stack(target_wav_savepath, window_length=window_length)
 
             # Create the datasets for each group
-            window_number = min(original_data.shape[0], modified_data.shape[0])
+            window_number = min(input_data.shape[0], target_data.shape[0])
             if i == 0:
                 phase_data = np.zeros((window_number, 2, window_length))
 
                 # Store the data in the new data in the phase array
-                phase_data[:, 0, :] = np.squeeze(original_data[:window_number])
-                phase_data[:, 1, :] = np.squeeze(modified_data[:window_number])
+                phase_data[:, 0, :] = np.squeeze(input_data[:window_number])
+                phase_data[:, 1, :] = np.squeeze(target_data[:window_number])
             else:
-                temp_data = np.concatenate([original_data[:window_number], modified_data[:window_number]], axis=1)
+                temp_data = np.concatenate([input_data[:window_number], target_data[:window_number]], axis=1)
                 phase_data = np.concatenate([phase_data, temp_data], axis=0)
 
         # Save array to disk
@@ -229,7 +229,7 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
     :param n_valid: number of validation tracks to use (scalar int).
     :param file_savepath: location to store the hdf5_file (string). Do not put it inside the temporary directory if
     remove_temporary=True.
-    :param transformations: dictionary of transformations to apply to the 'original' and 'modified' tracks (dictionary).
+    :param transformations: dictionary of transformations to apply to the 'input' and 'target' tracks (dictionary).
     :param remove_temporary: flag indicating if the temporary files must be removed (boolean)
     :return: None
     """
@@ -237,7 +237,7 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
     midifiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
 
     # Create a dictionary to store files location
-    file_dict = {phase: {status: [] for status in ['original', 'modified']} for phase in ['train', 'test', 'valid']}
+    file_dict = {phase: {status: [] for status in ['input', 'target']} for phase in ['train', 'test', 'valid']}
 
     # Create a directory to store the temporary files (.midi and .wav)
     if os.path.exists(temporary_directory_path):
@@ -249,7 +249,7 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
         # Create sub-directories for each phase
         phase_directory = os.path.join(temporary_directory_path, phase)
         os.mkdir(phase_directory)
-        for status in ['original', 'modified']:
+        for status in ['input', 'target']:
             # Create sub-directories for each status
             status_directory = os.path.join(phase_directory, status)
             os.mkdir(status_directory)
@@ -276,9 +276,9 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
 
 
 def main():
-    # Specify transformation to apply to the original and modified tracks
-    transformations = {'original': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
-                       'modified': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
+    # Specify transformation to apply to the input and target tracks
+    transformations = {'input': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
+                       'target': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
 
     savepaths = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
 

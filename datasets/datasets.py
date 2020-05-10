@@ -12,11 +12,13 @@ import matplotlib.pyplot as plt
 class DatasetBeethoven(data.Dataset):
     def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=False):
         """
-        Initializes the class DatasetBeethoven that store the original high quality data and applies the transformation
-        to get the low quality audio signal on the fly. The raw data is stored as [n_tracks, track_length]. The track
-        length is fixed and is equal to 128000. As the track length is too large to be fed directly in the models it is
-        further split in overlapping windows, this split is done on the fly. The transformation applied on the original
-        signal is a down-sampling in the time domain by 'ratio'.
+        Initializes the class DatasetBeethoven that stores the original high quality data (target) and applies the
+        transformation to get the low quality data (input) on the fly. The raw data is stored as [n_tracks,
+        track_length]. The track length is fixed and is equal to 128000. As the track length is too large to be fed
+        directly in the models it is further split in overlapping windows, this split is done on the fly. The
+        transformation applied on the original signal is a down-sampling in the time domain by 'ratio'. This dataset
+        only stores the data for a single phase, therefore one should instantiate such a class for train,
+        test and validation individually.
         :param datapath: path to raw .npy file (string).
         :param ratio: down-sampling ratio (scalar int).
         :param overlap: overlap ratio with adjacent windows (float in [0, 1)).
@@ -78,7 +80,7 @@ class DatasetBeethoven(data.Dataset):
 
     def __getitem__(self, index):
         """
-        Loads a single pair (x_h, x_l) of length 8192 sampled at 16 kHz for x_h
+        Loads a single pair (x_h, x_input) of length 8192 sampled at 16 kHz for x_h
         :param index: index of the sample to load
         :return: corresponding image
         """
@@ -110,6 +112,15 @@ class DatasetBeethoven(data.Dataset):
 
 class DatasetMaestroHDF(data.Dataset):
     def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=30):
+        """
+        Initializes the class DatasetMaestroHDF that stores the data in a .hdf5 file that contains the complete data for
+        all phases (train, test, validation). It contains the input data ()
+        :param hdf5_filepath:
+        :param phase:
+        :param batch_size:
+        :param use_cache:
+        :param cache_size:
+        """
         self.hdf5_filepath = hdf5_filepath
         self.phase = phase
         self.batch_size = batch_size
@@ -117,7 +128,7 @@ class DatasetMaestroHDF(data.Dataset):
         # Initialize cache to store in RAM
         self.use_cache = use_cache
         if self.use_cache:
-            self.cache = {'original': None, 'modified': None}
+            self.cache = {'input': None, 'modified': None}
             self.cache_size = cache_size * batch_size
             self.cache_min_index = None
             self.cache_max_index = None
@@ -129,7 +140,7 @@ class DatasetMaestroHDF(data.Dataset):
         :return: length of the dataset (scalar int)
         """
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
-            length = hdf[self.phase]['original'].shape[0]
+            length = hdf[self.phase]['input'].shape[0]
         return length
 
     def is_in_cache(self, index):
@@ -151,20 +162,25 @@ class DatasetMaestroHDF(data.Dataset):
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
             self.cache_min_index = index
             self.cache_max_index = min(len(self), index + self.cache_size)
-            self.cache['original'] = hdf[self.phase]['original'][self.cache_min_index: self.cache_max_index]
-            self.cache['modified'] = hdf[self.phase]['modified'][self.cache_min_index: self.cache_max_index]
+            self.cache['input'] = hdf[self.phase]['input'][self.cache_min_index: self.cache_max_index]
+            self.cache['target'] = hdf[self.phase]['target'][self.cache_min_index: self.cache_max_index]
 
     def __getitem__(self, index):
+        """
+        Loads a single pair (x_input, x_target).
+        :param index: index of the sample to load
+        :return: corresponding image
+        """
         if self.use_cache:
             if not self.is_in_cache(index):
                 self.load_chunk_to_cache(index)
-            x_original = self.cache['original'][index - self.cache_min_index]
-            x_modified = self.cache['modified'][index - self.cache_min_index]
+            x_input = self.cache['input'][index - self.cache_min_index]
+            x_target = self.cache['target'][index - self.cache_min_index]
         else:
             with h5py.File(self.hdf5_filepath, 'r') as hdf:
-                x_original = hdf[self.phase]['original'][index]
-                x_modified = hdf[self.phase]['modified'][index]
-        return x_original, x_modified
+                x_input = hdf[self.phase]['input'][index]
+                x_target = hdf[self.phase]['target'][index]
+        return torch.from_numpy(x_input).float(), torch.from_numpy(x_target).float()
 
 
 class DatasetMaestroNPY(data.Dataset):
@@ -175,8 +191,8 @@ class DatasetMaestroNPY(data.Dataset):
         return self.data.shape[0]
 
     def __getitem__(self, index):
-        x_original, x_modified = self.data[index, 0, :][None], self.data[index, 1, :][None]
-        return torch.from_numpy(x_original).float(), torch.from_numpy(x_modified).float()
+        x_input, x_target = self.data[index, 0, :][None], self.data[index, 1, :][None]
+        return torch.from_numpy(x_input).float(), torch.from_numpy(x_target).float()
 
 
 def main():

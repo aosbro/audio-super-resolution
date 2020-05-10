@@ -41,23 +41,23 @@ class GeneratorTrainer(Trainer):
             self.generator.train()
             for i in range(TRAIN_BATCH_ITERATIONS):
                 # Get the next batch
-                local_batch = next(self.train_loader_iter)
+                data_batch = next(self.train_loader_iter)
                 # Transfer to GPU
-                x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+                input_batch, target_batch = data_batch[0].to(self.device), data_batch[1].to(self.device)
 
                 # Reset all gradients in the graph
                 self.optimizer.zero_grad()
 
                 # Generates a fake batch
-                fake_batch = self.generator(x_l_batch)
+                fake_batch = self.generator(input_batch)
 
                 # Get the spectrogram
-                specgram_h_batch = self.spectrogram(x_h_batch)
+                specgram_target_batch = self.spectrogram(target_batch)
                 specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_h_batch)
+                time_l2_loss = self.time_criterion(fake_batch, target_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss + freq_l2_loss
@@ -96,18 +96,18 @@ class GeneratorTrainer(Trainer):
             # Get the next batch
             local_batch = next(self.valid_loader_iter)
             # Transfer to GPU
-            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+            input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
             # Generates a fake batch
-            fake_batch = self.generator(x_l_batch)
+            fake_batch = self.generator(input_batch)
 
             # Get the spectrogram
-            specgram_h_batch = self.spectrogram(x_h_batch)
+            specgram_target_batch = self.spectrogram(target_batch)
             specgram_fake_batch = self.spectrogram(fake_batch)
 
             # Compute and store the loss
-            time_l2_loss = self.time_criterion(fake_batch, x_h_batch)
-            freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_h_batch)
+            time_l2_loss = self.time_criterion(fake_batch, target_batch)
+            freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
             batch_losses['time_l2'].append(time_l2_loss.item())
             batch_losses['freq_l2'].append(freq_l2_loss.item())
 

@@ -39,7 +39,7 @@ class AutoEncoderTrainer(Trainer):
             self.autoencoder.train()
             for i in range(TRAIN_BATCH_ITERATIONS):
                 local_batch = next(self.train_loader_iter)
-                # Transfer to GPU
+                # Concatenate the input and target along firrt dimension and transfer to GPU
                 local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
 
@@ -83,22 +83,22 @@ class AutoEncoderTrainer(Trainer):
         with torch.no_grad():
             self.autoencoder.eval()
             batch_losses = {'time_l2': [], 'freq_l2': []}
-            # for i, local_batch in enumerate(self.test_loader):
+            # for i, data_batch in enumerate(self.test_loader):
             for i in range(TEST_BATCH_ITERATIONS):
                 # Transfer to GPU
-                local_batch = next(self.test_loader_iter)
-                local_batch = torch.cat(local_batch).to(self.device)
+                data_batch = next(self.test_loader_iter)
+                data_batch = torch.cat(data_batch).to(self.device)
 
                 # Forward pass
-                fake_batch, _ = self.autoencoder.forward(local_batch)
+                fake_batch, _ = self.autoencoder.forward(data_batch)
 
                 # Get the spectrogram
-                specgram_local_batch = self.spectrogram(local_batch)
+                specgram_batch = self.spectrogram(data_batch)
                 specgram_fake_batch = self.spectrogram(fake_batch)
 
                 # Compute and store the loss
-                time_l2_loss = self.time_criterion(fake_batch, local_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_local_batch)
+                time_l2_loss = self.time_criterion(fake_batch, data_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_batch)
                 batch_losses['time_l2'].append(time_l2_loss.item())
                 batch_losses['freq_l2'].append(freq_l2_loss.item())
 

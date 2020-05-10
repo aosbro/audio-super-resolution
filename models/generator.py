@@ -5,7 +5,7 @@ from torch import nn
 
 
 class Generator(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, use_additive_skip=False):
+    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, use_additive_skip=True):
         super(Generator, self).__init__()
         # Specify if the last additive skip connection must be used
         self.use_additive_skip = use_additive_skip
@@ -83,11 +83,12 @@ class Generator(nn.Module):
         self.output_conv = nn.Conv1d(in_channels=sum(channel_sizes[0]) // 2, out_channels=1,
                                      kernel_size=kernel_size, padding=padding)
 
+        # Output activation
         self.tanh = nn.Tanh()
 
-    def forward(self, x_l):
+    def forward(self, x_input):
         # Encoder
-        d1 = self.down_block_1(x_l)
+        d1 = self.down_block_1(x_input)
         d2 = self.down_block_2(d1)
         d3 = self.down_block_3(d2)
         d4 = self.down_block_4(d3)
@@ -106,6 +107,6 @@ class Generator(nn.Module):
         x = self.up_block_7(x, d1)
         x = self.up_block_8(x, None)
         if self.use_additive_skip:
-            return self.tanh(self.output_conv(x) + x_l)
+            return self.tanh(self.output_conv(x + x_input))
         return self.tanh(self.output_conv(x))
 
