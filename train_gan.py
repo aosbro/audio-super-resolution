@@ -103,7 +103,7 @@ class GanTrainer(Trainer):
                 output = self.discriminator(target_batch)
 
                 # Compute and store the discriminator loss on real data
-                loss_discriminator_real = self.adversarial_criterion(output, torch.unsqueeze(label))
+                loss_discriminator_real = self.adversarial_criterion(output, torch.unsqueeze(label, dim=0))
                 self.train_losses['discriminator_adversarial']['real'].append(loss_discriminator_real.item())
                 loss_discriminator_real.backward()
 
@@ -113,7 +113,7 @@ class GanTrainer(Trainer):
                 output = self.discriminator(generated_batch.detach())
 
                 # Compute and store the discriminator loss on fake data
-                loss_discriminator_generated = self.adversarial_criterion(output, torch.unsqueeze(label))
+                loss_discriminator_generated = self.adversarial_criterion(output, torch.unsqueeze(label, dim=0))
                 self.train_losses['discriminator_adversarial']['fake'].append(loss_discriminator_generated.item())
                 loss_discriminator_generated.backward()
 
@@ -137,7 +137,7 @@ class GanTrainer(Trainer):
                 # Get the adversarial loss
                 loss_generator_adversarial = torch.zeros(size=[1], device=self.device)
                 if self.use_adversarial:
-                    loss_generator_adversarial = self.adversarial_criterion(output, torch.unsqueeze(label))
+                    loss_generator_adversarial = self.adversarial_criterion(output, torch.unsqueeze(label, dim=0))
                 self.train_losses['generator_adversarial'].append(loss_generator_adversarial.item())
 
                 # Get the L2 loss in time domain
