@@ -275,24 +275,24 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
         shutil.rmtree(temporary_directory_path)
 
 
-def main():
-    # Specify transformation to apply to the input and target tracks
-    transformations = {'input': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
-                       'target': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
-
-    savepaths = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-
-    # Create the .h5 file
-    create_maestro_dataset(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
-                           temporary_directory_path='data/maestro/',
-                           n_train=5,
-                           n_test=1,
-                           n_valid=1,
-                           file_savepath=savepaths,
-                           transformations=transformations,
-                           remove_temporary=True,
-                           use_hdf5=False)
-
-
-if __name__ == '__main__':
-    main()
+# def main():
+#     # Specify transformation to apply to the input and target tracks
+#     transformations = {'input': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
+#                        'target': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
+#
+#     savepaths = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
+#
+#     # Create the .h5 file
+#     create_maestro_dataset(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
+#                            temporary_directory_path='data/maestro/',
+#                            n_train=5,
+#                            n_test=1,
+#                            n_valid=1,
+#                            file_savepath=savepaths,
+#                            transformations=transformations,
+#                            remove_temporary=True,
+#                            use_hdf5=False)
+#
+#
+# if __name__ == '__main__':
+#     main()

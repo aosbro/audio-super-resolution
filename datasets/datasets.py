@@ -22,7 +22,7 @@ class DatasetBeethoven(data.Dataset):
         :param datapath: path to raw .npy file (string).
         :param ratio: down-sampling ratio (scalar int).
         :param overlap: overlap ratio with adjacent windows (float in [0, 1)).
-        :param use_windowing: boolean indicating if a Hanning window must be applied on the input tensors.
+        :param use_windowing: boolean indicating if a Hanning window must be applied on the input tensors (boolean).
         """
         self.data = np.load(datapath)
         self.ratio = ratio
@@ -36,7 +36,7 @@ class DatasetBeethoven(data.Dataset):
     def compute_window_number(self):
         """
         Computes the number of overlapping windows in a single track.
-        :return: the number of windows in the track.
+        :return: the number of windows in the track (scalar int).
         """
         num = self.data.shape[1] - self.window_length
         den = self.window_length * (1 - self.overlap)
@@ -45,7 +45,7 @@ class DatasetBeethoven(data.Dataset):
     def __len__(self):
         """
         Returns the total number of samples in the dataset: n_tracks * (windows per track).
-        :return: number of samples.
+        :return: number of samples (scalar int).
         """
         return self.data.shape[0] * self.window_number
 
@@ -53,9 +53,9 @@ class DatasetBeethoven(data.Dataset):
         """
         Applies a butterworth low-pass filter to the high resolution signal.
         :param x_target: high resolution signal as a numpy array.
-        :param cutoff_frequency: desired max frequency of the filtered signal.
-        :param order: shapness of the filter.
-        :return: filtered signal as a numpy array.
+        :param cutoff_frequency: desired max frequency of the filtered signal (scalar float).
+        :param order: shapness of the filter (scalar int).
+        :return: filtered signal (numpy array).
         """
         nyquist_frequency = self.fs / 2
         normalised_cutoff_frequency = cutoff_frequency / nyquist_frequency
@@ -82,7 +82,7 @@ class DatasetBeethoven(data.Dataset):
         """
         Loads a single pair (x_target, x_input) of length 8192 sampled at 16 kHz for x_target
         :param index: index of the sample to load (scalar int).
-        :return: corresponding image (tuple of torch tensor with shape [1, window_length]).
+        :return: corresponding pair of signals (tuple of torch tensor with shape [1, window_length]).
         """
         # Get the row of the sample
         signal_index = int(index // self.window_number)
@@ -118,12 +118,18 @@ class DatasetMaestroHDF(data.Dataset):
         of computation done in fly. The samples are first split w.r.t. the phase (train, test, validation) and then
         w.r.t. the status (input, target). A pair of (input, target) samples is accessed with same index. For a given
         phase a pair is accessed as: (hdf[phase]['input'][index], hdf[phase]['target'][index]).
-        The .hdf5 file is stored on disk and only accessed
+        The .hdf5 file is stored on disk and only the queried samples are loaded in RAM. To increase retrieval speed
+        a small cache in RAM  is implemented. When using the cache, one should note the following observations:
+            - The speed will only improve if the data is not shuffled.
+            - The cache size must be adapted to the computer used.
+            - The number of workers of the data loader must be adapted to the computer used and the cache size.
+            - The cache size must be a multiple of the chunk size that was used to create the dataset.
+
         :param hdf5_filepath: location of the .hdf5 file (string).
         :param phase: current phase in 'train', 'test', 'validation' (string).
         :param batch_size: size of a single batch (scalar int).
-        :param use_cache: boolean indicating if
-        :param cache_size:
+        :param use_cache: boolean indicating if the cache should be used or not (boolean).
+        :param cache_size: size of the cache in number of batches (scalar int).
         """
         self.hdf5_filepath = hdf5_filepath
         self.phase = phase
@@ -140,7 +146,7 @@ class DatasetMaestroHDF(data.Dataset):
 
     def __len__(self):
         """
-        returns the total length of the dataset
+        Returns the total length of the dataset
         :return: length of the dataset (scalar int)
         """
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
@@ -151,7 +157,7 @@ class DatasetMaestroHDF(data.Dataset):
         """
         Checks if the queried data is in cache.
         :param index: index of the sample to load (scalar int)
-        :return: boolean indicating if the data is available in cache
+        :return: boolean indicating if the data is available in cache (boolean).
         """
         return index in set(range(self.cache_min_index, self.cache_max_index))
 
@@ -159,10 +165,9 @@ class DatasetMaestroHDF(data.Dataset):
         """
         Loads a chunk of data in cache from disk. The chunk of data is the block of size self.size_cache and contains
         the samples following the current index. This is only efficient if data is not shuffled.
-        :param index: index of a single sample that is currently being queried
-        :return: None
+        :param index: index of a single sample that is currently being queried (scalar int).
+        :return: None.
         """
-        print('cache miss')
         with h5py.File(self.hdf5_filepath, 'r') as hdf:
             self.cache_min_index = index
             self.cache_max_index = min(len(self), index + self.cache_size)
@@ -172,8 +177,8 @@ class DatasetMaestroHDF(data.Dataset):
     def __getitem__(self, index):
         """
         Loads a single pair (x_input, x_target).
-        :param index: index of the sample to load
-        :return: corresponding image
+        :param index: index of the sample to load (scalar int).
+        :return: corresponding pair of signals (tuple of torch tensor with shape [1, window_length]).
         """
         if self.use_cache:
             if not self.is_in_cache(index):
@@ -189,6 +194,10 @@ class DatasetMaestroHDF(data.Dataset):
 
 class DatasetMaestroNPY(data.Dataset):
     def __init__(self, datapath):
+        """
+        Initializes the class DatasetMaestroNPY that is based on a
+        :param datapath:
+        """
         self.data = np.load(datapath)
 
     def __len__(self):
