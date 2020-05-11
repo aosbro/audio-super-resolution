@@ -107,6 +107,6 @@ class Generator(nn.Module):
         x = self.up_block_7(x, d1)
         x = self.up_block_8(x, None)
         if self.use_additive_skip:
-            return self.tanh(self.output_conv(x + x_input))
+            return self.tanh(self.output_conv(x) + x_input)
         return self.tanh(self.output_conv(x))
 

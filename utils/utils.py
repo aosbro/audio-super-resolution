@@ -3,9 +3,20 @@ from utils.constants import *
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from models.generator import Generator
 
 
 def get_the_data_loaders(train_datapath, test_datapath, valid_datapath, batch_size):
+    """
+    Prepares the loaders for each phase (train, test, valid). The data for each phase is separated in different
+    files whose location is given in parameters. Each file only contain the target signals as the input signals are
+    generated on the fly.
+    :param train_datapath: location of the .npy file for the train phase (string).
+    :param test_datapath: location of the .npy file for the test phase (string).
+    :param valid_datapath: location of the .npy file for the valid phase (string).
+    :param batch_size: size of the batches, identical for all phases (scalar int).
+    :return: one data loader for each phae (torch DataLoader)
+    """
     train_dataset = DatasetBeethoven(train_datapath)
     test_dataset = DatasetBeethoven(test_datapath)
     valid_dataset = DatasetBeethoven(valid_datapath)
@@ -91,3 +102,22 @@ def plot_losses(losses, names, is_training, savepath=None):
     if savepath:
         plt.savefig(savepath)
     plt.show()
+
+
+def get_generator(loadpath, device):
+    """
+    Returns a pre-trained generator.
+    :param loadpath: location of the generator trainer (string).
+    :param device: either 'cpu' or 'cuda' depending on hardware availability (string).
+    :return: pre-trained generator (nn.Module).
+    """
+    # Instantiate a new generator with identical architecture
+    generator = Generator(kernel_sizes=KERNEL_SIZES,
+                          channel_sizes_min=CHANNEL_SIZES_MIN,
+                          p=DROPOUT_PROBABILITY,
+                          n_blocks=N_BLOCKS_GENERATOR).to(device)
+
+    # Restore pre-trained weights
+    checkpoint = torch.load(loadpath, map_location=device)
+    generator.load_state_dict(checkpoint['generator_state_dict'])
+    return generator.eval()

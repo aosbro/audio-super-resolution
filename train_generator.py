@@ -21,7 +21,7 @@ class GeneratorTrainer(Trainer):
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=5, gamma=0.5)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=10, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -60,7 +60,7 @@ class GeneratorTrainer(Trainer):
                 freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_target_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                loss = time_l2_loss + freq_l2_loss
+                loss = time_l2_loss #+ freq_l2_loss
 
                 # Backward pass
                 loss.backward()
