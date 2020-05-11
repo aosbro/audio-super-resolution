@@ -219,7 +219,7 @@ class GanTrainer(Trainer):
             batch_losses['freq_l2'].append(loss_generator_frequency.item())
 
         # Store the validation losses
-        self.valid_loader['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
         self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
         # Display validation losses
