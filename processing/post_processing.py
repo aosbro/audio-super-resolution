@@ -4,7 +4,7 @@ import os
 import torch
 import shutil
 from create_maestro_file import create_modified_midifile, convert_midi_to_wav, cut_track_and_stack
-from scipy.io.wavfile import write
+from scipy.io.wavfile import write, read
 from utils.utils import get_generator
 
 
@@ -65,8 +65,11 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
     # Generate the pair of .wav files
     convert_midi_to_wav(midi_filepath=os.path.join(temporary_directory_path, 'input.midi'),
                         wav_savepath=os.path.join(temporary_directory_path, 'input.wav'))
+    _, full_sample_input = read(os.path.join(temporary_directory_path, 'input.wav'))
+
     convert_midi_to_wav(midi_filepath=os.path.join(temporary_directory_path, 'target.midi'),
                         wav_savepath=os.path.join(temporary_directory_path, 'target.wav'))
+    _, full_sample_target = read(os.path.join(temporary_directory_path, 'target.wav'))
 
     # Split the input file
     input_tensor, fs = cut_track_and_stack(track_path=os.path.join(temporary_directory_path, 'input.wav'))
@@ -82,7 +85,8 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
 
     full_sample_generated = overlap_and_add_samples(batch=generated_tensor, overlap=0.5, use_windowing=True)
     write(os.path.join(temporary_directory_path, 'generated.wav'), fs, full_sample_generated.numpy())
-
+    write(os.path.join(temporary_directory_path, 'input.wav'), fs, full_sample_input[:, 0])
+    write(os.path.join(temporary_directory_path, 'target.wav'), fs, full_sample_target[:, 0])
 
 # def test_reconstruction(index, dataset):
 #     batch = [dataset.__getitem__(i + index * dataset.window_number) for i in range(dataset.window_number)]

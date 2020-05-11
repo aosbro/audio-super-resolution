@@ -159,8 +159,9 @@ class GanTrainer(Trainer):
                     self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
 
                 # Combine the different losses
-                loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                                 loss_generator_frequency + loss_generator_autoencoder
+                # loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
+                #                  loss_generator_frequency + loss_generator_autoencoder
+                loss_generator = loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
