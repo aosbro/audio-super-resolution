@@ -116,11 +116,13 @@ class DatasetMaestroHDF(data.Dataset):
         Initializes the class DatasetMaestroHDF that stores the data in a .hdf5 file that contains the complete data for
         all phases (train, test, validation). It contains the input data as well as the target data to reduce the amount
         of computation done in fly. The samples are first split w.r.t. the phase (train, test, validation) and then
-        w.r.t. the status (input, target). A pair of (input, target) samples is indexed with identical
-        :param hdf5_filepath:
-        :param phase:
-        :param batch_size:
-        :param use_cache:
+        w.r.t. the status (input, target). A pair of (input, target) samples is accessed with same index. For a given
+        phase a pair is accessed as: (hdf[phase]['input'][index], hdf[phase]['target'][index]).
+        The .hdf5 file is stored on disk and only accessed
+        :param hdf5_filepath: location of the .hdf5 file (string).
+        :param phase: current phase in 'train', 'test', 'validation' (string).
+        :param batch_size: size of a single batch (scalar int).
+        :param use_cache: boolean indicating if
         :param cache_size:
         """
         self.hdf5_filepath = hdf5_filepath

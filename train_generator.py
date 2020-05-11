@@ -69,13 +69,9 @@ class GeneratorTrainer(Trainer):
             # Print message
             message = 'Train, epoch {}: \n' \
                       '\t Time: {} \n' \
-                      '\t Frequency: {} \n'.format(i, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
+                      '\t Frequency: {} \n'.format(epoch, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
                                                    np.mean(self.train_losses['freq_l2'][-TRAIN_BATCH_ITERATIONS:]))
             print(message)
-
-            # Increment epoch counter
-            self.epoch += 1
-            self.scheduler.step()
 
             with torch.no_grad():
                 self.eval()
@@ -83,6 +79,10 @@ class GeneratorTrainer(Trainer):
             # Save the trainer state
             if self.need_saving:
                 self.save()
+
+            # Increment epoch counter
+            self.epoch += 1
+            self.scheduler.step()
 
     def eval(self):
         """
