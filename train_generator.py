@@ -21,7 +21,7 @@ class GeneratorTrainer(Trainer):
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=15, gamma=0.5)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=5, gamma=0.5)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -53,11 +53,11 @@ class GeneratorTrainer(Trainer):
 
                 # Get the spectrogram
                 specgram_target_batch = self.spectrogram(target_batch)
-                specgram_fake_batch = self.spectrogram(generated_batch)
+                specgram_generated_batch = self.spectrogram(generated_batch)
 
                 # Compute and store the loss
                 time_l2_loss = self.time_criterion(generated_batch, target_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
+                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_target_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss #+ freq_l2_loss
@@ -66,12 +66,12 @@ class GeneratorTrainer(Trainer):
                 loss.backward()
                 self.optimizer.step()
 
-                # Print message
-                if not (i % 10):
-                    message = 'Batch {}: \n' \
-                              '\t Time: {} \n' \
-                              '\t Frequency: {} \n' .format(i, time_l2_loss.item(), freq_l2_loss.item())
-                    print(message)
+            # Print message
+            message = 'Train, epoch {}: \n' \
+                      '\t Time: {} \n' \
+                      '\t Frequency: {} \n'.format(i, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
+                                                   np.mean(self.train_losses['freq_l2'][-TRAIN_BATCH_ITERATIONS:]))
+            print(message)
 
             # Increment epoch counter
             self.epoch += 1
@@ -116,7 +116,7 @@ class GeneratorTrainer(Trainer):
         self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
         # Display valid loss
-        message = 'Epoch {}: \n' \
+        message = 'Validation, epoch {}: \n' \
                   '\t Time: {} \n' \
                   '\t Frequency: {} \n'.format(self.epoch,
                                                np.mean(np.mean(batch_losses['time_l2'])),
@@ -175,20 +175,20 @@ def get_generator_trainer(datapath, loadpath, savepath, datasets_parameters, loa
     return generator_trainer
 
 
-if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
-    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
-                          for phase in ['train', 'test', 'valid']}
-
-    generator_trainer = get_generator_trainer(datapath=datapath,
-                                              loadpath='',
-                                              savepath='',
-                                              datasets_parameters=datasets_parameters,
-                                              loaders_parameters=loaders_parameters,
-                                              use_hdf5=False)
-    generator_trainer.train(epochs=1)
+# if __name__ == '__main__':
+#     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+#
+#     datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
+#     datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
+#     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
+#                           for phase in ['train', 'test', 'valid']}
+#
+#     generator_trainer = get_generator_trainer(datapath=datapath,
+#                                               loadpath='',
+#                                               savepath='',
+#                                               datasets_parameters=datasets_parameters,
+#                                               loaders_parameters=loaders_parameters,
+#                                               use_hdf5=False)
+#     generator_trainer.train(epochs=1)
 
 

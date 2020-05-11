@@ -68,10 +68,10 @@ class DatasetBeethoven(data.Dataset):
     def pad_signal(self, x):
         """
         Adds zero-padding at the end of the last window.
-        :param x: Signal with length smaller than the window length.
-        :return: Padded signal.
+        :param x: Signal with length smaller than the window length (numpy array).
+        :return: Padded signal (numpy array).
         """
-        # Apply hanning window before padding to avoid aliasing
+        # Apply a half Hanning window before padding to avoid aliasing
         half_hanning = np.hanning(self.hanning_length)[self.hanning_length // 2:]
         x[- self.hanning_length // 2:] = x[- self.hanning_length // 2:] * half_hanning
 
@@ -81,8 +81,8 @@ class DatasetBeethoven(data.Dataset):
     def __getitem__(self, index):
         """
         Loads a single pair (x_target, x_input) of length 8192 sampled at 16 kHz for x_target
-        :param index: index of the sample to load
-        :return: corresponding image
+        :param index: index of the sample to load (scalar int).
+        :return: corresponding image (tuple of torch tensor with shape [1, window_length]).
         """
         # Get the row of the sample
         signal_index = int(index // self.window_number)
@@ -114,7 +114,9 @@ class DatasetMaestroHDF(data.Dataset):
     def __init__(self, hdf5_filepath, phase, batch_size, use_cache, cache_size=30):
         """
         Initializes the class DatasetMaestroHDF that stores the data in a .hdf5 file that contains the complete data for
-        all phases (train, test, validation). It contains the input data ()
+        all phases (train, test, validation). It contains the input data as well as the target data to reduce the amount
+        of computation done in fly. The samples are first split w.r.t. the phase (train, test, validation) and then
+        w.r.t. the status (input, target). A pair of (input, target) samples is indexed with identical
         :param hdf5_filepath:
         :param phase:
         :param batch_size:
@@ -128,7 +130,7 @@ class DatasetMaestroHDF(data.Dataset):
         # Initialize cache to store in RAM
         self.use_cache = use_cache
         if self.use_cache:
-            self.cache = {'input': None, 'modified': None}
+            self.cache = {'input': None, 'target': None}
             self.cache_size = cache_size * batch_size
             self.cache_min_index = None
             self.cache_max_index = None
