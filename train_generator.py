@@ -60,8 +60,7 @@ class GeneratorTrainer(Trainer):
                 freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_target_batch)
                 self.train_losses['time_l2'].append(time_l2_loss.item())
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                # loss = time_l2_loss + freq_l2_loss
-                loss = freq_l2_loss
+                loss = time_l2_loss + freq_l2_loss
 
                 # Backward pass
                 loss.backward()
