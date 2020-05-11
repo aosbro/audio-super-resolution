@@ -189,41 +189,40 @@ class GanTrainer(Trainer):
             with torch.no_grad():
                 self.eval()
 
+            # Save the trainer state
+            if self.need_saving:
+                self.save()
+
             # Increment epoch counter
             self.epoch += 1
             self.generator_scheduler.step()
             self.discriminator_scheduler.step()
 
-            # Save the trainer state
-            if self.need_saving:
-                self.save()
-
     def eval(self):
         self.generator.eval()
         self.discriminator.eval()
         batch_losses = {'time_l2': [], 'freq_l2': []}
-        test_loader_iter = iter(self.test_loader)
-        for i in range(TEST_BATCH_ITERATIONS):
+        for i in range(VALID_BATCH_ITERATIONS):
             # Transfer to GPU
-            local_batch = next(test_loader_iter)
-            x_h_batch, x_l_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+            local_batch = next(self.valid_loader_iter)
+            input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
-            fake_batch = self.generator(x_l_batch)
+            generated_batch = self.generator(input_batch)
 
             # Get the spectrogram
-            specgram_h_batch = self.spectrogram(x_h_batch)
-            specgram_fake_batch = self.spectrogram(fake_batch)
+            specgram_target_batch = self.spectrogram(target_batch)
+            specgram_generated_batch = self.spectrogram(generated_batch)
 
-            loss_generator_time = self.generator_time_criterion(fake_batch, x_h_batch)
+            loss_generator_time = self.generator_time_criterion(generated_batch, target_batch)
             batch_losses['time_l2'].append(loss_generator_time.item())
-            loss_generator_frequency = self.generator_frequency_criterion(specgram_fake_batch, specgram_h_batch)
+            loss_generator_frequency = self.generator_frequency_criterion(specgram_generated_batch, specgram_target_batch)
             batch_losses['freq_l2'].append(loss_generator_frequency.item())
 
-        # Store test losses
-        self.test_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
-        self.test_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
+        # Store the validation losses
+        self.valid_loader['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
-        # Display test loss
+        # Display validation losses
         message = 'Epoch {}: \n' \
                   '\t Time: {} \n' \
                   '\t Frequency: {} \n'.format(self.epoch,
@@ -299,11 +298,11 @@ if __name__ == '__main__':
     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
                           for phase in ['train', 'test', 'valid']}
 
-    generator_trainer = get_gan_trainer(datapath=datapath,
-                                        loadpath='',
-                                        savepath='',
-                                        datasets_parameters=datasets_parameters,
-                                        loaders_parameters=loaders_parameters,
-                                        use_hdf5=False)
-    # generator_trainer.train(epochs=1)
+    gan_trainer = get_gan_trainer(datapath=datapath,
+                                  loadpath='',
+                                  savepath='',
+                                  datasets_parameters=datasets_parameters,
+                                  loaders_parameters=loaders_parameters,
+                                  use_hdf5=False)
+    generator_trainer.train(epochs=1)
 
