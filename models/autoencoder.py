@@ -6,6 +6,17 @@ from torch import nn
 
 class AutoEncoder(nn.Module):
     def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, return_embedding=True):
+        """
+        Initializes the class AutoEncoder which is the model used to extract features from audio signals. Its
+        architecture is similar to the one of the generator with the difference that the encoder and decoder contain 4
+         DownBlocks and 4 UpBlocks respectively. Furthermore, the auto-encoder does not embed any skip connection as it
+         is desired that 
+        :param kernel_sizes:
+        :param channel_sizes_min:
+        :param p:
+        :param n_blocks:
+        :param return_embedding:
+        """
         super(AutoEncoder, self).__init__()
 
         # Compute channel sizes at each level
