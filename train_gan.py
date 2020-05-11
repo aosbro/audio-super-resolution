@@ -10,6 +10,7 @@ from torch import nn
 import torch
 from torchaudio.transforms import Spectrogram
 import numpy as np
+from itertools import cycle
 
 
 class GanTrainer(Trainer):
@@ -99,20 +100,20 @@ class GanTrainer(Trainer):
                 # Train the discriminator with real data
                 self.discriminator_optimizer.zero_grad()
                 label = torch.full((batch_size,), self.real_label, device=self.device)
-                output = self.discriminator(input_batch)
+                output = self.discriminator(target_batch)
 
                 # Compute and store the discriminator loss on real data
-                loss_discriminator_real = self.adversarial_criterion(torch.squeeze(output), label)
+                loss_discriminator_real = self.adversarial_criterion(output, torch.unsqueeze(label))
                 self.train_losses['discriminator_adversarial']['real'].append(loss_discriminator_real.item())
                 loss_discriminator_real.backward()
 
                 # Train the discriminator with fake data
-                generated_batch = self.generator(target_batch)
+                generated_batch = self.generator(input_batch)
                 label.fill_(self.generated_label)
                 output = self.discriminator(generated_batch.detach())
 
                 # Compute and store the discriminator loss on fake data
-                loss_discriminator_generated = self.adversarial_criterion(torch.squeeze(output), label)
+                loss_discriminator_generated = self.adversarial_criterion(output, torch.unsqueeze(label))
                 self.train_losses['discriminator_adversarial']['fake'].append(loss_discriminator_generated.item())
                 loss_discriminator_generated.backward()
 
@@ -136,7 +137,7 @@ class GanTrainer(Trainer):
                 # Get the adversarial loss
                 loss_generator_adversarial = torch.zeros(size=[1], device=self.device)
                 if self.use_adversarial:
-                    loss_generator_adversarial = self.adversarial_criterion(torch.squeeze(output), label)
+                    loss_generator_adversarial = self.adversarial_criterion(output, torch.unsqueeze(label))
                 self.train_losses['generator_adversarial'].append(loss_generator_adversarial.item())
 
                 # Get the L2 loss in time domain
@@ -304,5 +305,5 @@ if __name__ == '__main__':
                                   datasets_parameters=datasets_parameters,
                                   loaders_parameters=loaders_parameters,
                                   use_hdf5=False)
-    generator_trainer.train(epochs=1)
+    gan_trainer.train(epochs=1)
 
