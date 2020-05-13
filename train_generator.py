@@ -174,7 +174,7 @@ def get_generator_trainer(datapath, loadpath, savepath, datasets_parameters, loa
 
     return generator_trainer
 
-
+#
 # if __name__ == '__main__':
 #     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 #
@@ -189,6 +189,6 @@ def get_generator_trainer(datapath, loadpath, savepath, datasets_parameters, loa
 #                                               datasets_parameters=datasets_parameters,
 #                                               loaders_parameters=loaders_parameters,
 #                                               use_hdf5=False)
-#     generator_trainer.train(epochs=1)
+    # generator_trainer.train(epochs=1)
 
 

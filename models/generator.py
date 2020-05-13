@@ -5,7 +5,7 @@ from torch import nn
 
 
 class Generator(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, use_additive_skip=True):
+    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks, use_additive_skip=False):
         super(Generator, self).__init__()
         # Specify if the last additive skip connection must be used
         self.use_additive_skip = use_additive_skip
