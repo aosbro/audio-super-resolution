@@ -69,7 +69,7 @@ class GeneratorTrainer(Trainer):
             # Print message
             message = 'Train, epoch {}: \n' \
                       '\t Time: {} \n' \
-                      '\t Frequency: {} \n'.format(epoch, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
+                      '\t Frequency: {} \n'.format(self.epoch, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
                                                    np.mean(self.train_losses['freq_l2'][-TRAIN_BATCH_ITERATIONS:]))
             print(message)
 
