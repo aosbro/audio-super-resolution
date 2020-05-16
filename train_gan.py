@@ -10,7 +10,6 @@ from torch import nn
 import torch
 from torchaudio.transforms import Spectrogram
 import numpy as np
-from itertools import cycle
 
 
 class GanTrainer(Trainer):

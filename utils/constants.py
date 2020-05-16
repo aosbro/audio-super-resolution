@@ -1,20 +1,7 @@
 # Data constants
 WINDOW_LENGTH = 8192
 HANNING_WINDOW_LENGTH = 101
-BATCH_SIZE = 10
 NUM_WORKERS = 6
-
-# Maestro dataset
-MAESTRO_PATH = '/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0'
-
-# Beethoven dataset
-TRAIN_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_train.npy'
-TEST_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_test.npy'
-VALID_DATAPATH = '/media/thomas/Samsung_T5/VITA/data/music/music_valid.npy'
-
-TRAIN_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_train.npy'
-TEST_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_test.npy'
-VALID_DATAPATH_DRIVE = '/content/drive/My Drive/audio_data/music_valid.npy'
 
 DOWNSCALE_FACTOR = 2
 UPSCALE_FACTOR = 2
@@ -34,7 +21,7 @@ CHANNEL_SIZES_MIN = [24, 24, 8, 8]
 GENERATOR_CHANNEL_FACTOR_MAX = 5
 AUTOENCODER_CHANNEL_FACTOR_MAX = 0
 DISCRIMINATOR_CHANNEL_FACOTR_MAX = 3
-GENERATOR_BOTTLENECK_REDUCTION_FACTOR = 8
+GENERATOR_BOTTLENECK_REDUCTION_FACTOR = 16
 AUTOENCODER_BOTTLENECK_REDUCTION_FACTOR = 4
 DISCRIMINATOR_BOTTLENECK_RECDUCTION_FACTOR = 8
 DROPOUT_PROBABILITY = 0.2
