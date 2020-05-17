@@ -7,7 +7,7 @@ from itertools import cycle
 
 
 class Trainer(abc.ABC):
-    def __init__(self, train_loader, test_loader, valid_loader, loadpath, savepath):
+    def __init__(self, train_loader, test_loader, valid_loader, general_args):
         # Device
         self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -21,9 +21,9 @@ class Trainer(abc.ABC):
         self.valid_loader_iter = cycle(iter(self.valid_loader))
         self.test_loader_iter = cycle(iter(self.test_loader))
 
-        # Paths
-        self.loadpath = loadpath
-        self.savepath = savepath
+        # # Paths
+        # self.loadpath = loadpath
+        # self.savepath = savepath
 
         # Epoch counter
         self.epoch = 0
@@ -69,6 +69,11 @@ class Trainer(abc.ABC):
 
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
+
+        # Set the pseudo-epochs
+        self.train_batches_per_epoch = general_args.train_batches_per_epoch
+        self.test_batches_per_epoch = general_args.test_batches_per_epoch
+        self.valid_batches_per_epoch = general_args.valid_batches_per_epoch
 
     def generate_single_validation_batch(self, model):
         """
@@ -157,58 +162,51 @@ class Trainer(abc.ABC):
         specgram_generated_db = self.amplitude_to_db(self.spectrogram(generated_batch))
 
         # Define the extent
-        f_min = 0
-        f_max = specgram_input_db.shape[-2]
-        k_min = 0
-        k_max = specgram_input_db.shape[-1]
+        extent = [0, specgram_input_db.shape[-1], 0, specgram_input_db.shape[-2]]
 
         # Plot
         if self.is_autoencoder:
             fig, axes = plt.subplots(2, 2, figsize=(12, 15))
 
             # Plot the input of the auto-encoder (input-like)
-            axes[0][0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0),
-                              extent=[k_min, k_max, f_min, f_max])
+            axes[0][0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[0][0].set_title('Input (input-like)', fontsize=16)
             axes[0][0].set_xlabel('Window index', fontsize=14)
             axes[0][0].set_ylabel('Frequency index', fontsize=14)
 
             # Plot the output of the auto-encoder (from an input-like signal)
-            axes[0][1].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0),
-                              extent=[k_min, k_max, f_min, f_max])
+            axes[0][1].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[0][1].set_title('Generated (from input-like)', fontsize=16)
             axes[0][1].set_xlabel('Window index', fontsize=14)
             axes[0][1].set_ylabel('Frequency index', fontsize=14)
 
             # Plot the input of the auto-encoder (target-like)
-            axes[1][0].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0),
-                              extent=[k_min, k_max, f_min, f_max])
+            axes[1][0].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[1][0].set_title('Input (target-like)', fontsize=16)
             axes[1][0].set_xlabel('Window index', fontsize=14)
             axes[1][0].set_ylabel('Frequency index', fontsize=14)
 
             # Plot the output of the auto-encoder (from a target-like signal)
-            axes[1][1].imshow(np.flip(specgram_generated_db[index + batch_size, 0].cpu().numpy(), axis=0),
-                              extent=[k_min, k_max, f_min, f_max])
+            axes[1][1].imshow(np.flip(specgram_generated_db[index + batch_size, 0].cpu().numpy(), axis=0), extent=extent)
             axes[1][1].set_title('Generated (from target-like)', fontsize=16)
             axes[1][1].set_xlabel('Window index', fontsize=14)
             axes[1][1].set_ylabel('Frequency index', fontsize=14)
         else:
             fig, axes = plt.subplots(1, 3, figsize=(11, 7))
             # Plot the input signal
-            axes[0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[0].imshow(np.flip(specgram_input_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[0].set_title('Input', fontsize=16)
             axes[0].set_xlabel('Window index', fontsize=14)
             axes[0].set_ylabel('Frequency index', fontsize=14)
 
             # Plot the target signal
-            axes[1].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[1].imshow(np.flip(specgram_target_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[1].set_title('Target', fontsize=16)
             axes[1].set_xlabel('Window index', fontsize=14)
             axes[1].set_ylabel('Frequency index', fontsize=14)
 
             # Plot the generated signal
-            axes[2].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0), extent=[k_min, k_max, f_min, f_max])
+            axes[2].imshow(np.flip(specgram_generated_db[index, 0].cpu().numpy(), axis=0), extent=extent)
             axes[2].set_title('Generated', fontsize=16)
             axes[2].set_xlabel('Window index', fontsize=14)
             axes[2].set_ylabel('Frequency index', fontsize=14)

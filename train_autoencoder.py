@@ -1,184 +1,73 @@
-from models.autoencoder import AutoEncoder
-from utils.utils import get_the_maestro_data_loaders_hdf, get_the_maestro_data_loaders_npy
-from utils.constants import *
+from utils.utils import prepare_maestro_data
+from trainers.autoencoder_trainer import AutoEncoderTrainer
+from utils.constants_parser import get_general_args
+import argparse
 import os
-from trainers.base_trainer import Trainer
-import torch
-from torch.optim import lr_scheduler
-from torch import nn
-import numpy as np
 
 
-class AutoEncoderTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath):
-        super(AutoEncoderTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
+def get_autoencoder_trainer_args():
+    parser = argparse.ArgumentParser(description='Trains the auto-encoder.')
+    # Data related constants
+    parser.add_argument('--use_npy', default=True, type=bool,
+                        help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
+    parser.add_argument('--hdf5_filepath', type=str, help='Location of the .hdf5 file if this data format is selected.')
+    parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
+                        help='Location of the train .npy file if this data format is selected.')
+    parser.add_argument('--test_npy_filepath', default='data/test.npy', type=str,
+                        help='Location of the test .npy file if this data format is selected.')
+    parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
+                        help='Location of the valid .npy file if this data format is selected.')
+    parser.add_argument('--train_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the train phase.')
+    parser.add_argument('--test_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the test phase.')
+    parser.add_argument('--valid_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the validation phase.')
+    parser.add_argument('--train_shuffle', default=True, type=bool,
+                        help='Flag indicating if the train data must be shuffled.')
+    parser.add_argument('--test_shuffle', default=True, type=bool,
+                        help='Flag indicating if the test data must be shuffled.')
+    parser.add_argument('--valid_shuffle', default=True, type=bool,
+                        help='Flag indicating if the validation data must be shuffled.')
+    parser.add_argument('--num_worker', default=2, type=int, help='Number of workers used by the data loaders.')
 
-        # Model
-        self.autoencoder = AutoEncoder(kernel_sizes=KERNEL_SIZES,
-                                       channel_sizes_min=CHANNEL_SIZES_MIN,
-                                       p=DROPOUT_PROBABILITY,
-                                       n_blocks=N_BLOCKS_AUTOENCODER).to(self.device)
-
-        # Optimizer and scheduler
-        self.optimizer = torch.optim.Adam(params=self.autoencoder.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=5, gamma=0.5)
-
-        # Load saved states
-        if os.path.exists(self.loadpath):
-            self.load()
-
-        # Loss function
-        self.time_criterion = nn.MSELoss()
-        self.frequency_criterion = nn.MSELoss()
-
-        # Boolean to differentiate generator from auto-encoder
-        self.is_autoencoder = True
-
-    def train(self, epochs):
-        for epoch in range(epochs):
-            self.autoencoder.train()
-            for i in range(TRAIN_BATCH_ITERATIONS):
-                local_batch = next(self.train_loader_iter)
-                # Concatenate the input and target along firrt dimension and transfer to GPU
-                local_batch = torch.cat(local_batch).to(self.device)
-                self.optimizer.zero_grad()
-
-                # Forward pass
-                generated_batch, _ = self.autoencoder.forward(local_batch)
-
-                # Get the spectrogram
-                specgram_local_batch = self.spectrogram(local_batch)
-                specgram_generated_batch = self.spectrogram(generated_batch)
-
-                # Compute and store the loss
-                time_l2_loss = self.time_criterion(generated_batch, local_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_local_batch)
-                self.train_losses['time_l2'].append(time_l2_loss.item())
-                self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                loss = time_l2_loss + freq_l2_loss
-
-                # Print message
-                if not (i % 10):
-                    message = 'Batch {}: \n' \
-                              '\t Time: {} \n' \
-                              '\t Frequency: {} \n' .format(i, time_l2_loss.item(), freq_l2_loss.item())
-                    print(message)
-
-                # Backward pass
-                loss.backward()
-                self.optimizer.step()
-
-            # Increment epoch counter
-            self.epoch += 1
-            self.scheduler.step()
-
-            with torch.no_grad():
-                self.eval()
-
-            # Save the trainer state
-            if self.need_saving:
-                self.save()
-
-    def eval(self):
-        with torch.no_grad():
-            self.autoencoder.eval()
-            batch_losses = {'time_l2': [], 'freq_l2': []}
-            for i in range(VALID_BATCH_ITERATIONS):
-                # Transfer to GPU
-                data_batch = next(self.valid_loader_iter)
-                data_batch = torch.cat(data_batch).to(self.device)
-
-                # Forward pass
-                generated_batch, _ = self.autoencoder.forward(data_batch)
-
-                # Get the spectrogram
-                specgram_batch = self.spectrogram(data_batch)
-                specgram_generated_batch = self.spectrogram(generated_batch)
-
-                # Compute and store the loss
-                time_l2_loss = self.time_criterion(generated_batch, data_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_batch)
-                batch_losses['time_l2'].append(time_l2_loss.item())
-                batch_losses['freq_l2'].append(freq_l2_loss.item())
-
-            # Store the validation losses
-            self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
-            self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
-
-            # Display the validation loss
-            message = 'Epoch {}: \n' \
-                      '\t Time: {} \n' \
-                      '\t Frequency: {} \n'.format(self.epoch,
-                                                   np.mean(np.mean(batch_losses['time_l2'])),
-                                                   np.mean(np.mean(batch_losses['freq_l2'])))
-            print(message)
-
-            # Check if the loss is decreasing
-            self.check_improvement()
-
-    def save(self):
-        """
-        Saves the model(s), optimizer(s), scheduler(s) and losses
-        :return: None
-        """
-        torch.save({
-            'epoch': self.epoch,
-            'autoencoder_state_dict': self.autoencoder.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'scheduler_state_dict': self.scheduler.state_dict(),
-            'train_losses': self.train_losses,
-            'test_losses': self.test_losses,
-            'valid_losses': self.valid_losses
-        }, self.savepath)
-
-    def load(self):
-        """
-        Loads the model(s), optimizer(s), scheduler(s) and losses
-        :return: None
-        """
-        checkpoint = torch.load(self.loadpath, map_location=self.device)
-        self.epoch = checkpoint['epoch']
-        self.autoencoder.load_state_dict(checkpoint['autoencoder_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        self.train_losses = checkpoint['train_losses']
-        self.test_losses = checkpoint['test_losses']
-        self.valid_losses = checkpoint['valid_losses']
+    # Trainer related constants
+    parser.add_argument('--savepath', type=str,
+                        help='Location where to save the auto-encoder trainer to resume training.')
+    parser.add_argument('--loadpath', default='', type=str,
+                        help='Location of an existing auto-encoder trainer from which to resume training.')
+    parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate for the auto-encoder.')
+    parser.add_argument('--scheduler_step', default=30, type=int,
+                        help='Number of steps before the learning step is reduced by a factor gamma.')
+    parser.add_argument('--scheduler_gamma', default=0.5, type=float,
+                        help='Factor by which the learning rate is reduced after a specified number of steps.')
+    args = parser.parse_args()
+    return args
 
 
-def get_autoencoder_trainer(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
-    # Get the data loader for each phase
-    if use_hdf5:
-        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
-                                                                                   loaders_parameters)
-    else:
-        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_npy(datapath, loaders_parameters)
+def get_autoencoder_trainer(general_args, trainer_args):
+    train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
     autoencoder_trainer = AutoEncoderTrainer(train_loader=train_loader,
                                              test_loader=test_loader,
                                              valid_loader=valid_loader,
-                                             lr=AUTOENCODER_LEARNING_RATE,
-                                             loadpath=loadpath,
-                                             savepath=savepath)
+                                             general_args=general_args,
+                                             trainer_args=trainer_args)
     return autoencoder_trainer
 
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-    datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-    datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
-    loaders_parameters = {phase: {'batch_size': 64, 'shuffle': True, 'num_workers': 2}
-                          for phase in ['train', 'test', 'valid']}
+    # Get the parameters related to the track generation
+    trainer_args = get_autoencoder_trainer_args()
 
-    generator_trainer = get_autoencoder_trainer(datapath=datapath,
-                                                loadpath='',
-                                                savepath='',
-                                                datasets_parameters=datasets_parameters,
-                                                loaders_parameters=loaders_parameters,
-                                                use_hdf5=False)
-    generator_trainer.train(epochs=1)
+    # Get the general parameters
+    general_args = get_general_args()
+
+    autoencoder_trainer = get_autoencoder_trainer(general_args, trainer_args)
+    autoencoder_trainer.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
 

@@ -2,16 +2,10 @@ import argparse
 from processing.post_processing import generate_single_track
 import torch
 import os
+from utils.constants_parser import get_general_args
 
 
-def main():
-    # midi_filepath = '/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2017/MIDI-Unprocessed_083_PIANO083_MID--AUDIO' \
-    #                 '-split_07-09-17_Piano-e_2_-06_wav--3.midi'
-    # temporary_directory_path = 'data/temp'
-    # generator_path = 'objects/generator_trainer_time2.tar'
-    # transformations = {'input': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
-    #                    'target': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
-
+def get_track_generation_args():
     parser = argparse.ArgumentParser(description='Generates a track from an input .midi file.')
     parser.add_argument('--original_midi', type=str, help='Original .midi file to base the input and target on.')
     parser.add_argument('--temp_dir', default='data/temp', type=str, help='Path to temporary directory.')
@@ -43,12 +37,21 @@ def main():
                                                                                'zero to remove a specific effect '
                                                                                'selected with the control argument.')
     args = parser.parse_args()
+    return args
+
+
+def main():
+    # Get the parameters related to the track generation
+    track_args = get_track_generation_args()
+
+    # Get the general parameters
+    general_args = get_general_args()
 
     # Prepare the transformations in adequate format
-    transformations = {'input': {'instrument': args.input_instrument, 'velocity': args.input_velocity,
-                                 'control': args.input_control, 'control_value': args.input_control_value},
-                       'target': {'instrument': args.target_instrument, 'velocity': args.target_velocity,
-                                  'control': args.target_control, 'control_value': args.target_control_value}}
+    transformations = {'input': {'instrument': track_args.input_instrument, 'velocity': track_args.input_velocity,
+                                 'control': track_args.input_control, 'control_value': track_args.input_control_value},
+                       'target': {'instrument': track_args.target_instrument, 'velocity': track_args.target_velocity,
+                                  'control': track_args.target_control, 'control_value': track_args.target_control_value}}
 
     # Set the device
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
@@ -56,10 +59,11 @@ def main():
     generate_single_track(original_midi_filepath='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2017/MIDI'
                                                  '-Unprocessed_083_PIANO083_MID--AUDIO-split_07-09-17_Piano-e_2_'
                                                  '-06_wav--3.midi',
-                          temporary_directory_path=args.temp_dir,
+                          temporary_directory_path=track_args.temp_dir,
                           transformations=transformations,
-                          generator_path='objects/gan_trainer.tar',
-                          device='cpu')
+                          generator_path='objects/generator_trainer_no_skip2.tar',
+                          device=device,
+                          general_args=general_args)
 
 
 if __name__ == '__main__':

@@ -65,6 +65,39 @@ def get_the_maestro_data_loaders_npy(datapath, loaders_parameters):
     return tuple(data_loaders)
 
 
+def prepare_maestro_data(trainer_args):
+    """
+    Prepares the dataset and data loaders for all phases (train, test and validation).
+    :param trainer_args: argument parser that contains all the needed parameters
+    :return: one data loader for each phase (torch DataLoader)
+    """
+    # Set the data loaders parameters with adequate format
+    loaders_parameters = {'train': {'batch_size': trainer_args.train_batch_size,
+                                    'shuffle': trainer_args.train_shuffle,
+                                    'num_workers': trainer_args.num_worker},
+                          'test': {'batch_size': trainer_args.test_batch_size,
+                                   'shuffle': trainer_args.test_shuffle,
+                                   'num_workers': trainer_args.num_worker},
+                          'valid': {'batch_size': trainer_args.valid_batch_size,
+                                    'shuffle': trainer_args.valid_shuffle,
+                                    'num_workers': trainer_args.num_worker}}
+
+    if trainer_args.use_npy:
+        datapath = {'train': trainer_args.train_npy_filepath,
+                    'test': trainer_args.test_npy_filepath,
+                    'valid': trainer_args.valid_npy_filepath}
+        return get_the_maestro_data_loaders_npy(datapath, loaders_parameters)
+    else:
+        datapath = trainer_args.hdf5_filepath
+        datasets_parameters = {'train': {'batch_size': trainer_args.train_batch_size,
+                                         'use_cache': not trainer_args.train_shuffle},
+                               'test': {'batch_size': trainer_args.test_batch_size,
+                                        'use_cache': not trainer_args.test_shuffle},
+                               'valid': {'batch_size': trainer_args.valid_batch_size,
+                                         'use_cache': not trainer_args.valid_shuffle}}
+        return get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_parameters)
+
+
 def get_consecutive_samples(dataset, index):
     """
     Samples a batch of consecutive samples from the data
@@ -104,18 +137,16 @@ def plot_losses(losses, names, is_training, savepath=None):
     plt.show()
 
 
-def get_generator(loadpath, device):
+def get_generator(loadpath, device, general_args):
     """
     Returns a pre-trained generator.
     :param loadpath: location of the generator trainer (string).
     :param device: either 'cpu' or 'cuda' depending on hardware availability (string).
+    :param general_args: argument parser that contains the arguments that are independent to the script being executed.
     :return: pre-trained generator (nn.Module).
     """
     # Instantiate a new generator with identical architecture
-    generator = Generator(kernel_sizes=KERNEL_SIZES,
-                          channel_sizes_min=CHANNEL_SIZES_MIN,
-                          p=DROPOUT_PROBABILITY,
-                          n_blocks=N_BLOCKS_GENERATOR).to(device)
+    generator = Generator(general_args=general_args).to(device)
 
     # Restore pre-trained weights
     checkpoint = torch.load(loadpath, map_location=device)

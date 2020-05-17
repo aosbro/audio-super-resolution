@@ -1,43 +1,39 @@
 from blocks.discriminator_block import DiscriminatorInput, DiscriminatorBlock, DiscriminatorOutput
-from utils.constants import *
 from torch import nn
 
 
 class Discriminator(nn.Module):
-    def __init__(self, kernel_sizes, channel_sizes_min, p, n_blocks):
+    def __init__(self, general_args):
         super(Discriminator, self).__init__()
 
         # Compute channel sizes at each level
-        channel_sizes = [list(map(lambda c_size: (2 ** min(i, DISCRIMINATOR_CHANNEL_FACOTR_MAX)) * c_size, channel_sizes_min))
-                         for i in range(n_blocks)]
+        channel_sizes = [list(map(lambda c_size: (2 ** min(i, general_args.discriminator_channel_factor_max)) * c_size,
+                                  general_args.channel_sizes_min)) for i in range(general_args.discriminator_n_block)]
 
         # Compute bottleneck channel size at each level
-        bottleneck_channels = [list(map(lambda c: c // DISCRIMINATOR_BOTTLENECK_RECDUCTION_FACTOR, channel_size))
-                               for channel_size in channel_sizes]
+        bottleneck_channels = [list(map(lambda c: max(1, c // general_args.discriminator_bottleneck_reduction_factor),
+                                        channel_size)) for channel_size in channel_sizes]
 
         # Define the first block
-        self.in_block = DiscriminatorInput(in_channels=1, kernel_sizes=kernel_sizes, channel_sizes=channel_sizes[0],
-                                           bottleneck_channels=bottleneck_channels[0],
-                                           use_bottleneck=DISCRIMINATOR_USE_BOTTLENECK)
+        self.in_block = DiscriminatorInput(in_channels=1, channel_sizes=channel_sizes[0],
+                                           bottleneck_channels=bottleneck_channels[0])
 
         # Define the intermediate blocks
-        in_channels = [2 ** min(i, DISCRIMINATOR_CHANNEL_FACOTR_MAX + 1) * sum(CHANNEL_SIZES_MIN)
-                       for i in range(n_blocks)]
+        in_channels = [2 ** min(i, general_args.discriminator_channel_factor_max + 1) *
+                       sum(general_args.channel_sizes_min) for i in range(general_args.discriminator_n_block)]
 
         self.mid_blocks = [DiscriminatorBlock(in_channels=in_channel,
-                                              kernel_sizes=kernel_sizes,
                                               channel_sizes=channel_size,
-                                              bottleneck_channels=bottleneck_channel,
-                                              p=p,
-                                              use_bottleneck=DISCRIMINATOR_USE_BOTTLENECK)
+                                              bottleneck_channels=bottleneck_channel)
                            for in_channel, channel_size, bottleneck_channel in zip(in_channels, channel_sizes,
                                                                                    bottleneck_channels)]
         self.mid_blocks = nn.Sequential(*self.mid_blocks)
 
         # Define the last block
         self.out_block = DiscriminatorOutput(
-            in_features_1=int(2 * sum(channel_sizes[-1]) * WINDOW_LENGTH * 2 ** - n_blocks),
-            out_features_1=64, p=p)
+            in_features_1=int(2 * sum(channel_sizes[-1]) * general_args.window_length * 2 ** - general_args.
+                              discriminator_n_block),
+            out_features_1=general_args.fc1_ouptut_features, general_args=general_args)
 
     def forward(self, x):
         x = self.in_block(x)

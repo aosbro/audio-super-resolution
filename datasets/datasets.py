@@ -1,4 +1,3 @@
-from utils.constants import *
 from torch.utils import data
 from processing.pre_processing import upsample, downsample
 import numpy as np
@@ -9,7 +8,7 @@ import h5py
 
 
 class DatasetBeethoven(data.Dataset):
-    def __init__(self, datapath, ratio=4, overlap=0.5, use_windowing=False):
+    def __init__(self, datapath, general_args, ratio=4, use_windowing=False):
         """
         Initializes the class DatasetBeethoven that stores the original high quality data (target) and applies the
         transformation to get the low quality data (input) on the fly. The raw data is stored as [n_tracks,
@@ -22,13 +21,15 @@ class DatasetBeethoven(data.Dataset):
         :param ratio: down-sampling ratio (scalar int).
         :param overlap: overlap ratio with adjacent windows (float in [0, 1)).
         :param use_windowing: boolean indicating if a Hanning window must be applied on the input tensors (boolean).
+        :param general_args: argument parser that contains the arguments that are independent to the script being
+        executed.
         """
         self.data = np.load(datapath)
         self.ratio = ratio
-        self.overlap = overlap
-        self.window_length = WINDOW_LENGTH
+        self.overlap = general_args.overlap
+        self.window_length = general_args.window_length
         self.window_number = self.compute_window_number()
-        self.hanning_length = HANNING_WINDOW_LENGTH
+        self.hanning_length = general_args.hanning_window_length
         self.fs = 16000
         self.use_windowing = use_windowing
 
@@ -102,7 +103,7 @@ class DatasetBeethoven(data.Dataset):
 
         # Apply hanning window over the whole window to avoid aliasing and for reconstruction
         if self.use_windowing:
-            x_target *= np.hanning(WINDOW_LENGTH)
+            x_target *= np.hanning(self.window_length)
 
         x_input = upsample(downsample(x_target, self.ratio), self.ratio)
         return torch.from_numpy(np.expand_dims(x_input, axis=0)).float(), \

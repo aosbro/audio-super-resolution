@@ -5,12 +5,12 @@ import torch
 class BaseBlock(nn.Module):
     def __init__(self, in_channels, kernel_sizes, channel_sizes, bottleneck_channels, use_bottleneck=True):
         """
-        Initializes the class BaseBlock which is the parent class to all blocks
-        :param in_channels: Number of input channel
-        :param kernel_sizes: List of kernel sizes, one entry per scale
-        :param channel_sizes: Number of output channel, one entry per scale
-        :param bottleneck_channels: Number of output channel of the intermediate convolution used to reduce
-        computational cost
+        Initializes the class BaseBlock which is the parent class to all blocks.
+        :param in_channels: Number of input channel.
+        :param kernel_sizes: list of kernel sizes, one entry per scale.
+        :param channel_sizes: number of output channel, one entry per scale.
+        :param bottleneck_channels: number of output channel of the intermediate convolution used to reduce
+        computational cost.
         :param use_bottleneck: boolean indicating whether to use the bottleneck channels or not.
         """
         super(BaseBlock, self).__init__()

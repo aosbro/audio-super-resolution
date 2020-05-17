@@ -1,194 +1,72 @@
-from trainers.base_trainer import Trainer
-from utils.utils import get_the_maestro_data_loaders_hdf, get_the_maestro_data_loaders_npy
-from models.generator import Generator
-from utils.constants import *
-from torch.optim import lr_scheduler
-import numpy as np
-import torch
-from torch import nn
+from trainers.generator_trainer import GeneratorTrainer
+from utils.constants_parser import get_general_args
+from utils.utils import prepare_maestro_data
+import argparse
 import os
 
 
-class GeneratorTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath):
-        super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath)
+def get_generator_trainer_args():
+    parser = argparse.ArgumentParser(description='Trains the generator.')
+    # Data related constants
+    parser.add_argument('--use_npy', default=True, type=bool,
+                        help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
+    parser.add_argument('--hdf5_filepath', type=str, help='Location of the .hdf5 file if this data format is selected.')
+    parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
+                        help='Location of the train .npy file if this data format is selected.')
+    parser.add_argument('--test_npy_filepath', default='data/test.npy', type=str,
+                        help='Location of the test .npy file if this data format is selected.')
+    parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
+                        help='Location of the valid .npy file if this data format is selected.')
+    parser.add_argument('--train_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the train phase.')
+    parser.add_argument('--test_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the test phase.')
+    parser.add_argument('--valid_batch_size', default=64, type=int,
+                        help='Number of samples per batch during the validation phase.')
+    parser.add_argument('--train_shuffle', default=True, type=bool,
+                        help='Flag indicating if the train data must be shuffled.')
+    parser.add_argument('--test_shuffle', default=True, type=bool,
+                        help='Flag indicating if the test data must be shuffled.')
+    parser.add_argument('--valid_shuffle', default=True, type=bool,
+                        help='Flag indicating if the validation data must be shuffled.')
+    parser.add_argument('--num_worker', default=2, type=int, help='Number of workers used by the data loaders.')
 
-        # Model
-        self.generator = Generator(kernel_sizes=KERNEL_SIZES,
-                                   channel_sizes_min=CHANNEL_SIZES_MIN,
-                                   p=DROPOUT_PROBABILITY,
-                                   n_blocks=N_BLOCKS_GENERATOR).to(self.device)
-
-        # Optimizer and scheduler
-        self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=30, gamma=0.5)
-
-        # Load saved states
-        if os.path.exists(self.loadpath):
-            self.load()
-
-        # Loss function
-        self.time_criterion = nn.MSELoss()
-        self.frequency_criterion = nn.MSELoss()
-
-    def train(self, epochs):
-        """
-        Trains the model for a specified number of epochs on the train dataset
-        :param epochs: Number of iterations over the complete dataset to perform
-        :return: None
-        """
-        for epoch in range(epochs):
-            self.generator.train()
-            for i in range(TRAIN_BATCH_ITERATIONS):
-                # Get the next batch
-                data_batch = next(self.train_loader_iter)
-                # Transfer to GPU
-                input_batch, target_batch = data_batch[0].to(self.device), data_batch[1].to(self.device)
-
-                # Reset all gradients in the graph
-                self.optimizer.zero_grad()
-
-                # Generates a fake batch
-                generated_batch = self.generator(input_batch)
-
-                # Get the spectrogram
-                specgram_target_batch = self.spectrogram(target_batch)
-                specgram_generated_batch = self.spectrogram(generated_batch)
-
-                # Compute and store the loss
-                time_l2_loss = self.time_criterion(generated_batch, target_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_target_batch)
-                self.train_losses['time_l2'].append(time_l2_loss.item())
-                self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                loss = time_l2_loss #+ freq_l2_loss
-
-                # Backward pass
-                loss.backward()
-                self.optimizer.step()
-
-            # Print message
-            message = 'Train, epoch {}: \n' \
-                      '\t Time: {} \n' \
-                      '\t Frequency: {} \n'.format(self.epoch, np.mean(self.train_losses['time_l2'][-TRAIN_BATCH_ITERATIONS:]),
-                                                   np.mean(self.train_losses['freq_l2'][-TRAIN_BATCH_ITERATIONS:]))
-            print(message)
-
-            with torch.no_grad():
-                self.eval()
-
-            # Save the trainer state
-            if self.need_saving:
-                self.save()
-
-            # Increment epoch counter
-            self.epoch += 1
-            self.scheduler.step()
-
-    def eval(self):
-        """
-        Evaluates the model on the validation dataset
-        :param epoch: Current epoch, used to print status information
-        :return: None
-        """
-        self.generator.eval()
-        batch_losses = {'time_l2': [], 'freq_l2': []}
-        for i in range(VALID_BATCH_ITERATIONS):
-            # Get the next batch
-            local_batch = next(self.valid_loader_iter)
-            # Transfer to GPU
-            input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
-
-            # Generates a fake batch
-            generated_batch = self.generator(input_batch)
-
-            # Get the spectrogram
-            specgram_target_batch = self.spectrogram(target_batch)
-            specgram_fake_batch = self.spectrogram(generated_batch)
-
-            # Compute and store the loss
-            time_l2_loss = self.time_criterion(generated_batch, target_batch)
-            freq_l2_loss = self.frequency_criterion(specgram_fake_batch, specgram_target_batch)
-            batch_losses['time_l2'].append(time_l2_loss.item())
-            batch_losses['freq_l2'].append(freq_l2_loss.item())
-
-        # Store validation losses
-        self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
-        self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
-
-        # Display valid loss
-        message = 'Validation, epoch {}: \n' \
-                  '\t Time: {} \n' \
-                  '\t Frequency: {} \n'.format(self.epoch,
-                                               np.mean(np.mean(batch_losses['time_l2'])),
-                                               np.mean(np.mean(batch_losses['freq_l2'])))
-        print(message)
-
-        # Check if the loss is decreasing
-        self.check_improvement()
-
-    def save(self):
-        """
-        Saves the model(s), optimizer(s), scheduler(s) and losses
-        :return: None
-        """
-        torch.save({
-            'epoch': self.epoch,
-            'generator_state_dict': self.generator.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'scheduler_state_dict': self.scheduler.state_dict(),
-            'train_losses': self.train_losses,
-            'test_losses': self.test_losses,
-            'valid_losses': self.valid_losses
-        }, self.savepath)
-
-    def load(self):
-        """
-        Loads the model(s), optimizer(s), scheduler(s) and losses
-        :return: None
-        """
-        checkpoint = torch.load(self.loadpath, map_location=self.device)
-        self.epoch = checkpoint['epoch']
-        self.generator.load_state_dict(checkpoint['generator_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        self.train_losses = checkpoint['train_losses']
-        self.test_losses = checkpoint['test_losses']
-        self.valid_losses = checkpoint['valid_losses']
+    # Trainer related constants
+    parser.add_argument('--savepath', type=str,
+                        help='Location where to save the generator trainer to resume training.')
+    parser.add_argument('--loadpath', default='', type=str,
+                        help='Location of an existing generator trainer from which to resume training.')
+    parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate for the generator.')
+    parser.add_argument('--scheduler_step', default=30, type=int,
+                        help='Number of steps before the learning step is reduced by a factor gamma.')
+    parser.add_argument('--scheduler_gamma', default=0.5, type=float,
+                        help='Factor by which the learning rate is reduced after a specified number of steps.')
+    args = parser.parse_args()
+    return args
 
 
-def get_generator_trainer(datapath, loadpath, savepath, datasets_parameters, loaders_parameters, use_hdf5):
-    # Get the data loader for each phase
-    if use_hdf5:
-        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_hdf(datapath, datasets_parameters,
-                                                                                   loaders_parameters)
-    else:
-        train_loader, test_loader, valid_loader = get_the_maestro_data_loaders_npy(datapath, loaders_parameters)
+def get_generator_trainer(general_args, trainer_args):
+    train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
-    generator_trainer = GeneratorTrainer(train_loader=train_loader,
-                                         test_loader=test_loader,
-                                         valid_loader=valid_loader,
-                                         lr=LEARNING_RATE,
-                                         loadpath=loadpath,
-                                         savepath=savepath)
-
-    return generator_trainer
-
-#
-# if __name__ == '__main__':
-#     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-#
-#     datapath = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-#     datasets_parameters = {phase: {'batch_size': 64, 'use_cache': True} for phase in ['train', 'test', 'valid']}
-#     loaders_parameters = {phase: {'batch_size': 64, 'shuffle': False, 'num_workers': 2}
-#                           for phase in ['train', 'test', 'valid']}
-#
-#     generator_trainer = get_generator_trainer(datapath=datapath,
-#                                               loadpath='',
-#                                               savepath='',
-#                                               datasets_parameters=datasets_parameters,
-#                                               loaders_parameters=loaders_parameters,
-#                                               use_hdf5=False)
-    # generator_trainer.train(epochs=1)
+    autoencoder_trainer = GeneratorTrainer(train_loader=train_loader,
+                                           test_loader=test_loader,
+                                           valid_loader=valid_loader,
+                                           general_args=general_args,
+                                           trainer_args=trainer_args)
+    return autoencoder_trainer
 
 
+if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    # Get the parameters related to the track generation
+    trainer_args = get_generator_trainer_args()
+
+    # Get the general parameters
+    general_args = get_general_args()
+
+    autoencoder_trainer = get_generator_trainer(general_args, trainer_args)
+    autoencoder_trainer.train(epochs=1)
+    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
+    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
