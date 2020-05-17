@@ -1,8 +1,5 @@
 import argparse
-"""
-KERNEL_SIZES = [3, 9, 27, 81]
-CHANNEL_SIZES_MIN = [24, 24, 8, 8]
-"""
+
 
 def get_general_args():
     parser = argparse.ArgumentParser(description='Store all constants required for the models and training.')
@@ -12,12 +9,6 @@ def get_general_args():
     parser.add_argument('--hanning_window_length', default=101, type=int,
                         help='Length of the hanning window used to smooth the transition after padding.')
     parser.add_argument('--num_worker', default=2, type=int, help='Number of workers used by the data loaders.')
-    # parser.add_argument('--train_shuffle', default=True, type=bool,
-    #                     help='Flag indicating if the train dataset must be shuffled.')
-    # parser.add_argument('--test_shuffle', default=False, type=bool,
-    #                     help='Flag indicating if the test dataset must be shuffled.')
-    # parser.add_argument('--valid_shuffle', default=True, type=bool,
-    #                     help='Flag indicating if the validation dataset must be shuffled.')
 
     # General architecture related constants
     parser.add_argument('--downscale_factor', default=2, type=int,
@@ -113,29 +104,6 @@ def get_general_args():
     parser.add_argument('--valid_batches_per_epoch', default=50, type=int,
                         help='Number of batches inside a validation pseudo-epoch. This allows for a faster but more'
                              ' stochastic evaluation.')
-    parser.add_argument('--lambda_adversarial', default=1e-3, type=float,
-                        help='Weight given to the adversarial loss during the GAN training.')
-
-    # # Auto-encoder's training related constants
-    # parser.add_argument('--autoencoder_lr', default=1e-3, type=float, help='Learning rate for the auto-encoder.')
-    # parser.add_argument('--autoencoder_scheduler_step', default=30, type=int,
-    #                     help='Number of steps before the learning step is reduced by a factor gamma.')
-    # parser.add_argument('--autoencoder_scheduler_gamma', default=0.5, type=float,
-    #                     help='Factor by which the learning rate is reduced after a specified number of steps.')
-    #
-    # # Generator's training related constants
-    # parser.add_argument('--generartor_lr', default=1e-3, type=float, help='Learning rate for the generator.')
-    # parser.add_argument('--generator_scheduler_step', default=30, type=int,
-    #                     help='Number of steps before the learning step is reduced by a factor gamma.')
-    # parser.add_argument('--generator_scheduler_gamma', default=0.5, type=float,
-    #                     help='Factor by which the learning rate is reduced after a specified number of steps.')
-    #
-    # # Discriminator's training related constants
-    # parser.add_argument('--discriminator_lr', default=1e-3, type=float, help='Learning rate for the discriminator.')
-    # parser.add_argument('--discriminator_scheduler_step', default=30, type=int,
-    #                     help='Number of steps before the learning step is reduced by a factor gamma.')
-    # parser.add_argument('--discriminator_scheduler_gamma', default=0.5, type=float,
-    #                     help='Factor by which the learning rate is reduced after a specified number of steps.')
     args = parser.parse_args()
     return args
 

@@ -8,18 +8,23 @@ import os
 
 
 class GeneratorTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, general_args, trainer_args):
-        super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath,
-                                               general_args)
+    def __init__(self, train_loader, test_loader, valid_loader, general_args, trainer_args):
+        super(GeneratorTrainer, self).__init__(train_loader, test_loader, valid_loader, general_args)
+        # Paths
+        self.loadpath = trainer_args.loadpath
+        self.savepath = trainer_args.savepath
+
         # Model
         self.generator = Generator(general_args).to(self.device)
 
         # Optimizer and scheduler
-        self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=30, gamma=0.5)
+        self.optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=trainer_args.lr)
+        self.scheduler = lr_scheduler.StepLR(optimizer=self.optimizer,
+                                             step_size=trainer_args.scheduler_step,
+                                             gamma=trainer_args.scheduler_gamma)
 
         # Load saved states
-        if os.path.exists(self.loadpath):
+        if os.path.exists(trainer_args.loadpath):
             self.load()
 
         # Loss function

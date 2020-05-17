@@ -16,7 +16,7 @@ class Discriminator(nn.Module):
 
         # Define the first block
         self.in_block = DiscriminatorInput(in_channels=1, channel_sizes=channel_sizes[0],
-                                           bottleneck_channels=bottleneck_channels[0])
+                                           bottleneck_channels=bottleneck_channels[0], general_args=general_args)
 
         # Define the intermediate blocks
         in_channels = [2 ** min(i, general_args.discriminator_channel_factor_max + 1) *
@@ -24,7 +24,7 @@ class Discriminator(nn.Module):
 
         self.mid_blocks = [DiscriminatorBlock(in_channels=in_channel,
                                               channel_sizes=channel_size,
-                                              bottleneck_channels=bottleneck_channel)
+                                              bottleneck_channels=bottleneck_channel, general_args=general_args)
                            for in_channel, channel_size, bottleneck_channel in zip(in_channels, channel_sizes,
                                                                                    bottleneck_channels)]
         self.mid_blocks = nn.Sequential(*self.mid_blocks)
@@ -33,7 +33,7 @@ class Discriminator(nn.Module):
         self.out_block = DiscriminatorOutput(
             in_features_1=int(2 * sum(channel_sizes[-1]) * general_args.window_length * 2 ** - general_args.
                               discriminator_n_block),
-            out_features_1=general_args.fc1_ouptut_features, general_args=general_args)
+            out_features_1=general_args.fc1_output_features, general_args=general_args)
 
     def forward(self, x):
         x = self.in_block(x)

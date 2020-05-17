@@ -49,12 +49,12 @@ def get_generator_trainer(general_args, trainer_args):
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
-    autoencoder_trainer = GeneratorTrainer(train_loader=train_loader,
-                                           test_loader=test_loader,
-                                           valid_loader=valid_loader,
-                                           general_args=general_args,
-                                           trainer_args=trainer_args)
-    return autoencoder_trainer
+    generator_trainer = GeneratorTrainer(train_loader=train_loader,
+                                         test_loader=test_loader,
+                                         valid_loader=valid_loader,
+                                         general_args=general_args,
+                                         trainer_args=trainer_args)
+    return generator_trainer
 
 
 if __name__ == '__main__':

@@ -11,31 +11,37 @@ import os
 
 
 class GanTrainer(Trainer):
-    def __init__(self, train_loader, test_loader, valid_loader, lr, loadpath, savepath, general_args,
-                 autoencoder_path=None, generator_path=None):
-        super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, loadpath, savepath, general_args)
-        # Models
+    def __init__(self, train_loader, test_loader, valid_loader, general_args, trainer_args):
+        super(GanTrainer, self).__init__(train_loader, test_loader, valid_loader, general_args)
+        # Paths
+        self.loadpath = trainer_args.loadpath
+        self.savepath = trainer_args.savepath
+
         # Load the auto-encoder
         self.use_autoencoder = False
-        if autoencoder_path:
+        if trainer_args.autoencoder_path and os.path.exists(trainer_args.autoencoder_path):
             self.use_autoencoder = True
             self.autoencoder = AutoEncoder(general_args=general_args).to(self.device)
-            self.load_pretrained_autoencoder(autoencoder_path)
+            self.load_pretrained_autoencoder(trainer_args.autoencoder_path)
             self.autoencoder.eval()
 
         # Load the generator
         self.generator = Generator(general_args=general_args).to(self.device)
-        if generator_path:
-            self.load_pretrained_generator(generator_path)
+        if trainer_args.generator_path and os.path.exists(trainer_args.generator_path):
+            self.load_pretrained_generator(trainer_args.generator_path)
 
         self.discriminator = Discriminator(general_args=general_args).to(self.device)
 
         # Optimizers and schedulers
-        self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=lr)
-        self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(), lr=lr)
-        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer, step_size=15, gamma=0.5)
-        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer, step_size=15,
-                                                           gamma=0.5)
+        self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=trainer_args.generator_lr)
+        self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(),
+                                                        lr=trainer_args.discriminator_lr)
+        self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer,
+                                                       step_size=trainer_args.generator_scheduler_step,
+                                                       gamma=trainer_args.generator_scheduler_gamma)
+        self.discriminator_scheduler = lr_scheduler.StepLR(optimizer=self.discriminator_optimizer,
+                                                           step_size=trainer_args.discriminator_scheduler_step,
+                                                           gamma=trainer_args.discriminator_scheduler_gamma)
 
         # Load saved states
         if os.path.exists(self.loadpath):
@@ -52,7 +58,7 @@ class GanTrainer(Trainer):
         self.generated_label = 0
 
         # Loss scaling factors
-        self.lambda_adv = LAMBDA_ADVERSARIAL_MIN
+        self.lambda_adv = trainer_args.lambda_adversarial
 
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
@@ -64,18 +70,33 @@ class GanTrainer(Trainer):
         self.use_adversarial = True
 
     def load_pretrained_generator(self, generator_path):
+        """
+        Loads a pre-trained generator. Can be used to stabilize the training.
+        :param generator_path: location of the pre-trained generator (string).
+        :return: None
+        """
         checkpoint = torch.load(generator_path, map_location=self.device)
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
 
     def load_pretrained_autoencoder(self, autoencoder_path):
+        """
+        Loads a pre-trained auto-encoder. Can be used to infer
+        :param autoencoder_path: location of the pre-trained auto-encoder (string).
+        :return: None
+        """
         checkpoint = torch.load(autoencoder_path, map_location=self.device)
         self.autoencoder.load_state_dict(checkpoint['autoencoder_state_dict'])
 
     def train(self, epochs):
+        """
+        Trains the GAN for a given number of pseudo-epochs.
+        :param epochs: Number of time to iterate over a part of the dataset (int).
+        :return: None
+        """
         for epoch in range(epochs):
             self.generator.train()
             self.discriminator.train()
-            for i in range(TRAIN_BATCH_ITERATIONS):
+            for i in range(self.train_batches_per_epoch):
                 # Transfer to GPU
                 local_batch = next(self.train_loader_iter)
                 input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
@@ -191,7 +212,7 @@ class GanTrainer(Trainer):
         self.generator.eval()
         self.discriminator.eval()
         batch_losses = {'time_l2': [], 'freq_l2': []}
-        for i in range(self.valid_batch_per_epoch):
+        for i in range(self.valid_batches_per_epoch):
             # Transfer to GPU
             local_batch = next(self.valid_loader_iter)
             input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)

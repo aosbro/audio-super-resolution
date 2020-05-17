@@ -15,7 +15,7 @@ class DiscriminatorBlock(BaseBlock):
         executed.
         """
         super(DiscriminatorBlock, self).__init__(in_channels, general_args.kernel_sizes, channel_sizes,
-                                                 bottleneck_channels, general_args.discriminator.use_bottleneck)
+                                                 bottleneck_channels, general_args.discriminator_use_bottleneck)
         self.batch_normalization = nn.BatchNorm1d(sum(channel_sizes))
         self.dropout = nn.Dropout(general_args.dropout_probability)
         self.activation = nn.LeakyReLU(negative_slope=general_args.leaky_relu_slope)
