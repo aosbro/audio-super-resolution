@@ -54,9 +54,10 @@ def get_autoencoder_trainer(general_args, trainer_args):
     """
     Instantiates the AutoEncoderTrainer class based on the given arguments.
     :param general_args: instance of an argument parser that stores generic parameters.
-    :param trainer_args: instance of an argumnet parser that strore parameters related to the training.
+    :param trainer_args: instance of an argument parser that stores parameters related to the training.
     :return: instance of an AutoEncoderTrainer.
     """
+    # Get the data loaders
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
@@ -78,8 +79,8 @@ if __name__ == '__main__':
     general_args = get_general_args()
 
     autoencoder_trainer = get_autoencoder_trainer(general_args, trainer_args)
-    autoencoder_trainer.train(epochs=1)
-    # autoencoder_trainer.plot_autoencoder_embedding_space(n_batches=5, fig_savepath='figures/autoencoder_features.png')
-    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
-    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
+    # autoencoder_trainer.train(epochs=1)
+    autoencoder_trainer.plot_l2_losses()
+    # autoencoder_trainer.plot_autoencoder_embedding_space(n_batches=5, fig_savepath='figures/autoencoder_features_new.png')
+
 

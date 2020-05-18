@@ -60,7 +60,7 @@ class Trainer(abc.ABC):
         self.spectrogram = Spectrogram(normalized=True, n_fft=512, hop_length=128).to(self.device)
         self.amplitude_to_db = AmplitudeToDB()
 
-        # Boolean indicting if autoencoder of generator
+        # Boolean indicting if auto-encoder or generator
         self.is_autoencoder = False
 
         # Boolean indicating if the model needs to be saved
@@ -210,6 +210,28 @@ class Trainer(abc.ABC):
         # Save plot if needed
         if savepath:
             plt.savefig(savepath)
+        plt.show()
+
+    def plot_l2_losses(self):
+        """
+        Plot the train and validation losses of type L2. The train losses are stored at a batch resolution it must
+        therefore be aggregated before plotting.
+        :return: None
+        """
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        for key, value in self.train_losses.items():
+            if key.endswith('l2') and value:
+                epoch_loss = np.reshape(np.array(value), newshape=[-1, self.train_batches_per_epoch]).mean(axis=-1)
+                axes[0].plot(epoch_loss, label=key)
+                axes[0].set_title('Train losses, L2', fontsize=16)
+                axes[0].set_xlabel('Pseudo-epochs ({} batches)'.format(self.train_batches_per_epoch), fontsize=14)
+                axes[0].legend()
+        for key, value in self.valid_losses.items():
+            if key.endswith('l2') and value:
+                axes[1].plot(value, label=key)
+                axes[1].set_title('Validation losses, L2', fontsize=16)
+                axes[1].set_xlabel('Pseudo-epochs ({} batches)'.format(self.valid_batches_per_epoch), fontsize=14)
+                axes[1].legend()
         plt.show()
 
     @abc.abstractmethod

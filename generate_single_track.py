@@ -7,8 +7,16 @@ import os
 
 
 def get_track_generation_args():
+    """
+    Parses the arguments related to the generation of a track if provided by the user, otherwise uses default
+    values.
+    :return: Parsed arguments.
+    """
     parser = argparse.ArgumentParser(description='Generates a track from an input .midi file.')
-    parser.add_argument('--original_midi', type=str, help='Original .midi file to base the input and target on.')
+    parser.add_argument('--original_midi',
+                        default='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2008/'
+                                'MIDI-Unprocessed_03_R3_2008_01-03_ORIG_MID--AUDIO_03_R3_2008_wav--1.midi',
+                        type=str, help='Original .midi file to base the input and target on.')
     parser.add_argument('--temp_dir', default='data/temp', type=str,
                         help='Location of a temporary directory to store temporary files. If is does not exists it will'
                              'be created. If it already exists its content will be erased. After the creation of the '
@@ -44,26 +52,26 @@ def get_track_generation_args():
     return args
 
 
-def main():
-    # Get the parameters related to the track generation
-    track_args = get_track_generation_args()
+def generate_track(general_args, track_args):
+    """
 
-    # Get the general parameters
-    general_args = get_general_args()
-
-    # Set the device
-    device = ('cuda' if torch.cuda.is_available() else 'cpu')
-
-    generate_single_track(original_midi_filepath='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2017/MIDI'
-                                                 '-Unprocessed_083_PIANO083_MID--AUDIO-split_07-09-17_Piano-e_2_'
-                                                 '-06_wav--3.midi',
+    :param general_args:
+    :param track_args:
+    :return:
+    """
+    generate_single_track(original_midi_filepath=track_args.original_midi,
                           temporary_directory_path=track_args.temp_dir,
                           transformations=prepare_transformations(track_args),
                           generator_path='objects/generator_trainer_no_skip2.tar',
-                          device=device,
+                          device=('cuda' if torch.cuda.is_available() else 'cpu'),
                           general_args=general_args)
 
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    main()
+    # Get the parameters related to the track generation
+    track_args = get_track_generation_args()
+
+    # Get the general parameters
+    general_args = get_general_args()
+    generate_track()

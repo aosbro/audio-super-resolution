@@ -94,9 +94,9 @@ class GanTrainer(Trainer):
         :return: None
         """
         for epoch in range(epochs):
-            self.generator.train()
-            self.discriminator.train()
             for i in range(self.train_batches_per_epoch):
+                self.generator.train()
+                self.discriminator.train()
                 # Transfer to GPU
                 local_batch = next(self.train_loader_iter)
                 input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
@@ -157,7 +157,7 @@ class GanTrainer(Trainer):
                 self.train_losses['freq_l2'].append(loss_generator_frequency.item())
 
                 # Get the L2 loss in embedding space
-                loss_generator_autoencoder = torch.zeros(size=[1], device=self.device)
+                loss_generator_autoencoder = torch.zeros(size=[1], device=self.device, requires_grad=True)
                 if self.use_autoencoder:
                     # Get the embeddings
                     _, embedding_target_batch = self.autoencoder(target_batch)
@@ -167,13 +167,11 @@ class GanTrainer(Trainer):
                     self.train_losses['autoencoder_l2'].append(loss_generator_autoencoder.item())
 
                 # Combine the different losses
-                # loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                #                  loss_generator_frequency + loss_generator_autoencoder
-                loss_generator = loss_generator_autoencoder
+                loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
+                                 loss_generator_frequency + loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
-                # clip_grad_norm_(parameters=self.generator.parameters(), max_norm=GENERATOR_CLIP_VALUE)
                 self.generator_optimizer.step()
 
                 # Print message

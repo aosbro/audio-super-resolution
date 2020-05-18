@@ -6,6 +6,11 @@ import os
 
 
 def get_generator_trainer_args():
+    """
+    Parses the arguments related to the training of the generator if provided by the user, otherwise uses default
+    values.
+    :return: Parsed arguments.
+    """
     parser = argparse.ArgumentParser(description='Trains the generator.')
     # Data related constants
     parser.add_argument('--use_npy', default=True, type=bool,
@@ -34,7 +39,7 @@ def get_generator_trainer_args():
     # Trainer related constants
     parser.add_argument('--savepath', type=str,
                         help='Location where to save the generator trainer to resume training.')
-    parser.add_argument('--loadpath', default='', type=str,
+    parser.add_argument('--loadpath', default='objects/generator_trainer_no_skip2.tar', type=str,
                         help='Location of an existing generator trainer from which to resume training.')
     parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate for the generator.')
     parser.add_argument('--scheduler_step', default=30, type=int,
@@ -46,6 +51,13 @@ def get_generator_trainer_args():
 
 
 def get_generator_trainer(general_args, trainer_args):
+    """
+    Instantiates the GeneratorTrainer class based on the given arguments.
+    :param general_args: instance of an argument parser that stores generic parameters.
+    :param trainer_args: instance of an argument parser that stores parameters related to the training.
+    :return: instance of an GeneratorTrainer.
+    """
+    # Get the data loaders
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
@@ -66,7 +78,6 @@ if __name__ == '__main__':
     # Get the general parameters
     general_args = get_general_args()
 
-    autoencoder_trainer = get_generator_trainer(general_args, trainer_args)
-    autoencoder_trainer.train(epochs=1)
-    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
-    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
+    generator_trainer = get_generator_trainer(general_args, trainer_args)
+    # generator_trainer.train(epochs=1)
+    generator_trainer.plot_l2_losses()

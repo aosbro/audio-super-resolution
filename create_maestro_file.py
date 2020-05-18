@@ -6,12 +6,18 @@ import os
 
 
 def get_dataset_creation_args():
+    """
+    Parses the arguments related to the creation of the dataset if provided by the user, otherwise uses default
+    values.
+    :return: Parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description='Creates the files on which training can occur from the Maestro dataset. Can either create a single'
                     '.hdf5 file that contains the complete data for all phases (train, test and validation) or three '
                     'separate .npy files (one for each phase).')
-    parser.add_argument('--use_npy', default=False, type=bool,
-                        help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
+    parser.add_argument('--use_npy', default=True, type=bool,
+                        help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file. This'
+                             'data format is not recommended as it required the data to fit entirely in RAM.')
     parser.add_argument('--hdf5_savepath', default='data/maestro2.hdf5', type=str,
                         help='Location of the .hdf5 file to create if this data format is selected')
     parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
@@ -28,7 +34,9 @@ def get_dataset_creation_args():
                              'dataset the temporary folder and its content will be deleted.')
     parser.add_argument('--remove_temporary_directory', default=True, type=bool,
                         help='Flag indicating if the temporary directory must be deleted after the dataset creation.')
-    parser.add_argument('--n_train', default=1, type=int,
+    parser.add_argument('--used_tracks_file', default='data/used_tracks.txt', type=str,
+                        help='Location of a text file to store the names of the tracks that have been used.')
+    parser.add_argument('--n_train', default=5, type=int,
                         help='Number of tracks to base the train dataset on. The average length of a track is over 10 '
                              'minutes and can go up to 30 minutes. The tracks are sampled at 44.1 kHz or 48 kHz this '
                              'information is stored as a meta-data in each track.')
@@ -70,7 +78,7 @@ def get_dataset_creation_args():
     return args
 
 
-def create_maestro_dataset():
+def create_maestro_dataset(dataset_args):
     """
     Parses the data_root folder to collect all .midi files. From all the files a random selection is done to get the
     specified numbers for each phase ('train', 'test', 'valid'). The .midi files are then modified according to the
@@ -78,14 +86,15 @@ def create_maestro_dataset():
     the .wav files are loaded as numpy arrays and cut in overlapping windows of size window_length=8192. These numpy
     arrays are stored in a hdf5 file.
     """
-    # Get the parameters related to the dataset creation
-    dataset_args = get_dataset_creation_args()
-
     # Randomly select the required number of tracks for each phase
     midifiles = sample_dataset(dataset_path=dataset_args.data_root,
                                n_train=dataset_args.n_train,
                                n_test=dataset_args.n_test,
                                n_valid=dataset_args.n_valid)
+
+    # Save the name of used tracks
+    with open(dataset_args.used_tracks_file, 'w') as f:
+        print(midifiles, file=f)
 
     # Create a dictionary to store files location
     file_dict = {phase: {status: [] for status in ['input', 'target']} for phase in ['train', 'test', 'valid']}
@@ -133,4 +142,8 @@ def create_maestro_dataset():
 
 
 if __name__ == '__main__':
-    create_maestro_dataset()
+    # Get the parameters related to the dataset creation
+    dataset_args = get_dataset_creation_args()
+
+    # Create the dataset
+    create_maestro_dataset(dataset_args)

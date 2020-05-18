@@ -169,8 +169,6 @@ def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_leng
                 input_data, _ = cut_track_and_stack(input_wav_savepath, window_length=window_length)
                 target_data, _ = cut_track_and_stack(target_wav_savepath, window_length=window_length)
 
-                print(input_data.shape, target_data.shape)
-
                 # Create the datasets for each group
                 if i == 0:
                     hdf[phase].create_dataset(name='input', data=input_data, maxshape=(None, 1, window_length),

@@ -6,16 +6,21 @@ import os
 
 
 def get_gan_trainer_args():
+    """
+    Parses the arguments related to the training of the gan if provided by the user, otherwise uses default
+    values.
+    :return: Parsed arguments.
+    """
     parser = argparse.ArgumentParser(description='Trains the GAN.')
     # Data related constants
     parser.add_argument('--use_npy', default=True, type=bool,
                         help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
     parser.add_argument('--hdf5_filepath', type=str, help='Location of the .hdf5 file if this data format is selected.')
-    parser.add_argument('--train_npy_filepath', default='/content/drive/My Drive/audio_data/train.npy', type=str,
+    parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
                         help='Location of the train .npy file if this data format is selected.')
-    parser.add_argument('--test_npy_filepath', default='/content/drive/My Drive/audio_data/test.npy', type=str,
+    parser.add_argument('--test_npy_filepath', default='data/test.npy', type=str,
                         help='Location of the test .npy file if this data format is selected.')
-    parser.add_argument('--valid_npy_filepath', default='/content/drive/My Drive/audio_data/valid.npy', type=str,
+    parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
                         help='Location of the valid .npy file if this data format is selected.')
     parser.add_argument('--train_batch_size', default=64, type=int,
                         help='Number of samples per batch during the train phase.')
@@ -67,6 +72,12 @@ def get_gan_trainer_args():
 
 
 def get_gan_trainer(general_args, trainer_args):
+    """
+    Instantiates the GanTrainer class based on the given arguments.
+    :param general_args: instance of an argument parser that stores generic parameters.
+    :param trainer_args: instance of an argument parser that stores parameters related to the training.
+    :return: instance of an GanTrainer.
+    """
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
@@ -89,7 +100,7 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_gan_trainer(general_args, trainer_args)
-    # self.train(epochs=1)
+    gan_trainer.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
 #

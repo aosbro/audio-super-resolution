@@ -37,6 +37,11 @@ class AutoEncoderTrainer(Trainer):
         self.is_autoencoder = True
 
     def train(self, epochs):
+        """
+        Trains the auto-encoder for a given number of pseudo-epochs
+        :param epochs: Number of pseudo-epochs to perform
+        :return: None
+        """
         for epoch in range(epochs):
             self.autoencoder.train()
             for i in range(self.train_batches_per_epoch):
@@ -97,6 +102,10 @@ class AutoEncoderTrainer(Trainer):
             self.scheduler.step()
 
     def eval(self):
+        """
+        Evaluate the the auto-encoder on the validation set.
+        :return: None
+        """
         with torch.no_grad():
             self.autoencoder.eval()
             batch_losses = {'time_l2': [], 'freq_l2': []}
@@ -123,7 +132,7 @@ class AutoEncoderTrainer(Trainer):
             self.valid_losses['freq_l2'].append(np.mean(batch_losses['freq_l2']))
 
             # Display the validation loss
-            message = 'Epoch {}: \n' \
+            message = 'Validation, epoch {}: \n' \
                       '\t Time: {} \n' \
                       '\t Frequency: {} \n'.format(self.epoch,
                                                    np.mean(np.mean(batch_losses['time_l2'])),
