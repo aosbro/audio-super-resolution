@@ -1,9 +1,11 @@
+from models.autoencoder import AutoEncoder
 from trainers.base_trainer import Trainer
-import torch
 from torch.optim import lr_scheduler
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 from torch import nn
 import numpy as np
-from models.autoencoder import AutoEncoder
+import torch
 import os
 
 
@@ -38,35 +40,50 @@ class AutoEncoderTrainer(Trainer):
         for epoch in range(epochs):
             self.autoencoder.train()
             for i in range(self.train_batches_per_epoch):
-                local_batch = next(self.train_loader_iter)
+                data_batch = next(self.train_loader_iter)
+                # Transfer to GPU
+                input_batch, target_batch = data_batch[0].to(self.device), data_batch[1].to(self.device)
+
                 # Concatenate the input and target signals along first dimension and transfer to GPU
-                local_batch = torch.cat(local_batch).to(self.device)
+                # local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
 
-                # Forward pass
-                generated_batch, _ = self.autoencoder.forward(local_batch)
-
-                # Get the spectrogram
-                specgram_local_batch = self.spectrogram(local_batch)
+                # Train with input samples
+                generated_batch, _ = self.autoencoder(input_batch)
+                specgram_input_batch = self.spectrogram(input_batch)
                 specgram_generated_batch = self.spectrogram(generated_batch)
 
-                # Compute and store the loss
-                time_l2_loss = self.time_criterion(generated_batch, local_batch)
-                freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_local_batch)
-                self.train_losses['time_l2'].append(time_l2_loss.item())
-                self.train_losses['freq_l2'].append(freq_l2_loss.item())
-                loss = time_l2_loss + freq_l2_loss
+                # Compute the input losses
+                input_time_l2_loss = self.time_criterion(generated_batch, input_batch)
+                input_freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_input_batch)
+                input_loss = input_time_l2_loss + input_freq_l2_loss
+                input_loss.backward()
 
-                # Print message
-                if not (i % 10):
-                    message = 'Batch {}: \n' \
-                              '\t Time: {} \n' \
-                              '\t Frequency: {} \n' .format(i, time_l2_loss.item(), freq_l2_loss.item())
-                    print(message)
+                # Train with target samples
+                generated_batch, _ = self.autoencoder(target_batch)
+                specgram_target_batch = self.spectrogram(target_batch)
+                specgram_generated_batch = self.spectrogram(generated_batch)
 
-                # Backward pass
-                loss.backward()
+                # Compute the input losses
+                target_time_l2_loss = self.time_criterion(generated_batch, target_batch)
+                target_freq_l2_loss = self.frequency_criterion(specgram_generated_batch, specgram_target_batch)
+                target_loss = target_time_l2_loss + target_freq_l2_loss
+                target_loss.backward()
+
+                # Update weights
                 self.optimizer.step()
+
+                # Store losses
+                self.train_losses['time_l2'].append((input_time_l2_loss + target_time_l2_loss).item())
+                self.train_losses['freq_l2'].append((input_freq_l2_loss + target_freq_l2_loss).item())
+
+            # Print message
+            message = 'Train, epoch {}: \n' \
+                      '\t Time: {} \n' \
+                      '\t Frequency: {} \n'.format(
+                self.epoch, np.mean(self.train_losses['time_l2'][-self.train_batches_per_epoch:]),
+                np.mean(self.train_losses['freq_l2'][-self.train_batches_per_epoch:]))
+            print(message)
 
             with torch.no_grad():
                 self.eval()
@@ -144,3 +161,52 @@ class AutoEncoderTrainer(Trainer):
         self.train_losses = checkpoint['train_losses']
         self.test_losses = checkpoint['test_losses']
         self.valid_losses = checkpoint['valid_losses']
+
+    def plot_autoencoder_embedding_space(self, n_batches, fig_savepath=None):
+        """
+        Plots a 2D representation of the embedding space. Can be useful to determine whether or not the auto-encoder's
+        features can be used to improve the generation of realistic samples.
+        :param n_batches: number of batches to use for the plot.
+        :param fig_savepath: location where to save the figure
+        :return: None
+        """
+        n_pairs = n_batches * self.valid_loader.batch_size
+        n_features = 9
+        with torch.no_grad():
+            autoencoder = self.autoencoder.eval()
+            embeddings = []
+            for k in range(n_batches):
+                # Transfer to GPU
+                data_batch = next(self.valid_loader_iter)
+                data_batch = torch.cat(data_batch).to(self.device)
+
+                # Forward pass
+                _, embedding_batch = autoencoder(data_batch)
+
+                # Store the embeddings
+                embeddings.append(embedding_batch)
+
+            # Convert list to tensor
+            embeddings = torch.cat(embeddings)
+
+        # Randomly select features from the channel dimension
+        random_features = np.random.randint(embeddings.shape[1], size=n_features)
+        # Plot embeddings
+        fig, axes = plt.subplots(3, 3, figsize=(12, 12))
+        for i, random_feature in enumerate(random_features):
+            # Map embedding to a 2D representation
+            tsne = TSNE(n_components=2, verbose=0, perplexity=50)
+            tsne_results = tsne.fit_transform(embeddings[:, random_feature, :].detach().cpu().numpy())
+            for k in range(2):
+                label = ('input' if k == 0 else 'target')
+                axes[i // 3][i % 3].scatter(tsne_results[k * n_pairs: (k + 1) * n_pairs, 0],
+                                            tsne_results[k * n_pairs: (k + 1) * n_pairs:, 1], label=label)
+                axes[i // 3][i % 3].set_title('Channel {}'.format(random_feature), fontsize=14)
+                axes[i // 3][i % 3].set_xlabel('Learned dimension 1', fontsize=14)
+                axes[i // 3][i % 3].set_ylabel('Learned dimension 2', fontsize=14)
+                axes[i // 3][i % 3].legend()
+
+        # Save plot if needed
+        if fig_savepath:
+            plt.savefig(fig_savepath)
+        plt.show()

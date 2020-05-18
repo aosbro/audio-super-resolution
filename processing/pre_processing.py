@@ -8,7 +8,6 @@ import h5py
 from scipy.io import wavfile
 from mido import MidiFile, MidiTrack
 from subprocess import call
-import shutil
 
 
 def downsample(x, downscale_factor):
@@ -69,6 +68,7 @@ def plot_spectrograms(x_h, x_l, fs):
     librosa.display.specshow(X_l_db, sr=fs, x_axis='time', y_axis='hz', ax=axes[1])
     axes[1].set_title('Low quality, spectrogram', fontsize=16)
     plt.show()
+
 
 def sample_dataset(dataset_path, n_train, n_test, n_valid):
     """

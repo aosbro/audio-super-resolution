@@ -40,7 +40,7 @@ def get_gan_trainer_args():
                         help='Weight given to the adversarial loss during the GAN training.')
 
     # Autoencoder related constants
-    parser.add_argument('--autoencoder_path', default='/content/drive/My Drive/audio_objects/autoencoder_trainer.tar',
+    parser.add_argument('--autoencoder_path', default='/content/drive/My Drive/audio_objects/self.tar',
                         type=str,
                         help='Location of a pre-trained auto-encoder used to extract features from the samples. If not '
                              'provided the gan will be trained without the auto-encoder loss.')
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_gan_trainer(general_args, trainer_args)
-    # autoencoder_trainer.train(epochs=1)
+    # self.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
 #

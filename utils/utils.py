@@ -158,8 +158,8 @@ def prepare_transformations(args):
     """
     Prepares the transformations that must be applied to the input and target signals under the adequate format using
     the parameters stored in the argument parser.
-    :param args: instance of an argument parser
-    :return:
+    :param args: instance of an argument parser.
+    :return: transformations for the input and target signals as a dictionary
     """
     transformations = {'input': {'instrument': args.input_instrument, 'velocity': args.input_velocity,
                                  'control': args.input_control, 'control_value': args.input_control_value},

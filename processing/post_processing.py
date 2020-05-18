@@ -3,7 +3,8 @@ import numpy as np
 import os
 import torch
 import shutil
-from create_maestro_file import create_modified_midifile, convert_midi_to_wav, cut_track_and_stack
+from create_maestro_file import create_modified_midifile
+from processing.pre_processing import convert_midi_to_wav, cut_track_and_stack
 from scipy.io.wavfile import write, read
 from utils.utils import get_generator
 
@@ -89,4 +90,6 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
     write(os.path.join(temporary_directory_path, 'generated.wav'), fs, full_sample_generated.numpy())
     write(os.path.join(temporary_directory_path, 'input.wav'), fs, full_sample_input[:, 0])
     write(os.path.join(temporary_directory_path, 'target.wav'), fs, full_sample_target[:, 0])
+
+
 

@@ -21,10 +21,6 @@ class Trainer(abc.ABC):
         self.valid_loader_iter = cycle(iter(self.valid_loader))
         self.test_loader_iter = cycle(iter(self.test_loader))
 
-        # # Paths
-        # self.loadpath = loadpath
-        # self.savepath = savepath
-
         # Epoch counter
         self.epoch = 0
 
