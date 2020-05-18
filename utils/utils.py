@@ -139,7 +139,7 @@ def plot_losses(losses, names, is_training, savepath=None):
 
 def get_generator(loadpath, device, general_args):
     """
-    Returns a pre-trained generator.
+    Returns a pre-trained generator in evaluation mode.
     :param loadpath: location of the generator trainer (string).
     :param device: either 'cpu' or 'cuda' depending on hardware availability (string).
     :param general_args: argument parser that contains the arguments that are independent to the script being executed.
@@ -152,3 +152,17 @@ def get_generator(loadpath, device, general_args):
     checkpoint = torch.load(loadpath, map_location=device)
     generator.load_state_dict(checkpoint['generator_state_dict'])
     return generator.eval()
+
+
+def prepare_transformations(args):
+    """
+    Prepares the transformations that must be applied to the input and target signals under the adequate format using
+    the parameters stored in the argument parser.
+    :param args: instance of an argument parser
+    :return:
+    """
+    transformations = {'input': {'instrument': args.input_instrument, 'velocity': args.input_velocity,
+                                 'control': args.input_control, 'control_value': args.input_control_value},
+                       'target': {'instrument': args.target_instrument, 'velocity': args.target_velocity,
+                                  'control': args.target_control, 'control_value': args.target_control_value}}
+    return transformations

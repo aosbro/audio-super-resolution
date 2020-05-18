@@ -1,253 +1,107 @@
-import os
-import numpy as np
-import h5py
-from scipy.io import wavfile
-from mido import MidiFile, MidiTrack
-from subprocess import call
+from processing.pre_processing import sample_dataset, create_modified_midifile, create_hdf5_file, create_npy_files
+from utils.utils import prepare_transformations
+import argparse
 import shutil
+import os
 
 
-def sample_dataset(dataset_path, n_train, n_test, n_valid):
-    """
-    Selects randomly from the complete dataset a specified number of train, test and valid samples.
-    :param dataset_path: path to root directory containing the sub-directories where the .wav files are (string).
-    :param n_train: number of train samples to select (scalar int).
-    :param n_test: number of test samples to select (scalar int).
-    :param n_valid: number of valid samples to select (scalar int).
-    :return: dictionary indexed by 'train', 'test' and 'valid' to access a list of paths to selected files
-    """
-    midifiles = []
-    # Collect all .wav files recursively
-    for root, dirs, files in os.walk(dataset_path):
-        for name in files:
-            if name.endswith('.midi'):
-                midifiles.append(os.path.join(root, name))
-
-    n_total = n_train + n_test + n_valid
-    selected_wavfiles = np.random.choice(midifiles, size=n_total, replace=False)
-    wavfiles_dict = {'train': selected_wavfiles[:n_train],
-                     'test': selected_wavfiles[n_train: n_train + n_test],
-                     'valid': selected_wavfiles[n_train + n_test:]}
-    return wavfiles_dict
-
-
-def compute_window_number(track_length, window_length=8192, overlap=0.5):
-    """
-    Computes the number of overlapping window for a specific track
-    :param track_length: total number of samples in the track (scalar int)
-    :param window_length: number of samples per window (scalar int)
-    :param overlap: ratio of overlapping samples for consecutive samples (scalar int in [0, 1))
-    :return: number of windows in the track
-    """
-    num = track_length - window_length
-    den = window_length * (1 - overlap)
-    return int(num // den + 2)
-
-
-def cut_track_and_stack(track_path, window_length=8192, overlap=0.5):
-    """
-    Cuts a given track in overlapping windows and stacks them along a new axis
-    :param track_path: path to .wav track to apply the function on
-    :param window_length: number of samples per window (scalar int)
-    :param overlap: ratio of overlapping samples for consecutive samples (scalar int in [0, 1))
-    :return: processed track as a numpy array with dimension [window_number, 1, window_length], sampling frequency
-    """
-    # Load a single track
-    fs, track = wavfile.read(track_path)
-
-    # Select left channel (do not use the right channel (track[:, 1]) as Timidity++ introduces distorsions in it)
-    track = (track[:, 0] / np.iinfo(np.int16).max).astype('float32')
-
-    # Get number of windows and prepare empty array
-    window_number = compute_window_number(track_length=track.shape[0])
-    cut_track = np.zeros((window_number, window_length))
-
-    # Cut the tracks in smaller windows
-    for i in range(window_number):
-        window_start = int(i * (1 - overlap) * window_length)
-        window = track[window_start: window_start + window_length]
-
-        # Check if last window needs padding
-        if window.shape[0] != window_length:
-            padding = window_length - window.shape[0]
-            window = np.concatenate([window, np.zeros(padding)])
-        cut_track[i] = window
-    return cut_track.reshape((window_number, 1, window_length)), fs
+def get_dataset_creation_args():
+    parser = argparse.ArgumentParser(
+        description='Creates the files on which training can occur from the Maestro dataset. Can either create a single'
+                    '.hdf5 file that contains the complete data for all phases (train, test and validation) or three '
+                    'separate .npy files (one for each phase).')
+    parser.add_argument('--use_npy', default=False, type=bool,
+                        help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
+    parser.add_argument('--hdf5_savepath', default='data/maestro2.hdf5', type=str,
+                        help='Location of the .hdf5 file to create if this data format is selected')
+    parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
+                        help='Location of the train .npy file if this data format is selected.')
+    parser.add_argument('--test_npy_filepath', default='data/test.npy', type=str,
+                        help='Location of the test .npy file if this data format is selected.')
+    parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
+                        help='Location of the valid .npy file if this data format is selected.')
+    parser.add_argument('--data_root', default='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0', type=str,
+                        help='Root directory of the Maestro dataset.')
+    parser.add_argument('--temporary_directory', default='data/temp', type=str,
+                        help='Location of a temporary directory to store temporary files. If is does not exists it will'
+                             'be created. If it already exists its content will be erased. After the creation of the '
+                             'dataset the temporary folder and its content will be deleted.')
+    parser.add_argument('--remove_temporary_directory', default=True, type=bool,
+                        help='Flag indicating if the temporary directory must be deleted after the dataset creation.')
+    parser.add_argument('--n_train', default=1, type=int,
+                        help='Number of tracks to base the train dataset on. The average length of a track is over 10 '
+                             'minutes and can go up to 30 minutes. The tracks are sampled at 44.1 kHz or 48 kHz this '
+                             'information is stored as a meta-data in each track.')
+    parser.add_argument('--n_test', default=1, type=int,
+                        help='Number of tracks to base the test dataset on. The average length of a track is over 10 '
+                             'minutes and can go up to 30 minutes. The tracks are sampled at 44.1 kHz or 48 kHz this '
+                             'information is stored as a meta-data in each track.')
+    parser.add_argument('--n_valid', default=1, type=int,
+                        help='Number of tracks to base the validation dataset on. The average length of a track is over'
+                             ' 10 minutes and can go up to 30 minutes. The tracks are sampled at 44.1 kHz or 48 kHz '
+                             'this information is stored as a meta-data in each track.')
+    parser.add_argument('--input_instrument', default=4, type=int, help='Input instrument, default is electric piano.')
+    parser.add_argument('--input_velocity', default=None, type=int, help='Velocity corresponds to the volume at which a'
+                                                                         ' given key is played. When set to a value in '
+                                                                         '[0, 127] this information is lost.')
+    parser.add_argument('--input_control', default=None, type=int, help='Control corresponds to effects (sustain/pedal)'
+                                                                        'applied on the signal. The only control in the'
+                                                                        ' Maestro dataset is the pedal which is encoded'
+                                                                        ' on value 64. A specific control can be set to'
+                                                                        ' a new control value using control and '
+                                                                        'control_value arguments.')
+    parser.add_argument('--input_control_value', default=None, type=int, help='The control value is typically set to '
+                                                                              'zero to remove a specific effect '
+                                                                              'selected with the control argument.')
+    parser.add_argument('--target_instrument', default=0, type=int, help='Input instrument, default is classic piano.')
+    parser.add_argument('--target_velocity', default=None, type=int, help='Velocity corresponds to the volume at which '
+                                                                          'a given key is played. When set to a value '
+                                                                          'in[0, 127] this information is lost.')
+    parser.add_argument('--target_control', default=None, type=int, help='Control corresponds to effects '
+                                                                         '(sustain/pedal) applied on the signal. The '
+                                                                         'only control in the Maestro dataset is the '
+                                                                         'pedal which is encoded on value 64. A '
+                                                                         'specific control can be set to a new control '
+                                                                         'value using control and  arguments.')
+    parser.add_argument('--target_control_value', default=None, type=int, help='The control value is typically set to '
+                                                                               'zero to remove a specific effect '
+                                                                               'selected with the control argument.')
+    args = parser.parse_args()
+    return args
 
 
-def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_length=8192):
-    """
-    Parses the root folder to find all .wav files and randomly select disjoint sets for the 'train', 'test'
-    and 'valid' phases.
-    :param hdf5_path: path to location where to create the .h5 file (string)
-    :param window_length: number of samples per window (scalar int)
-    :param n_train: number of train tracks to select
-    :param n_test: number of test tracks to select
-    :param n_valid: number of valid tracks to select (scalar int).
-    :return: None
-    """
-    with h5py.File(hdf5_path, 'w') as hdf:
-        # Create the groups inside the files
-        for phase in ['train', 'test', 'valid']:
-            hdf.create_group(name=phase)
-            phase_directory = os.path.join(temporary_directory_path, phase)
-            status_directories = {status: os.path.join(phase_directory, status) for status in ['input', 'target']}
-            for i, (input_midifile, target_midifile) in enumerate(zip(file_dict[phase]['input'],
-                                                                      file_dict[phase]['target'])):
-                # Create the new wavfiles
-                input_wav_savepath = os.path.join(status_directories['input'],
-                                                     os.path.split(input_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-                target_wav_savepath = os.path.join(status_directories['target'],
-                                                     os.path.split(target_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-                convert_midi_to_wav(input_midifile, input_wav_savepath)
-                convert_midi_to_wav(target_midifile, target_wav_savepath)
-
-                # Get the data as a numpy array with shape [window_number, 1, window_length]
-                input_data, _ = cut_track_and_stack(input_wav_savepath, window_length=window_length)
-                target_data, _ = cut_track_and_stack(target_wav_savepath, window_length=window_length)
-
-                print(input_data.shape, target_data.shape)
-
-                # Create the datasets for each group
-                if i == 0:
-                    hdf[phase].create_dataset(name='input', data=input_data, maxshape=(None, 1, window_length),
-                                              chunks=(32, 1, window_length))
-                    hdf[phase].create_dataset(name='target', data=target_data, maxshape=(None, 1, window_length),
-                                              chunks=(32, 1, window_length))
-                else:
-                    # Resize and append dataset
-                    hdf[phase]['input'].resize((hdf[phase]['input'].shape[0] + input_data.shape[0]), axis=0)
-                    hdf[phase]['input'][-input_data.shape[0]:] = input_data
-                    hdf[phase]['target'].resize((hdf[phase]['target'].shape[0] + target_data.shape[0]), axis=0)
-                    hdf[phase]['target'][-target_data.shape[0]:] = target_data
-
-
-def create_npy_files(file_dict, temporary_directory_path, savepath, window_length=8192):
-    # Iterate over the phases
-    for phase in ['train', 'test', 'valid']:
-        phase_directory = os.path.join(temporary_directory_path, phase)
-        status_directories = {status: os.path.join(phase_directory, status) for status in ['input', 'target']}
-        # Iterate all selected files
-        for i, (input_midifile, target_midifile) in enumerate(zip(file_dict[phase]['input'],
-                                                                  file_dict[phase]['target'])):
-            # Create the new wavfiles
-            input_wav_savepath = os.path.join(status_directories['input'],
-                                                 os.path.split(input_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-            target_wav_savepath = os.path.join(status_directories['target'],
-                                                 os.path.split(target_midifile)[-1].rsplit('.', 1)[0] + '.wav')
-            convert_midi_to_wav(input_midifile, input_wav_savepath)
-            convert_midi_to_wav(target_midifile, target_wav_savepath)
-
-            # Get the data as a numpy array with shape [window_number, 1, window_length]
-            input_data, _ = cut_track_and_stack(input_wav_savepath, window_length=window_length)
-            target_data, _ = cut_track_and_stack(target_wav_savepath, window_length=window_length)
-
-            # Create the datasets for each group
-            window_number = min(input_data.shape[0], target_data.shape[0])
-            if i == 0:
-                phase_data = np.zeros((window_number, 2, window_length))
-
-                # Store the data in the new data in the phase array
-                phase_data[:, 0, :] = np.squeeze(input_data[:window_number])
-                phase_data[:, 1, :] = np.squeeze(target_data[:window_number])
-            else:
-                temp_data = np.concatenate([input_data[:window_number], target_data[:window_number]], axis=1)
-                phase_data = np.concatenate([phase_data, temp_data], axis=0)
-
-        # Save array to disk
-        np.save(savepath[phase], phase_data)
-
-
-def create_modified_midifile(midi_filepath, midi_savepath, instrument=None, velocity=None, control=False,
-                             control_value=None):
-    """
-    Modifies a .midi file according to the given parameters. The new .midi file is saved in a user specified location.
-    Information regarding the codes for instruments and control is available here:
-        http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html
-    All information is coded on 8-bit therefore the values must lie in [0 - 127].
-    :param midi_filepath: path to the input .midi file (string).
-    :param midi_savepath: path to the outout .midi file (string).
-    :param instrument: code of the new instrument (scalar int).
-    :param velocity: value of the velocity to set for all notes (scalar int).
-    :param control: boolean indicating if control should be modified (pedal control is coded 64) (boolean).
-    :param control_value: new value of the control (set to 0 to remove the control) (scalar int).
-    :return: None.
-    """
-    # Load the original midi file
-    mid_old = MidiFile(midi_filepath)
-
-    # Create a new midi file
-    mid_new = MidiFile()
-
-    # Iterate over messages and apply transformation
-    for track_old in mid_old.tracks:
-        track_new = MidiTrack()
-        for msg_old in track_old:
-
-            # Append new message to new track
-            msg_new = msg_old.copy()
-            if instrument and msg_old.type == 'program_change':
-                msg_new.program = instrument
-            if velocity and msg_old.type == 'note_on':
-                # Do not modify messages with velocity 0 as they correspond to 'note_off' (stops the note from playing)
-                if msg_old.velocity != 0:
-                    msg_new.velocity = velocity
-            if control and msg_old.type == 'control_change':
-                msg_new.value = control_value
-            track_new.append(msg_new)
-
-        # Append the new track to new file
-        mid_new.tracks.append(track_new)
-    mid_new.save(midi_savepath)
-
-
-def convert_midi_to_wav(midi_filepath, wav_savepath, fs=44100):
-    """
-    Converts a .midi file to a .wav file using Timidity++. The .wav file is encoded on 16 bits integers, the amplitude
-    is in [-2**15, 2**15 - 1]. The .wav is temporary written to disk.
-    :param midi_filepath: location where the .midi file is stored (string).
-    :param wav_savepath: location where to save the new .wav file (string).
-    :param fs: sampling frequency in Hz to reconstruct the .wav file (scalar int).
-    :return: None
-    """
-    command = 'timidity {} -s {} -Ow -o {}'.format(midi_filepath, fs, wav_savepath)
-    call(command.split())
-
-
-def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test, n_valid, file_savepath, transformations,
-                           remove_temporary=True, use_hdf5=True):
+def create_maestro_dataset():
     """
     Parses the data_root folder to collect all .midi files. From all the files a random selection is done to get the
     specified numbers for each phase ('train', 'test', 'valid'). The .midi files are then modified according to the
     transformations dictionary. From the new .midi files, the .wav files are generated by calling Timidity++. Finally,
     the .wav files are loaded as numpy arrays and cut in overlapping windows of size window_length=8192. These numpy
     arrays are stored in a hdf5 file.
-    :param data_root: path to root directory containing all the .midi files (string).
-    :param temporary_directory_path: location where to create a new directory to store all temporary files (string).
-    :param n_train: number of train tracks to use (scalar int).
-    :param n_test: number of test tracks to use (scalar int).
-    :param n_valid: number of validation tracks to use (scalar int).
-    :param file_savepath: location to store the hdf5_file (string). Do not put it inside the temporary directory if
-    remove_temporary=True.
-    :param transformations: dictionary of transformations to apply to the 'input' and 'target' tracks (dictionary).
-    :param remove_temporary: flag indicating if the temporary files must be removed (boolean)
-    :return: None
     """
+    # Get the parameters related to the dataset creation
+    dataset_args = get_dataset_creation_args()
+
     # Randomly select the required number of tracks for each phase
-    midifiles = sample_dataset(data_root, n_train=n_train, n_test=n_test, n_valid=n_valid)
+    midifiles = sample_dataset(dataset_path=dataset_args.data_root,
+                               n_train=dataset_args.n_train,
+                               n_test=dataset_args.n_test,
+                               n_valid=dataset_args.n_valid)
 
     # Create a dictionary to store files location
     file_dict = {phase: {status: [] for status in ['input', 'target']} for phase in ['train', 'test', 'valid']}
 
+    # Get the transformations to apply to input and target signals
+    transformations = prepare_transformations(dataset_args)
+
     # Create a directory to store the temporary files (.midi and .wav)
-    if os.path.exists(temporary_directory_path):
-        shutil.rmtree(temporary_directory_path)
-    os.mkdir(temporary_directory_path)
+    if os.path.exists(dataset_args.temporary_directory):
+        shutil.rmtree(dataset_args.temporary_directory)
+    os.mkdir(dataset_args.temporary_directory)
 
     # Create the new .midi files
     for phase in ['train', 'test', 'valid']:
         # Create sub-directories for each phase
-        phase_directory = os.path.join(temporary_directory_path, phase)
+        phase_directory = os.path.join(dataset_args.temporary_directory, phase)
         os.mkdir(phase_directory)
         for status in ['input', 'target']:
             # Create sub-directories for each status
@@ -265,34 +119,18 @@ def create_maestro_dataset(data_root, temporary_directory_path, n_train, n_test,
              for input_midifile, output_midifile in zip(midifiles[phase], output_midifiles)]
 
     # Loop over all selected files and add them to the dataset
-    if use_hdf5:
-        create_hdf5_file(file_dict, temporary_directory_path, hdf5_path=file_savepath)
+    if dataset_args.use_npy:
+        file_savepath = {'train': dataset_args.train_npy_filepath,
+                         'test': dataset_args.test_npy_filepath,
+                         'valid': dataset_args.valid_npy_filepath}
+        create_npy_files(file_dict, dataset_args.temporary_directory, savepath=file_savepath)
     else:
-        create_npy_files(file_dict, temporary_directory_path, savepath=file_savepath)
+        create_hdf5_file(file_dict, dataset_args.temporary_directory, hdf5_path=dataset_args.hdf5_savepath)
 
     # Remove temporary files
-    if remove_temporary:
-        shutil.rmtree(temporary_directory_path)
+    if dataset_args.remove_temporary_directory:
+        shutil.rmtree(dataset_args.temporary_directory)
 
 
-# def main():
-#     # Specify transformation to apply to the input and target tracks
-#     transformations = {'input': {'instrument': 4, 'velocity': None, 'control': None, 'control_value': None},
-#                        'target': {'instrument': 0, 'velocity': None, 'control': None, 'control_value': None}}
-#
-#     savepaths = {phase: os.path.join('data', phase + '.npy') for phase in ['train', 'test', 'valid']}
-#
-#     # Create the .h5 file
-#     create_maestro_dataset(data_root='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0',
-#                            temporary_directory_path='data/maestro/',
-#                            n_train=5,
-#                            n_test=1,
-#                            n_valid=1,
-#                            file_savepath=savepaths,
-#                            transformations=transformations,
-#                            remove_temporary=True,
-#                            use_hdf5=False)
-#
-#
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    create_maestro_dataset()

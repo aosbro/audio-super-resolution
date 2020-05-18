@@ -200,8 +200,9 @@ class GanTrainer(Trainer):
                 self.eval()
 
             # Save the trainer state
-            if self.need_saving:
-                self.save()
+            self.save()
+            # if self.need_saving:
+            #     self.save()
 
             # Increment epoch counter
             self.epoch += 1

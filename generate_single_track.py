@@ -1,14 +1,18 @@
-import argparse
 from processing.post_processing import generate_single_track
+from utils.constants_parser import get_general_args
+from utils.utils import prepare_transformations
+import argparse
 import torch
 import os
-from utils.constants_parser import get_general_args
 
 
 def get_track_generation_args():
     parser = argparse.ArgumentParser(description='Generates a track from an input .midi file.')
     parser.add_argument('--original_midi', type=str, help='Original .midi file to base the input and target on.')
-    parser.add_argument('--temp_dir', default='data/temp', type=str, help='Path to temporary directory.')
+    parser.add_argument('--temp_dir', default='data/temp', type=str,
+                        help='Location of a temporary directory to store temporary files. If is does not exists it will'
+                             'be created. If it already exists its content will be erased. After the creation of the '
+                             'dataset the temporary folder and its content will be deleted.')
     parser.add_argument('--generator_path', type=str, help='Path to a generator trainer to load pre-trained weights.')
     parser.add_argument('--input_instrument', default=4, type=int, help='Input instrument, default is electric piano.')
     parser.add_argument('--input_velocity', default=None, type=int, help='Velocity corresponds to the volume at which a'
@@ -47,12 +51,6 @@ def main():
     # Get the general parameters
     general_args = get_general_args()
 
-    # Prepare the transformations in adequate format
-    transformations = {'input': {'instrument': track_args.input_instrument, 'velocity': track_args.input_velocity,
-                                 'control': track_args.input_control, 'control_value': track_args.input_control_value},
-                       'target': {'instrument': track_args.target_instrument, 'velocity': track_args.target_velocity,
-                                  'control': track_args.target_control, 'control_value': track_args.target_control_value}}
-
     # Set the device
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -60,7 +58,7 @@ def main():
                                                  '-Unprocessed_083_PIANO083_MID--AUDIO-split_07-09-17_Piano-e_2_'
                                                  '-06_wav--3.midi',
                           temporary_directory_path=track_args.temp_dir,
-                          transformations=transformations,
+                          transformations=prepare_transformations(track_args),
                           generator_path='objects/generator_trainer_no_skip2.tar',
                           device=device,
                           general_args=general_args)

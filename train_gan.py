@@ -11,11 +11,11 @@ def get_gan_trainer_args():
     parser.add_argument('--use_npy', default=True, type=bool,
                         help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file.')
     parser.add_argument('--hdf5_filepath', type=str, help='Location of the .hdf5 file if this data format is selected.')
-    parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
+    parser.add_argument('--train_npy_filepath', default='/content/drive/My Drive/audio_data/train.npy', type=str,
                         help='Location of the train .npy file if this data format is selected.')
-    parser.add_argument('--test_npy_filepath', default='data/test.npy', type=str,
+    parser.add_argument('--test_npy_filepath', default='/content/drive/My Drive/audio_data/test.npy', type=str,
                         help='Location of the test .npy file if this data format is selected.')
-    parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
+    parser.add_argument('--valid_npy_filepath', default='/content/drive/My Drive/audio_data/valid.npy', type=str,
                         help='Location of the valid .npy file if this data format is selected.')
     parser.add_argument('--train_batch_size', default=64, type=int,
                         help='Number of samples per batch during the train phase.')
@@ -32,7 +32,7 @@ def get_gan_trainer_args():
     parser.add_argument('--num_worker', default=2, type=int, help='Number of workers used by the data loaders.')
 
     # Trainer related constants
-    parser.add_argument('--savepath', type=str,
+    parser.add_argument('--savepath', default='/content/drive/My Drive/audio_objects/gan_trainer.tar', type=str,
                         help='Location where to save the gan trainer to resume training.')
     parser.add_argument('--loadpath', default='', type=str,
                         help='Location of an existing gan trainer from which to resume training.')
@@ -40,7 +40,8 @@ def get_gan_trainer_args():
                         help='Weight given to the adversarial loss during the GAN training.')
 
     # Autoencoder related constants
-    parser.add_argument('--autoencoder_path', default=None, type=str,
+    parser.add_argument('--autoencoder_path', default='/content/drive/My Drive/audio_objects/autoencoder_trainer.tar',
+                        type=str,
                         help='Location of a pre-trained auto-encoder used to extract features from the samples. If not '
                              'provided the gan will be trained without the auto-encoder loss.')
 
@@ -86,7 +87,8 @@ if __name__ == '__main__':
     # Get the general parameters
     general_args = get_general_args()
 
-    autoencoder_trainer = get_gan_trainer(general_args, trainer_args)
+    # Get the trainer
+    gan_trainer = get_gan_trainer(general_args, trainer_args)
     # autoencoder_trainer.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
