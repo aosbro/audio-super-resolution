@@ -78,8 +78,9 @@ class GeneratorTrainer(Trainer):
                 self.eval()
 
             # Save the trainer state
-            if self.need_saving:
-                self.save()
+            # if self.need_saving:
+            #     self.save()
+            self.save()
 
             # Increment epoch counter
             self.epoch += 1
