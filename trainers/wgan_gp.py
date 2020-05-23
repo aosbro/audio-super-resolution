@@ -9,9 +9,9 @@ import torch
 import os
 
 
-class WGanGPTrainer(Trainer):
+class WGanTrainer(Trainer):
     def __init__(self, train_loader, test_loader, valid_loader, general_args, trainer_args):
-        super(WGanGPTrainer, self).__init__(train_loader, test_loader, valid_loader, general_args)
+        super(WGanTrainer, self).__init__(train_loader, test_loader, valid_loader, general_args)
         # Paths
         self.loadpath = trainer_args.loadpath
         self.savepath = trainer_args.savepath
@@ -24,9 +24,9 @@ class WGanGPTrainer(Trainer):
         self.discriminator = Discriminator(general_args=general_args).to(self.device)
 
         # Optimizers and schedulers
-        self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=trainer_args.generator_lr)
-        self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(),
-                                                        lr=trainer_args.discriminator_lr)
+        self.generator_optimizer = torch.optim.RMSprop(params=self.generator.parameters(), lr=trainer_args.generator_lr)
+        self.discriminator_optimizer = torch.optim.RMSprop(params=self.discriminator.parameters(),
+                                                           lr=trainer_args.discriminator_lr)
         self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer,
                                                        step_size=trainer_args.generator_scheduler_step,
                                                        gamma=trainer_args.generator_scheduler_gamma)
@@ -47,8 +47,6 @@ class WGanGPTrainer(Trainer):
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
 
-        self.gamma = trainer_args.gamma_wgan_gp
-
         # Overrides losses from parent class
         self.train_losses = {
             'time_l2': [],
@@ -65,6 +63,12 @@ class WGanGPTrainer(Trainer):
             'generator_adversarial': [],
             'discriminator_adversarial': []
         }
+
+        # Select either wgan or wgan-gp method
+        self.use_penalty = trainer_args.use_penalty
+        self.gamma = trainer_args.gamma_wgan_gp
+        self.clipping_limit = trainer_args.clipping_limit
+        self.n_critic = trainer_args.n_critic
 
     def load_pretrained_generator(self, generator_path):
         """
@@ -84,14 +88,12 @@ class WGanGPTrainer(Trainer):
         :return: penalty as a scalar (torch tensor).
         """
         batch_size = input_batch.size(0)
-        # epsilon = torch.rand(batch_size, 1, 1)
-        # epsilon = epsilon.expand_as(input_batch).to(self.device)
-        #
-        # # Interpolate
-        # interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
-        # interpolation = interpolation.requires_grad_(True).to(self.device)
+        epsilon = torch.rand(batch_size, 1, 1)
+        epsilon = epsilon.expand_as(input_batch).to(self.device)
 
-        interpolation = torch.randn_like(input_batch).requires_grad_(True)
+        # Interpolate
+        interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
+        interpolation = interpolation.requires_grad_(True).to(self.device)
 
         # Computes the discriminator's prediction for the interpolated input
         interpolation_logits = self.discriminator(interpolation)
@@ -109,13 +111,14 @@ class WGanGPTrainer(Trainer):
         gradients = gradients.view(batch_size, -1)
 
         # Computes the norm of the gradients
-        gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
-        return self.gamma * ((gradients_norm - 1) ** 2).mean()
+        gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1))
+        return ((gradients_norm - 1) ** 2).mean()
 
-    def train_discriminator_step(self, input_batch):
+    def train_discriminator_step(self, input_batch, target_batch):
         """
         Trains the discriminator for a single step based on the wasserstein gan-gp framework.
         :param input_batch: batch of input data (torch tensor).
+        :param target_batch: batch of target data (torch tensor).
         :return: a batch of generated data (torch tensor).
         """
         # Activate gradient tracking for the discriminator
@@ -126,15 +129,21 @@ class WGanGPTrainer(Trainer):
 
         # Generate a batch and compute the penalty
         generated_batch = self.generator(input_batch)
-        penalty = self.compute_gradient_penalty(input_batch, generated_batch.detach())
-        print(penalty)
 
-        # Compute the loss and back-propagate it
-        # loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(input_batch).mean() + penalty
-        loss_d = penalty
+        # Compute the loss
+        loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(target_batch).mean()
+        if self.use_penalty:
+            penalty = self.compute_gradient_penalty(input_batch, generated_batch.detach())
+            loss_d = loss_d + penalty
+
+        # Update the discriminator's weights
         loss_d.backward()
-        print('success')
         self.discriminator_optimizer.step()
+
+        # Apply the weight constraint if needed
+        if not self.use_penalty:
+            for p in self.discriminator.parameters():
+                p.data.clamp_(min=-self.clipping_limit, max=self.clipping_limit)
 
         # Store the loss
         self.train_losses['discriminator_adversarial'].append(loss_d.item())
@@ -186,20 +195,20 @@ class WGanGPTrainer(Trainer):
         :param epochs: Number of time to iterate over a part of the dataset (int).
         :return: None
         """
+        self.generator.train()
+        self.discriminator.train()
         for epoch in range(epochs):
-            self.generator.train()
-            self.discriminator.train()
-            # for i in range(self.train_batches_per_epoch):
-            for i in range(1):
+            for i in range(self.train_batches_per_epoch):
                 # Transfer to GPU
                 local_batch = next(self.train_loader_iter)
                 input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
                 # Train the discriminator
-                generated_batch = self.train_discriminator_step(input_batch)
+                generated_batch = self.train_discriminator_step(input_batch, target_batch)
 
-                # Train the generator
-                self.train_generator_step(target_batch, generated_batch)
+                # Train the generator every n_critic
+                if not (i % self.n_critic):
+                    self.train_generator_step(target_batch, generated_batch)
 
                 # Print message
                 if not (i % 10):

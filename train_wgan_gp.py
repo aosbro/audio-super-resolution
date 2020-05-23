@@ -1,11 +1,11 @@
 from utils.constants_parser import get_general_args
-from trainers.wgan_gp import WGanGPTrainer
+from trainers.wgan_gp import WGanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
 import os
 
 
-def get_wgan_gp_trainer_args():
+def get_wgan_trainer_args():
     """
     Parses the arguments related to the training of the gan if provided by the user, otherwise uses default
     values.
@@ -22,11 +22,11 @@ def get_wgan_gp_trainer_args():
                         help='Location of the test .npy file if this data format is selected.')
     parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
                         help='Location of the valid .npy file if this data format is selected.')
-    parser.add_argument('--train_batch_size', default=1, type=int,
+    parser.add_argument('--train_batch_size', default=64, type=int,
                         help='Number of samples per batch during the train phase.')
-    parser.add_argument('--test_batch_size', default=1, type=int,
+    parser.add_argument('--test_batch_size', default=64, type=int,
                         help='Number of samples per batch during the test phase.')
-    parser.add_argument('--valid_batch_size', default=1, type=int,
+    parser.add_argument('--valid_batch_size', default=64, type=int,
                         help='Number of samples per batch during the validation phase.')
     parser.add_argument('--train_shuffle', default=True, type=bool,
                         help='Flag indicating if the train data must be shuffled.')
@@ -43,8 +43,15 @@ def get_wgan_gp_trainer_args():
                         help='Location of an existing gan trainer from which to resume training.')
     parser.add_argument('--lambda_adversarial', default=1e-3, type=float,
                         help='Weight given to the adversarial loss during the GAN training.')
+    parser.add_argument('--use_penalty', default=False, type=bool,
+                        help='Flag indicating whether to use gradient penalty or weight clipping to enforce the '
+                             'Lipschitz constraint on the discriminator.')
+    parser.add_argument('--clipping_limit', default=0.01, type=float,
+                        help='Maximum absolute value for the weights of the discriminator.')
     parser.add_argument('--gamma_wgan_gp', default=10, type=float,
-                        help='Weight given to the gradient penalty in the discriminator loss')
+                        help='Weight given to the gradient penalty in the discriminator loss.')
+    parser.add_argument('--n_critic', default=5, type=int,
+                        help='Number of discriminator update before doing a single generator update.')
 
     # Generator related constants
     parser.add_argument('--generator_path', default=None, type=str,
@@ -67,7 +74,7 @@ def get_wgan_gp_trainer_args():
     return args
 
 
-def get_wgan_gp_trainer(general_args, trainer_args):
+def get_wgan_trainer(general_args, trainer_args):
     """
     Instantiates the GanTrainer class based on the given arguments.
     :param general_args: instance of an argument parser that stores generic parameters.
@@ -77,25 +84,25 @@ def get_wgan_gp_trainer(general_args, trainer_args):
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
-    wgan_gp_trainer = WGanGPTrainer(train_loader=train_loader,
-                                    test_loader=test_loader,
-                                    valid_loader=valid_loader,
-                                    general_args=general_args,
-                                    trainer_args=trainer_args)
-    return wgan_gp_trainer
+    wgan_trainer = WGanTrainer(train_loader=train_loader,
+                                  test_loader=test_loader,
+                                  valid_loader=valid_loader,
+                                  general_args=general_args,
+                                  trainer_args=trainer_args)
+    return wgan_trainer
 
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # Get the parameters related to the track generation
-    trainer_args = get_wgan_gp_trainer_args()
+    trainer_args = get_wgan_trainer_args()
 
     # Get the general parameters
     general_args = get_general_args()
 
     # Get the trainer
-    gan_trainer = get_wgan_gp_trainer(general_args, trainer_args)
+    gan_trainer = get_wgan_trainer(general_args, trainer_args)
     gan_trainer.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
