@@ -13,13 +13,14 @@ class Trainer(abc.ABC):
 
         # Data generators
         self.train_loader = train_loader
-        self.test_loader = test_loader
         self.valid_loader = valid_loader
+        self.test_loader = test_loader
 
         # Iterators to cycle over the datasets
         self.train_loader_iter = cycle(iter(self.train_loader))
         self.valid_loader_iter = cycle(iter(self.valid_loader))
-        self.test_loader_iter = cycle(iter(self.test_loader))
+        if self.test_loader:
+            self.test_loader_iter = cycle(iter(self.test_loader))
 
         # Epoch counter
         self.epoch = 0
