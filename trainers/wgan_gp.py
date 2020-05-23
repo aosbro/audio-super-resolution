@@ -24,9 +24,9 @@ class WGanTrainer(Trainer):
         self.discriminator = Discriminator(general_args=general_args).to(self.device)
 
         # Optimizers and schedulers
-        self.generator_optimizer = torch.optim.RMSprop(params=self.generator.parameters(), lr=trainer_args.generator_lr)
-        self.discriminator_optimizer = torch.optim.RMSprop(params=self.discriminator.parameters(),
-                                                           lr=trainer_args.discriminator_lr)
+        self.generator_optimizer = torch.optim.Adam(params=self.generator.parameters(), lr=trainer_args.generator_lr)
+        self.discriminator_optimizer = torch.optim.Adam(params=self.discriminator.parameters(),
+                                                        lr=trainer_args.discriminator_lr)
         self.generator_scheduler = lr_scheduler.StepLR(optimizer=self.generator_optimizer,
                                                        step_size=trainer_args.generator_scheduler_step,
                                                        gamma=trainer_args.generator_scheduler_gamma)
