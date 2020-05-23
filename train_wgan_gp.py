@@ -67,7 +67,7 @@ def get_wgan_gp_trainer_args():
     return args
 
 
-def get_gan_trainer(general_args, trainer_args):
+def get_wgan_gp_trainer(general_args, trainer_args):
     """
     Instantiates the GanTrainer class based on the given arguments.
     :param general_args: instance of an argument parser that stores generic parameters.
@@ -77,12 +77,12 @@ def get_gan_trainer(general_args, trainer_args):
     train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
-    gan_trainer = WGanGPTrainer(train_loader=train_loader,
-                                test_loader=test_loader,
-                                valid_loader=valid_loader,
-                                general_args=general_args,
-                                trainer_args=trainer_args)
-    return gan_trainer
+    wgan_gp_trainer = WGanGPTrainer(train_loader=train_loader,
+                                    test_loader=test_loader,
+                                    valid_loader=valid_loader,
+                                    general_args=general_args,
+                                    trainer_args=trainer_args)
+    return wgan_gp_trainer
 
 
 if __name__ == '__main__':
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     general_args = get_general_args()
 
     # Get the trainer
-    gan_trainer = get_gan_trainer(general_args, trainer_args)
+    gan_trainer = get_wgan_gp_trainer(general_args, trainer_args)
     gan_trainer.train(epochs=1)
     # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
     # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
