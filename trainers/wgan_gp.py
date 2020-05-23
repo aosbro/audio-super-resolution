@@ -84,25 +84,28 @@ class WGanGPTrainer(Trainer):
         :return: penalty as a scalar (torch tensor).
         """
         batch_size = input_batch.size(0)
-        epsilon = torch.rand(batch_size, 1, 1)
-        epsilon = epsilon.expand_as(input_batch).to(self.device)
+        # epsilon = torch.rand(batch_size, 1, 1)
+        # epsilon = epsilon.expand_as(input_batch).to(self.device)
+        #
+        # # Interpolate
+        # interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
+        # interpolation = interpolation.requires_grad_(True).to(self.device)
 
-        # Interpolate
-        interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
-        interpolation = interpolation.requires_grad_().to(self.device)
+        interpolation = torch.randn_like(input_batch).requires_grad_(True)
 
         # Computes the discriminator's prediction for the interpolated input
         interpolation_logits = self.discriminator(interpolation)
 
         # Computes a vector of outputs to make it works with 2 output classes if needed
-        grad_outputs = torch.ones(interpolation_logits.size()).to(self.device)
+        grad_outputs = torch.ones(interpolation_logits.size()).requires_grad_(False)
 
         # Get the gradients and retain the graph so that the penalty can be back-propagated
         gradients = autograd.grad(outputs=interpolation_logits,
                                   inputs=interpolation,
                                   grad_outputs=grad_outputs,
                                   create_graph=True,
-                                  retain_graph=True)[0]
+                                  retain_graph=True,
+                                  only_inputs=True)[0]
         gradients = gradients.view(batch_size, -1)
 
         # Computes the norm of the gradients
@@ -123,11 +126,14 @@ class WGanGPTrainer(Trainer):
 
         # Generate a batch and compute the penalty
         generated_batch = self.generator(input_batch)
-        penalty = self.compute_gradient_penalty(input_batch, generated_batch)
+        penalty = self.compute_gradient_penalty(input_batch, generated_batch.detach())
+        print(penalty)
 
         # Compute the loss and back-propagate it
-        loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(input_batch).mean() + penalty
+        # loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(input_batch).mean() + penalty
+        loss_d = penalty
         loss_d.backward()
+        print('success')
         self.discriminator_optimizer.step()
 
         # Store the loss
@@ -183,7 +189,8 @@ class WGanGPTrainer(Trainer):
         for epoch in range(epochs):
             self.generator.train()
             self.discriminator.train()
-            for i in range(self.train_batches_per_epoch):
+            # for i in range(self.train_batches_per_epoch):
+            for i in range(1):
                 # Transfer to GPU
                 local_batch = next(self.train_loader_iter)
                 input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)

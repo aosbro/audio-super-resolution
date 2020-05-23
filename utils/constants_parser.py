@@ -78,7 +78,7 @@ def get_general_args():
     # Discriminator's architecture related constants
     parser.add_argument('--discriminator_n_block', default=7, type=int,
                         help='Number of blocks in the compressing part of the discriminator.')
-    parser.add_argument('--discriminator_channel_factor_max', default=3, type=int,
+    parser.add_argument('--discriminator_channel_factor_max', default=0, type=int,
                         help='Number of DiscriminatorBlocks that will have an output number of channel (C_out) twice '
                              'as large as the input number of channel (C_in). Blocks deeper that this number will have'
                              'C_out = C_in. This parameter is used to regulate the complexity of the model.')

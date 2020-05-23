@@ -22,11 +22,11 @@ def get_wgan_gp_trainer_args():
                         help='Location of the test .npy file if this data format is selected.')
     parser.add_argument('--valid_npy_filepath', default='data/valid.npy', type=str,
                         help='Location of the valid .npy file if this data format is selected.')
-    parser.add_argument('--train_batch_size', default=64, type=int,
+    parser.add_argument('--train_batch_size', default=1, type=int,
                         help='Number of samples per batch during the train phase.')
-    parser.add_argument('--test_batch_size', default=64, type=int,
+    parser.add_argument('--test_batch_size', default=1, type=int,
                         help='Number of samples per batch during the test phase.')
-    parser.add_argument('--valid_batch_size', default=64, type=int,
+    parser.add_argument('--valid_batch_size', default=1, type=int,
                         help='Number of samples per batch during the validation phase.')
     parser.add_argument('--train_shuffle', default=True, type=bool,
                         help='Flag indicating if the train data must be shuffled.')
