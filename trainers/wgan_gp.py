@@ -122,7 +122,7 @@ class WGanTrainer(Trainer):
         :return: a batch of generated data (torch tensor).
         """
         # Activate gradient tracking for the discriminator
-        self.change_discriminator_grad_requirement(requires_grad=True)
+        # self.change_discriminator_grad_requirement(requires_grad=True)
 
         # Set the discriminator's gradients to zero
         self.discriminator_optimizer.zero_grad()
@@ -159,7 +159,7 @@ class WGanTrainer(Trainer):
         :return: None
         """
         # Deactivate gradient tracking for the discriminator
-        self.change_discriminator_grad_requirement(requires_grad=False)
+        # self.change_discriminator_grad_requirement(requires_grad=False)
 
         # Set generator's gradients to zero
         self.generator_optimizer.zero_grad()
