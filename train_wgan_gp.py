@@ -81,14 +81,14 @@ def get_wgan_trainer(general_args, trainer_args):
     :param trainer_args: instance of an argument parser that stores parameters related to the training.
     :return: instance of an GanTrainer.
     """
-    train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
+    train_loader, _, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
     wgan_trainer = WGanTrainer(train_loader=train_loader,
-                                  test_loader=test_loader,
-                                  valid_loader=valid_loader,
-                                  general_args=general_args,
-                                  trainer_args=trainer_args)
+                               test_loader=None,
+                               valid_loader=valid_loader,
+                               general_args=general_args,
+                               trainer_args=trainer_args)
     return wgan_trainer
 
 
