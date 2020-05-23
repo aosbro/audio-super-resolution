@@ -99,7 +99,7 @@ class WGanTrainer(Trainer):
         interpolation_logits = self.discriminator(interpolation)
 
         # Computes a vector of outputs to make it works with 2 output classes if needed
-        grad_outputs = torch.ones(interpolation_logits.size()).requires_grad_(False)
+        grad_outputs = torch.ones_like(interpolation_logits).to(self.device).requires_grad_(True)
 
         # Get the gradients and retain the graph so that the penalty can be back-propagated
         gradients = autograd.grad(outputs=interpolation_logits,
