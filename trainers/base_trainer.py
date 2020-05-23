@@ -89,8 +89,7 @@ class Trainer(abc.ABC):
         return input_batch, target_batch, generated_batch
 
     def check_improvement(self):
-        self.need_saving = np.less_equal(self.valid_losses['time_l2'][-1], min(self.valid_losses['time_l2'])) or \
-                           np.less_equal(self.valid_losses['freq_l2'][-1], min(self.valid_losses['freq_l2']))
+        self.need_saving = np.less_equal(self.valid_losses['time_l2'][-1], min(self.valid_losses['time_l2']))
 
     def plot_reconstruction_time_domain(self, index, model):
         """
