@@ -1,9 +1,7 @@
 from models.discriminator import Discriminator
-from torchaudio.transforms import Spectrogram
 from trainers.base_trainer import Trainer
 from models.generator import Generator
 from torch.optim import lr_scheduler
-from torch.autograd import Variable
 from torch import autograd
 from torch import nn
 import numpy as np
@@ -41,7 +39,6 @@ class WGanGPTrainer(Trainer):
             self.load()
 
         # Loss function and stored losses
-        self.adversarial_criterion = nn.BCEWithLogitsLoss()
         self.generator_time_criterion = nn.MSELoss()
 
         # Define labels
@@ -51,13 +48,27 @@ class WGanGPTrainer(Trainer):
         # Loss scaling factors
         self.lambda_adv = trainer_args.lambda_adversarial
 
-        # Spectrogram converter
-        self.spectrogram = Spectrogram(normalized=True).to(self.device)
-
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
 
         self.gamma = 10
+
+        # Overrides losses from parent class
+        self.train_losses = {
+            'time_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': []
+        }
+        self.test_losses = {
+            'time_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': []
+        }
+        self.valid_losses = {
+            'time_l2': [],
+            'generator_adversarial': [],
+            'discriminator_adversarial': []
+        }
 
     def load_pretrained_generator(self, generator_path):
         """
@@ -69,12 +80,19 @@ class WGanGPTrainer(Trainer):
         self.generator.load_state_dict(checkpoint['generator_state_dict'])
 
     def compute_gradient_penalty(self, input_batch, generated_batch):
+        """
+        Compute the gradient penalty as described in the original paper
+        (https://papers.nips.cc/paper/7159-improved-training-of-wasserstein-gans.pdf).
+        :param input_batch: batch of input data (torch tensor).
+        :param generated_batch: batch of generated data (torch tensor).
+        :return: penalty as a scalar (torch tensor).
+        """
         batch_size = input_batch.size(0)
         epsilon = torch.rand(batch_size, 1, 1)
         epsilon = epsilon.expand_as(input_batch).to(self.device)
 
         # Interpolate
-        interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
+        interpolation = epsilon * input_batch + (1 - epsilon) * generated_batch
         interpolation = interpolation.requires_grad_().to(self.device)
 
         # Computes the discriminator's prediction for the interpolated input
@@ -83,76 +101,86 @@ class WGanGPTrainer(Trainer):
         # Computes a vector of outputs to make it works with 2 output classes if needed
         grad_outputs = torch.ones(interpolation_logits.size()).to(self.device)
 
-        # Get the gradients
+        # Get the gradients and retain the graph so that the penalty can be back-propagated
         gradients = autograd.grad(outputs=interpolation_logits,
                                   inputs=interpolation,
                                   grad_outputs=grad_outputs,
                                   create_graph=True,
                                   retain_graph=True)[0]
-
         gradients = gradients.view(batch_size, -1)
 
-        # Computes the norm of the gradients and return the penalty
+        # Computes the norm of the gradients
         gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
         return self.gamma * ((gradients_norm - 1) ** 2).mean()
 
-    def train_discriminator_step(self, input_batch, target_batch):
-        # Set discriminator's gradients to zero
-        batch_size = input_batch.shape[0]
+    def train_discriminator_step(self, input_batch):
+        """
+        Trains the discriminator for a single step based on the wasserstein gan-gp framework.
+        :param input_batch: batch of input data (torch tensor).
+        :return: a batch of generated data (torch tensor).
+        """
+        # Activate gradient tracking for the discriminator
+        self.change_discriminator_grad_requirement(requires_grad=True)
+
+        # Set the discriminator's gradients to zero
         self.discriminator_optimizer.zero_grad()
 
-        # Train the discriminator with real data
-        label = torch.full((batch_size,), self.real_label, device=self.device)
-        output = self.discriminator(target_batch)
-
-        # Compute and store the discriminator loss on real data
-        loss_discriminator_real = self.adversarial_criterion(output, torch.unsqueeze(label, dim=1))
-        self.train_losses['discriminator_adversarial']['real'].append(loss_discriminator_real.item())
-        loss_discriminator_real.backward()
-
-        # Train the discriminator with fake data
+        # Generate a batch and compute the penalty
         generated_batch = self.generator(input_batch)
-        label.fill_(self.generated_label)
-        output = self.discriminator(generated_batch.detach())
+        penalty = self.compute_gradient_penalty(input_batch, generated_batch)
 
-        # Compute and store the discriminator loss on fake data
-        loss_discriminator_generated = self.adversarial_criterion(output, torch.unsqueeze(label, dim=1))
-        self.train_losses['discriminator_adversarial']['fake'].append(loss_discriminator_generated.item())
-        loss_discriminator_generated.backward()
-
-        # Update the discriminator weights
+        # Compute the loss and back-propagate it
+        loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(input_batch).mean() + penalty
+        loss_d.backward()
         self.discriminator_optimizer.step()
 
-        # Return the generated batch and labels to avoid redundant computations
-        return generated_batch, label
+        # Store the loss
+        self.train_losses['discriminator_adversarial'].append(loss_d.item())
 
-    def train_generator_step(self, target_batch, generated_batch, label):
+        # Return the generated batch to avoid redundant computation
+        return generated_batch
+
+    def train_generator_step(self, target_batch, generated_batch):
+        """
+        Trains the generator for a single step based on the wasserstein gan-gp framework.
+        :param target_batch: batch of target data (torch tensor).
+        :param generated_batch: batch of generated data (torch tensor).
+        :return: None
+        """
+        # Deactivate gradient tracking for the discriminator
+        self.change_discriminator_grad_requirement(requires_grad=False)
+
         # Set generator's gradients to zero
         self.generator_optimizer.zero_grad()
 
-        # Fake labels are real for the generator cost
-        label.fill_(self.real_label)
-        output = self.discriminator(generated_batch)
-
-        # Compute the generator loss on fake data
-        # Get the adversarial loss
-        loss_generator_adversarial = self.adversarial_criterion(output, torch.unsqueeze(label, dim=1))
-        self.train_losses['generator_adversarial'].append(loss_generator_adversarial.item())
-
-        # Get the L2 loss in time domain
-        loss_generator_time = self.generator_time_criterion(generated_batch, target_batch)
-        self.train_losses['time_l2'].append(loss_generator_time.item())
+        # Get the generator losses
+        loss_g_adversarial = - self.discriminator(generated_batch).mean()
+        loss_g_time = self.generator_time_criterion(generated_batch, target_batch)
 
         # Combine the different losses
-        loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time
+        loss_g = self.lambda_adv * loss_g_adversarial + loss_g_time
 
         # Back-propagate and update the generator weights
-        loss_generator.backward()
+        loss_g.backward()
         self.generator_optimizer.step()
+
+        # Store the losses
+        self.train_losses['generator_adversarial'].append(loss_g_adversarial.item())
+        self.train_losses['time_l2'].append(loss_g_time.item())
+
+    def change_discriminator_grad_requirement(self, requires_grad):
+        """
+        Changes the requires_grad flag of discriminator's parameters. This action is not absolutely needed as the
+        discriminator's optimizer is not called after the generators update, but it reduces the computational cost.
+        :param requires_grad: flag indicating if the discriminator's parameter require gradient tracking (boolean).
+        :return: None
+        """
+        for p in self.discriminator.parameters():
+            p.requires_grad_(requires_grad)
 
     def train(self, epochs):
         """
-        Trains the GAN for a given number of pseudo-epochs.
+        Trains the WGAN-GP for a given number of pseudo-epochs.
         :param epochs: Number of time to iterate over a part of the dataset (int).
         :return: None
         """
@@ -165,24 +193,22 @@ class WGanGPTrainer(Trainer):
                 input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
                 # Train the discriminator
-                generated_batch, label = self.train_discriminator_step(input_batch, target_batch)
+                generated_batch = self.train_discriminator_step(input_batch)
 
                 # Train the generator
-                self.train_generator_step(target_batch, generated_batch, label)
+                self.train_generator_step(target_batch, generated_batch)
 
                 # Print message
                 if not (i % 10):
                     message = 'Batch {}: \n' \
-                              '\t Genarator: \n' \
+                              '\t Generator: \n' \
                               '\t\t Time: {} \n' \
                               '\t\t Adversarial: {} \n' \
                               '\t Discriminator: \n' \
-                              '\t\t Real {} \n' \
-                              '\t\t Fake {} \n'.format(i,
-                                                       self.train_losses['time_l2'][-1],
-                                                       self.train_losses['generator_adversarial'][-1],
-                                                       self.train_losses['discriminator_adversarial']['real'][-1],
-                                                       self.train_losses['discriminator_adversarial']['fake'][-1])
+                              '\t\t Adversarial {} \n'.format(i,
+                                                              self.train_losses['time_l2'][-1],
+                                                              self.train_losses['generator_adversarial'][-1],
+                                                              self.train_losses['discriminator_adversarial'][-1])
                     print(message)
 
             # Evaluate the model
@@ -211,12 +237,8 @@ class WGanGPTrainer(Trainer):
 
             generated_batch = self.generator(input_batch)
 
-            # Get the spectrogram
-            specgram_target_batch = self.spectrogram(target_batch)
-            specgram_generated_batch = self.spectrogram(generated_batch)
-
-            loss_generator_time = self.generator_time_criterion(generated_batch, target_batch)
-            batch_losses['time_l2'].append(loss_generator_time.item())
+            loss_g_time = self.generator_time_criterion(generated_batch, target_batch)
+            batch_losses['time_l2'].append(loss_g_time.item())
 
         # Store the validation losses
         self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
