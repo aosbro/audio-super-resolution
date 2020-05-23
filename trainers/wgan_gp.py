@@ -88,7 +88,7 @@ class WGanGPTrainer(Trainer):
         epsilon = epsilon.expand_as(input_batch).to(self.device)
 
         # Interpolate
-        interpolation = epsilon * input_batch + (1 - epsilon) * generated_batch
+        interpolation = epsilon * input_batch.data + (1 - epsilon) * generated_batch.data
         interpolation = interpolation.requires_grad_().to(self.device)
 
         # Computes the discriminator's prediction for the interpolated input
