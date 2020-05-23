@@ -41,17 +41,13 @@ class WGanGPTrainer(Trainer):
         # Loss function and stored losses
         self.generator_time_criterion = nn.MSELoss()
 
-        # Define labels
-        self.real_label = 1
-        self.generated_label = 0
-
         # Loss scaling factors
         self.lambda_adv = trainer_args.lambda_adversarial
 
         # Boolean indicating if the model needs to be saved
         self.need_saving = True
 
-        self.gamma = 10
+        self.gamma = trainer_args.gamma_wgan_gp
 
         # Overrides losses from parent class
         self.train_losses = {
