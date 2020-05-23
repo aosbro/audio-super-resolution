@@ -69,6 +69,7 @@ class WGanTrainer(Trainer):
         self.gamma = trainer_args.gamma_wgan_gp
         self.clipping_limit = trainer_args.clipping_limit
         self.n_critic = trainer_args.n_critic
+        self.coupling_epoch = trainer_args.coupling_epoch
 
     def load_pretrained_generator(self, generator_path):
         """
@@ -122,7 +123,7 @@ class WGanTrainer(Trainer):
         :return: a batch of generated data (torch tensor).
         """
         # Activate gradient tracking for the discriminator
-        # self.change_discriminator_grad_requirement(requires_grad=True)
+        self.change_discriminator_grad_requirement(requires_grad=True)
 
         # Set the discriminator's gradients to zero
         self.discriminator_optimizer.zero_grad()
@@ -159,7 +160,7 @@ class WGanTrainer(Trainer):
         :return: None
         """
         # Deactivate gradient tracking for the discriminator
-        # self.change_discriminator_grad_requirement(requires_grad=False)
+        self.change_discriminator_grad_requirement(requires_grad=False)
 
         # Set generator's gradients to zero
         self.generator_optimizer.zero_grad()
@@ -169,7 +170,9 @@ class WGanTrainer(Trainer):
         loss_g_time = self.generator_time_criterion(generated_batch, target_batch)
 
         # Combine the different losses
-        loss_g = self.lambda_adv * loss_g_adversarial + loss_g_time
+        loss_g = loss_g_time
+        if self.epoch >= self.coupling_epoch:
+            loss_g = loss_g + self.lambda_adv * loss_g_adversarial
 
         # Back-propagate and update the generator weights
         loss_g.backward()
