@@ -232,8 +232,6 @@ class WGanTrainer(Trainer):
 
             # Save the trainer state
             self.save()
-            # if self.need_saving:
-            #     self.save()
 
             # Increment epoch counter
             self.epoch += 1
@@ -262,9 +260,6 @@ class WGanTrainer(Trainer):
         message = 'Epoch {}: \n' \
                   '\t Time: {} \n'.format(self.epoch, np.mean(np.mean(batch_losses['time_l2'])))
         print(message)
-
-        # Check if the loss is decreasing
-        self.check_improvement()
 
         # Set the models in train mode
         self.generator.train()

@@ -50,9 +50,9 @@ def get_wgan_trainer_args():
                         help='Maximum absolute value for the weights of the discriminator.')
     parser.add_argument('--gamma_wgan_gp', default=10, type=float,
                         help='Weight given to the gradient penalty in the discriminator loss.')
-    parser.add_argument('--n_critic', default=5, type=int,
+    parser.add_argument('--n_critic', default=1, type=int,
                         help='Number of discriminator update before doing a single generator update.')
-    parser.add_argument('--coupling_epoch', default=5, type=int,
+    parser.add_argument('--coupling_epoch', default=0, type=int,
                         help='Epoch from which the generator receives the feedback from the discriminator.')
 
     # Generator related constants
