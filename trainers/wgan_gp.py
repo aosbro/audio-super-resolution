@@ -270,6 +270,7 @@ class WGanTrainer(Trainer):
         Saves the model(s), optimizer(s), scheduler(s) and losses
         :return: None
         """
+        savepath = self.savepath.split('.')[0] + '_' + str(self.epoch // 5) + '.' + self.savepath.split('.')[1]
         torch.save({
             'epoch': self.epoch,
             'generator_state_dict': self.generator.state_dict(),
@@ -281,7 +282,7 @@ class WGanTrainer(Trainer):
             'train_losses': self.train_losses,
             'test_losses': self.test_losses,
             'valid_losses': self.valid_losses
-        }, self.savepath)
+        }, savepath)
 
     def load(self):
         """
