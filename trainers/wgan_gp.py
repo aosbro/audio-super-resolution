@@ -113,7 +113,7 @@ class WGanTrainer(Trainer):
 
         # Computes the norm of the gradients
         gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1))
-        return ((gradients_norm - 1) ** 2).mean()
+        return self.gamma * ((gradients_norm - 1) ** 2).mean()
 
     def train_discriminator_step(self, input_batch, target_batch):
         """
