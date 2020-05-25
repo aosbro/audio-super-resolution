@@ -1,5 +1,5 @@
 from utils.constants_parser import get_general_args
-from trainers.wgan_gp import WGanTrainer
+from trainers.wgan_trainer import WGanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
 import os

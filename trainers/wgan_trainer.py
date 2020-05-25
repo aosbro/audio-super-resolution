@@ -216,12 +216,12 @@ class WGanTrainer(Trainer):
                               '\t\t Time: {} \n' \
                               '\t\t Adversarial: {} \n' \
                               '\t Discriminator: \n' \
-                              '\t\t Penalty: \n' \
-                              '\t\t Adversarial {} \n'.format(i,
-                                                              self.train_losses['generator']['time_l2'][-1],
-                                                              self.train_losses['generator']['adversarial'][-1],
-                                                              self.train_losses['discriminator']['penalty'][-1],
-                                                              self.train_losses['discriminator']['adversarial'][-1])
+                              '\t\t Penalty: {}\n' \
+                              '\t\t Adversarial: {} \n'.format(i,
+                                                               self.train_losses['generator']['time_l2'][-1],
+                                                               self.train_losses['generator']['adversarial'][-1],
+                                                               self.train_losses['discriminator']['penalty'][-1],
+                                                               self.train_losses['discriminator']['adversarial'][-1])
                     print(message)
 
             # Evaluate the model
@@ -252,7 +252,7 @@ class WGanTrainer(Trainer):
             batch_losses['time_l2'].append(loss_g_time.item())
 
         # Store the validation losses
-        self.valid_losses['time_l2'].append(np.mean(batch_losses['time_l2']))
+        self.valid_losses['generator']['time_l2'].append(np.mean(batch_losses['time_l2']))
 
         # Display validation losses
         message = 'Epoch {}: \n' \
