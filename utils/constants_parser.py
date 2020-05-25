@@ -93,6 +93,9 @@ def get_general_args():
                              'with kernels of width 1.')
     parser.add_argument('--fc1_output_features', default=64, type=int, help='Number of output features in first linear'
                                                                             'layer of the discriminator.')
+    parser.add_argument('--use_layer_norm', default=True, type=bool,
+                        help='Flag indicating whether to use layer normalization or batch normalization as the latter '
+                             'is incoherent with the wgan-gp framework.')
 
     # General training related constants
     parser.add_argument('--train_batches_per_epoch', default=100, type=int,

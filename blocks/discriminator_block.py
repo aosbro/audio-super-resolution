@@ -4,19 +4,23 @@ from torch import nn
 
 
 class DiscriminatorBlock(BaseBlock):
-    def __init__(self, in_channels, channel_sizes, bottleneck_channels, general_args):
+    def __init__(self, in_channels, channel_sizes, bottleneck_channels, input_width, general_args):
         """
         Initializes the class DiscriminatorBlock that inherits its main properties from BaseBlock. DiscriminatorBlock
         is the main ingredient of the discriminator.
         :param in_channels: number of channels of the input tensor (scalar int).
         :param channel_sizes: number of filters for each scale of the multi-scale convolution (list of scalar int).
         :param bottleneck_channels: number of filters for each of the multi-scale bottleneck convolution.
+        :param input_width: width of the block's input (scalar int).
         :param general_args: argument parser that contains the arguments that are independent to the script being
         executed.
         """
         super(DiscriminatorBlock, self).__init__(in_channels, general_args.kernel_sizes, channel_sizes,
                                                  bottleneck_channels, general_args.discriminator_use_bottleneck)
-        self.batch_normalization = nn.BatchNorm1d(sum(channel_sizes))
+        if general_args.use_layer_norm:
+            self.normalization = nn.LayerNorm([sum(channel_sizes), input_width])
+        else:
+            self.normalization = nn.BatchNorm1d(sum(channel_sizes))
         self.dropout = nn.Dropout(general_args.dropout_probability)
         self.activation = nn.LeakyReLU(negative_slope=general_args.leaky_relu_slope)
         self.superpixel = SuperPixel1D(in_channels=sum(channel_sizes),
@@ -29,7 +33,7 @@ class DiscriminatorBlock(BaseBlock):
         :return: output feature map.
         """
         x = self.forward_base(x)
-        x = self.superpixel(self.activation(self.dropout(self.batch_normalization(x))))
+        x = self.superpixel(self.activation(self.dropout(self.normalization(x))))
         return x
 
 

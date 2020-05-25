@@ -5,6 +5,8 @@ from torch import nn
 class Discriminator(nn.Module):
     def __init__(self, general_args):
         super(Discriminator, self).__init__()
+        # Compute the input width at each level
+        input_widths = [general_args.window_length // 2 ** (i + 1) for i in range(general_args.discriminator_n_block)]
 
         # Compute channel sizes at each level
         channel_sizes = [list(map(lambda c_size: (2 ** min(i, general_args.discriminator_channel_factor_max)) * c_size,
@@ -24,9 +26,13 @@ class Discriminator(nn.Module):
 
         self.mid_blocks = [DiscriminatorBlock(in_channels=in_channel,
                                               channel_sizes=channel_size,
-                                              bottleneck_channels=bottleneck_channel, general_args=general_args)
-                           for in_channel, channel_size, bottleneck_channel in zip(in_channels, channel_sizes,
-                                                                                   bottleneck_channels)]
+                                              bottleneck_channels=bottleneck_channel,
+                                              input_width=input_width,
+                                              general_args=general_args)
+                           for in_channel, channel_size, bottleneck_channel, input_width in zip(in_channels,
+                                                                                                channel_sizes,
+                                                                                                bottleneck_channels,
+                                                                                                input_widths)]
         self.mid_blocks = nn.Sequential(*self.mid_blocks)
 
         # Define the last block

@@ -49,19 +49,16 @@ class WGanTrainer(Trainer):
 
         # Overrides losses from parent class
         self.train_losses = {
-            'time_l2': [],
-            'generator_adversarial': [],
-            'discriminator_adversarial': []
+            'generator': {'time_l2': [], 'adversarial': []},
+            'discriminator': {'penalty': [], 'adversarial': []}
         }
         self.test_losses = {
-            'time_l2': [],
-            'generator_adversarial': [],
-            'discriminator_adversarial': []
+            'generator': {'time_l2': [], 'adversarial': []},
+            'discriminator': {'penalty': [], 'adversarial': []}
         }
         self.valid_losses = {
-            'time_l2': [],
-            'generator_adversarial': [],
-            'discriminator_adversarial': []
+            'generator': {'time_l2': [], 'adversarial': []},
+            'discriminator': {'penalty': [], 'adversarial': []}
         }
 
         # Select either wgan or wgan-gp method
@@ -113,7 +110,7 @@ class WGanTrainer(Trainer):
 
         # Computes the norm of the gradients
         gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1))
-        return self.gamma * ((gradients_norm - 1) ** 2).mean()
+        return ((gradients_norm - 1) ** 2).mean()
 
     def train_discriminator_step(self, input_batch, target_batch):
         """
@@ -133,9 +130,11 @@ class WGanTrainer(Trainer):
 
         # Compute the loss
         loss_d = self.discriminator(generated_batch.detach()).mean() - self.discriminator(target_batch).mean()
+        self.train_losses['discriminator']['adversarial'].append(loss_d.item())
         if self.use_penalty:
             penalty = self.compute_gradient_penalty(input_batch, generated_batch.detach())
-            loss_d = loss_d + penalty
+            self.train_losses['discriminator']['penalty'].append(penalty.item())
+            loss_d = loss_d + self.gamma * penalty
 
         # Update the discriminator's weights
         loss_d.backward()
@@ -145,9 +144,6 @@ class WGanTrainer(Trainer):
         if not self.use_penalty:
             for p in self.discriminator.parameters():
                 p.data.clamp_(min=-self.clipping_limit, max=self.clipping_limit)
-
-        # Store the loss
-        self.train_losses['discriminator_adversarial'].append(loss_d.item())
 
         # Return the generated batch to avoid redundant computation
         return generated_batch
@@ -179,8 +175,8 @@ class WGanTrainer(Trainer):
         self.generator_optimizer.step()
 
         # Store the losses
-        self.train_losses['generator_adversarial'].append(loss_g_adversarial.item())
-        self.train_losses['time_l2'].append(loss_g_time.item())
+        self.train_losses['generator']['time_l2'].append(loss_g_time.item())
+        self.train_losses['generator']['adversarial'].append(loss_g_adversarial.item())
 
     def change_discriminator_grad_requirement(self, requires_grad):
         """
@@ -220,10 +216,12 @@ class WGanTrainer(Trainer):
                               '\t\t Time: {} \n' \
                               '\t\t Adversarial: {} \n' \
                               '\t Discriminator: \n' \
+                              '\t\t Penalty: \n' \
                               '\t\t Adversarial {} \n'.format(i,
-                                                              self.train_losses['time_l2'][-1],
-                                                              self.train_losses['generator_adversarial'][-1],
-                                                              self.train_losses['discriminator_adversarial'][-1])
+                                                              self.train_losses['generator']['time_l2'][-1],
+                                                              self.train_losses['generator']['adversarial'][-1],
+                                                              self.train_losses['discriminator']['penalty'][-1],
+                                                              self.train_losses['discriminator']['adversarial'][-1])
                     print(message)
 
             # Evaluate the model

@@ -1,5 +1,5 @@
-import torch
 from torchaudio.transforms import Spectrogram
+import torch
 
 
 def snr(x, x_ref):

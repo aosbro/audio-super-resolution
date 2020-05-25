@@ -3,6 +3,7 @@ from trainers.wgan_gp import WGanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
 import os
+import torch
 
 
 def get_wgan_trainer_args():
@@ -105,7 +106,4 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_wgan_trainer(general_args, trainer_args)
-    gan_trainer.train(epochs=1)
-    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
-    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
-#
+    # gan_trainer.train(epochs=1)
