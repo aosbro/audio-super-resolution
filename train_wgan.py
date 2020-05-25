@@ -3,7 +3,6 @@ from trainers.wgan_gp import WGanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
 import os
-import torch
 
 
 def get_wgan_trainer_args():

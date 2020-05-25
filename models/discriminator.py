@@ -6,7 +6,7 @@ class Discriminator(nn.Module):
     def __init__(self, general_args):
         super(Discriminator, self).__init__()
         # Compute the input width at each level
-        input_widths = [general_args.window_length // 2 ** (i + 1) for i in range(general_args.discriminator_n_block)]
+        input_widths = [general_args.window_length // 2 ** i for i in range(general_args.discriminator_n_block)]
 
         # Compute channel sizes at each level
         channel_sizes = [list(map(lambda c_size: (2 ** min(i, general_args.discriminator_channel_factor_max)) * c_size,
