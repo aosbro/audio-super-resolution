@@ -1,41 +1,21 @@
 from datasets.datasets import DatasetBeethoven, DatasetMaestroHDF, DatasetMaestroNPY
-from utils.constants import *
-import torch
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 from models.generator import Generator
+import matplotlib.pyplot as plt
+import torch
 
 
-def get_the_data_loaders(train_datapath, test_datapath, valid_datapath, batch_size):
+def get_the_beethoven_data_loaders_npy(datapath, loaders_parameters):
     """
-    Prepares the loaders for each phase (train, test, valid). The data for each phase is separated in different
-    files whose location is given in parameters. Each file only contain the target signals as the input signals are
-    generated on the fly.
-    :param train_datapath: location of the .npy file for the train phase (string).
-    :param test_datapath: location of the .npy file for the test phase (string).
-    :param valid_datapath: location of the .npy file for the valid phase (string).
-    :param batch_size: size of the batches, identical for all phases (scalar int).
-    :return: one data loader for each phae (torch DataLoader)
+    Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
+    loaders_parameters[phase]. The data paths are contained in a dictionary, there is a single file for each phase.
+    :param datapath: dictionary containing the locations for each phase.
+    :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
+    :return: one data loader for each phase (torch DataLoader).
     """
-    train_dataset = DatasetBeethoven(train_datapath)
-    test_dataset = DatasetBeethoven(test_datapath)
-    valid_dataset = DatasetBeethoven(valid_datapath)
-
-    # Create the generators
-    train_params = {'batch_size': batch_size,
-                    'shuffle': TRAIN_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-    test_params = {'batch_size': batch_size,
-                   'shuffle': TEST_SHUFFLE,
-                   'num_workers': NUM_WORKERS}
-    valid_params = {'batch_size': batch_size,
-                    'shuffle': VALID_SHUFFLE,
-                    'num_workers': NUM_WORKERS}
-
-    train_loader = DataLoader(train_dataset, **train_params)
-    test_loader = DataLoader(test_dataset, **test_params)
-    valid_loader = DataLoader(valid_dataset, **valid_params)
-    return train_loader, test_loader, valid_loader
+    datasets = {phase: DatasetBeethoven(datapath[phase]) for phase in ['train', 'test', 'valid']}
+    data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
+    return tuple(data_loaders)
 
 
 def get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_parameters):
@@ -55,10 +35,10 @@ def get_the_maestro_data_loaders_hdf(datapath, datasets_parameters, loaders_para
 def get_the_maestro_data_loaders_npy(datapath, loaders_parameters):
     """
     Prepares the loaders for each phase ('train', 'test', 'valid') according to the parameters given in the dictionary
-    loaders_parameters[phase]. The data paths are contained in a dictionary, there is a single file for each phase
+    loaders_parameters[phase]. The data paths are contained in a dictionary, there is a single file for each phase.
     :param datapath: dictionary containing the locations for each phase.
     :param loaders_parameters: dictionary of parameters whose first keys are the phases (dictionary).
-    :return: one data loader for each phase (torch DataLoader)
+    :return: one data loader for each phase (torch DataLoader).
     """
     datasets = {phase: DatasetMaestroNPY(datapath[phase]) for phase in ['train', 'test', 'valid']}
     data_loaders = [DataLoader(dataset, **loaders_parameters[phase]) for phase, dataset in datasets.items()]
@@ -68,8 +48,8 @@ def get_the_maestro_data_loaders_npy(datapath, loaders_parameters):
 def prepare_maestro_data(trainer_args):
     """
     Prepares the dataset and data loaders for all phases (train, test and validation).
-    :param trainer_args: argument parser that contains all the needed parameters
-    :return: one data loader for each phase (torch DataLoader)
+    :param trainer_args: argument parser that contains all the needed parameters.
+    :return: one data loader for each phase (torch DataLoader).
     """
     # Set the data loaders parameters with adequate format
     loaders_parameters = {'train': {'batch_size': trainer_args.train_batch_size,

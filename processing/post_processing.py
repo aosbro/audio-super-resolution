@@ -1,34 +1,32 @@
-from utils.constants import *
-import numpy as np
-import os
-import torch
-import shutil
-from create_maestro_file import create_modified_midifile
 from processing.pre_processing import convert_midi_to_wav, cut_track_and_stack
+from create_maestro_file import create_modified_midifile
 from scipy.io.wavfile import write, read
 from utils.utils import get_generator
+import numpy as np
+import shutil
+import torch
+import os
 
 
-def overlap_and_add_samples(batch, overlap=0.5, use_windowing=False):
+def overlap_and_add_samples(batch, general_args, use_windowing=True):
     """
-    Re-construct a full sample from its sub-parts using the OLA algorithm
-    :param overlap: proportion of the overlap between contiguous signals
-    :param batch: input signal previously split in overlapping windows torch tensor of shape [B, 1, WINDOW_LENGTH]
-    :return: reconstructed sample (torch tensor)
+    Re-construct a full sample from its sub-parts using the OLA algorithm.
+    :param batch: input signal previously split in overlapping windows torch tensor of shape [B, 1, WINDOW_LENGTH].
+    :return: reconstructed sample (torch tensor).
     """
     # Compute the size of the full sample
     N, _, single_sample_size = batch.size()
-    full_sample_size = int(single_sample_size * (1 + (N - 1) * (1 - overlap)))
+    full_sample_size = int(single_sample_size * (1 + (N - 1) * (1 - general_args.overlap)))
 
     # Initialize the full sample
     full_sample = torch.zeros(full_sample_size)
 
     for window_index in range(N):
-        window_start = int(window_index * (1 - overlap) * WINDOW_LENGTH)
-        window_end = window_start + WINDOW_LENGTH
+        window_start = int(window_index * (1 - general_args.overlap) * general_args.window_length)
+        window_end = window_start + general_args.window_length
         local_sample = batch[window_index].squeeze()
         if use_windowing:
-            local_sample *= torch.from_numpy(np.hanning(WINDOW_LENGTH))
+            local_sample *= torch.from_numpy(np.hanning(general_args.window_length))
         full_sample[window_start: window_end] += local_sample
     return full_sample
 
@@ -86,7 +84,7 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
             batch_generated = generator(input_tensor.narrow(0, batch, batch_size))
             generated_tensor[batch: batch + batch_generated.shape[0]] = batch_generated
 
-    full_sample_generated = overlap_and_add_samples(batch=generated_tensor, overlap=0.5, use_windowing=True)
+    full_sample_generated = overlap_and_add_samples(batch=generated_tensor, general_args=general_args)
     write(os.path.join(temporary_directory_path, 'generated.wav'), fs, full_sample_generated.numpy())
     write(os.path.join(temporary_directory_path, 'input.wav'), fs, full_sample_input[:, 0])
     write(os.path.join(temporary_directory_path, 'target.wav'), fs, full_sample_target[:, 0])

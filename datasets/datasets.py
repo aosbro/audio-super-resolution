@@ -19,7 +19,6 @@ class DatasetBeethoven(data.Dataset):
         test and validation individually.
         :param datapath: path to raw .npy file (string).
         :param ratio: down-sampling ratio (scalar int).
-        :param overlap: overlap ratio with adjacent windows (float in [0, 1)).
         :param use_windowing: boolean indicating if a Hanning window must be applied on the input tensors (boolean).
         :param general_args: argument parser that contains the arguments that are independent to the script being
         executed.

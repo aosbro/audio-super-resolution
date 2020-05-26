@@ -91,8 +91,8 @@ def get_general_args():
     parser.add_argument('--discriminator_bottleneck_reduction_factor', default=16, type=int,
                         help='Factor by which the number of input channels should be reduced by a first convolution '
                              'with kernels of width 1.')
-    parser.add_argument('--fc1_output_features', default=64, type=int, help='Number of output features in first linear'
-                                                                            'layer of the discriminator.')
+    parser.add_argument('--fc1_output_features', default=64, type=int,
+                        help='Number of output features in first linear layer of the discriminator.')
     parser.add_argument('--use_layer_norm', default=True, type=bool,
                         help='Flag indicating whether to use layer normalization or batch normalization as the latter '
                              'is incoherent with the wgan-gp framework.')

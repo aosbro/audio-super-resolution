@@ -43,6 +43,7 @@ class WGanTrainer(Trainer):
 
         # Loss scaling factors
         self.lambda_adv = trainer_args.lambda_adversarial
+        self.lambda_time = trainer_args.lambda_time
 
         # Boolean indicating if the model needs to be saved
         self.need_saving = True

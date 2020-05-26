@@ -43,6 +43,8 @@ def get_wgan_trainer_args():
                         help='Location of an existing gan trainer from which to resume training.')
     parser.add_argument('--lambda_adversarial', default=1e-4, type=float,
                         help='Weight given to the adversarial loss during the GAN training.')
+    parser.add_argument('--lambda_time', default=1.0, type=float,
+                        help='Weight given to the l2 loss in dime domain during the GAN training.')
     parser.add_argument('--use_penalty', default=False, type=bool,
                         help='Flag indicating whether to use gradient penalty or weight clipping to enforce the '
                              'Lipschitz constraint on the discriminator.')
