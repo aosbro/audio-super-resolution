@@ -205,17 +205,3 @@ class DatasetMaestroNPY(data.Dataset):
     def __getitem__(self, index):
         x_input, x_target = self.data[index, 0, :][None], self.data[index, 1, :][None]
         return torch.from_numpy(x_input).float(), torch.from_numpy(x_target).float()
-
-
-# def main():
-#     dataset = DatasetMaestroNPY('../data/train.npy')
-#     test = dataset.__getitem__(3000)
-#     print(test[0].shape, test[1].shape)
-#
-#     plt.plot(test[0].squeeze().cpu().numpy())
-#     plt.plot(test[1].squeeze().cpu().numpy())
-#     plt.show()
-#
-#
-# if __name__ == '__main__':
-#     main()

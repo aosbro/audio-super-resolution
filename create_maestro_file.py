@@ -18,7 +18,8 @@ def get_dataset_creation_args():
     parser.add_argument('--use_npy', default=True, type=bool,
                         help='Flag indicating if the data is stored as multiple .npy files or a single .hdf5 file. This'
                              'data format is not recommended as it required the data to fit entirely in RAM.')
-    parser.add_argument('--hdf5_savepath', default='data/maestro.hdf5', type=str,
+    parser.add_argument('--hdf5_savepath', default='data/maestro'
+                                                   '.hdf5', type=str,
                         help='Location of the .hdf5 file to create if this data format is selected')
     parser.add_argument('--train_npy_filepath', default='data/train.npy', type=str,
                         help='Location of the train .npy file if this data format is selected.')
