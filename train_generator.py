@@ -46,6 +46,10 @@ def get_generator_trainer_args():
                         help='Number of steps before the learning step is reduced by a factor gamma.')
     parser.add_argument('--scheduler_gamma', default=0.5, type=float,
                         help='Factor by which the learning rate is reduced after a specified number of steps.')
+    parser.add_argument('--use_freq_criterion', default=True, type=bool,
+                        help='Flag indicating whether or not the l2 criterion should be used in frequency domain.')
+    parser.add_argument('--lambda_freq', default=100., type=float,
+                        help='Weight given to the l2 loss in frequency domain during the generator training')
     parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
     args = parser.parse_args()
     return args
