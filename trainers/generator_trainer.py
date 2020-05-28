@@ -30,7 +30,7 @@ class GeneratorTrainer(Trainer):
         # Loss function
         self.time_criterion = nn.MSELoss()
         self.use_freq_criterion = trainer_args.use_freq_criterion
-        self.lambda_time = trainer_args.lambda_time
+        self.lambda_freq = trainer_args.lambda_freq
         self.frequency_criterion = nn.MSELoss()
 
     def train(self, epochs):
@@ -64,7 +64,7 @@ class GeneratorTrainer(Trainer):
                 self.train_losses['freq_l2'].append(freq_l2_loss.item())
                 loss = time_l2_loss
                 if self.use_freq_criterion:
-                    loss = loss + self.lambda_time * freq_l2_loss
+                    loss = loss + self.lambda_freq * freq_l2_loss
 
                 # Backward pass
                 loss.backward()
