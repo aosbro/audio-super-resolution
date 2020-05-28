@@ -67,7 +67,7 @@ class GanTrainer(Trainer):
         self.need_saving = True
 
         # Boolean if the generator receives the feedback from the discriminator
-        self.use_adversarial = True
+        self.use_adversarial = trainer_args.use_adversarial
 
     def load_pretrained_generator(self, generator_path):
         """
