@@ -7,8 +7,7 @@ import os
 
 def get_wgan_trainer_args():
     """
-    Parses the arguments related to the training of the gan if provided by the user, otherwise uses default
-    values.
+    Parses the arguments related to the training of the gan if provided by the user, otherwise uses default values.
     :return: Parsed arguments.
     """
     parser = argparse.ArgumentParser(description='Trains the GAN.')
@@ -56,6 +55,7 @@ def get_wgan_trainer_args():
                         help='Number of discriminator update before doing a single generator update.')
     parser.add_argument('--coupling_epoch', default=0, type=int,
                         help='Epoch from which the generator receives the feedback from the discriminator.')
+    parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
 
     # Generator related constants
     parser.add_argument('--generator_path', default=None, type=str,
@@ -97,6 +97,7 @@ def get_wgan_trainer(general_args, trainer_args):
 
 
 if __name__ == '__main__':
+    # TODO: Delete next line
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # Get the parameters related to the track generation
@@ -107,4 +108,4 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_wgan_trainer(general_args, trainer_args)
-    # gan_trainer.train(epochs=1)
+    gan_trainer.train(epochs=trainer_args.epochs)

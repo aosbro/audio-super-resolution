@@ -7,8 +7,7 @@ import os
 
 def get_gan_trainer_args():
     """
-    Parses the arguments related to the training of the gan if provided by the user, otherwise uses default
-    values.
+    Parses the arguments related to the training of the gan if provided by the user, otherwise uses default values.
     :return: Parsed arguments.
     """
     parser = argparse.ArgumentParser(description='Trains the GAN.')
@@ -43,6 +42,7 @@ def get_gan_trainer_args():
                         help='Location of an existing gan trainer from which to resume training.')
     parser.add_argument('--lambda_adversarial', default=1e-3, type=float,
                         help='Weight given to the adversarial loss during the GAN training.')
+    parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
 
     # Autoencoder related constants
     parser.add_argument('--autoencoder_path', default='/content/drive/My Drive/audio_objects/self.tar',
@@ -100,7 +100,4 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_gan_trainer(general_args, trainer_args)
-    gan_trainer.train(epochs=1)
-    # generator_trainer.plot_reconstruction_time_domain(index=0, model=generator_trainer.autoencoder)
-    # generator_trainer.plot_reconstruction_frequency_domain(index=0, model=generator_trainer.autoencoder)
-#
+    gan_trainer.train(epochs=trainer_args.epochs)

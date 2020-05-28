@@ -80,11 +80,24 @@ ram is implemented. More can be found in the docstring of the class ``DatasetMae
 Every argument to pass when calling the ``create_maestro_file.py`` script have a default value and have an explanation 
 in the argument parser.
 ```
-# Displaying the help menu
+# Display the help menu
 python3 create_maestro_file.py --help
 ```
 
 ## Training the models
-Each model c
+Each model can be trained through its own file. The training is managed by a trainer class which stores all the 
+attributes and parameters needed to be able to train a model over multiple sessions. Every argument to pass when 
+calling the ``train_<model_name>.py`` script have a default value and have an explanation in the argument parser.
+```
+# Display the help menu
+python3 train_<model_name>.py --help
+```
 
-## Future work
+## Generating a track with a pre-trained model
+Once a model is trained, it can be used to generate a part of track in order to assess its performance subjectively.
+To do so, the file ``generate_single_track.py`` can be used. Every argument to pass when calling the 
+``generate_single_track.py`` script have a default value and have an explanation in the argument parser.
+```
+# Display the help menu
+python3 generate_single_track.py --help 
+```

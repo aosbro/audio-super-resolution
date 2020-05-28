@@ -46,6 +46,7 @@ def get_autoencoder_trainer_args():
                         help='Number of steps before the learning step is reduced by a factor gamma.')
     parser.add_argument('--scheduler_gamma', default=0.5, type=float,
                         help='Factor by which the learning rate is reduced after a specified number of steps.')
+    parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
     args = parser.parse_args()
     return args
 
@@ -79,8 +80,5 @@ if __name__ == '__main__':
     general_args = get_general_args()
 
     autoencoder_trainer = get_autoencoder_trainer(general_args, trainer_args)
-    # autoencoder_trainer.train(epochs=1)
-    autoencoder_trainer.plot_l2_losses()
-    # autoencoder_trainer.plot_autoencoder_embedding_space(n_batches=5, fig_savepath='figures/autoencoder_features_new.png')
-
+    autoencoder_trainer.train(epochs=trainer_args.epochs)
 

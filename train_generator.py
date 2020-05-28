@@ -46,6 +46,7 @@ def get_generator_trainer_args():
                         help='Number of steps before the learning step is reduced by a factor gamma.')
     parser.add_argument('--scheduler_gamma', default=0.5, type=float,
                         help='Factor by which the learning rate is reduced after a specified number of steps.')
+    parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
     args = parser.parse_args()
     return args
 
@@ -79,5 +80,4 @@ if __name__ == '__main__':
     general_args = get_general_args()
 
     generator_trainer = get_generator_trainer(general_args, trainer_args)
-    # generator_trainer.train(epochs=1)
-    generator_trainer.plot_l2_losses()
+    generator_trainer.train(epochs=trainer_args.epochs)
