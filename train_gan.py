@@ -44,6 +44,10 @@ def get_gan_trainer_args():
                         help='Flag indicating whether or not the adversarial criterion should be used')
     parser.add_argument('--lambda_adversarial', default=1e-3, type=float,
                         help='Weight given to the adversarial loss during the GAN training.')
+    parser.add_argument('--lambda_freq', default=0., type=float,
+                        help='Weight given to the l2 loss in frequency domain during the GAN training.')
+    parser.add_argument('--lambda_autoencoder', default=1e-1, type=float,
+                        help='Weight given to the l2 loss in the autoencoder embedding space during the GAN training.')
     parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to train the models on.')
 
     # Autoencoder related constants

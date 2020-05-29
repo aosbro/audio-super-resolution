@@ -59,6 +59,8 @@ class GanTrainer(Trainer):
 
         # Loss scaling factors
         self.lambda_adv = trainer_args.lambda_adversarial
+        self.lambda_freq = trainer_args.lambda_freq
+        self.lambda_autoencoder = trainer_args.lambda_autoencoder
 
         # Spectrogram converter
         self.spectrogram = Spectrogram(normalized=True).to(self.device)
@@ -168,7 +170,8 @@ class GanTrainer(Trainer):
 
                 # Combine the different losses
                 loss_generator = self.lambda_adv * loss_generator_adversarial + loss_generator_time + \
-                                 loss_generator_frequency + loss_generator_autoencoder
+                                 self.lambda_freq * loss_generator_frequency + \
+                                 self.lambda_autoencoder * loss_generator_autoencoder
 
                 # Back-propagate and update the generator weights
                 loss_generator.backward()
@@ -177,7 +180,7 @@ class GanTrainer(Trainer):
                 # Print message
                 if not (i % 10):
                     message = 'Batch {}: \n' \
-                              '\t Genarator: \n' \
+                              '\t Generator: \n' \
                               '\t\t Time: {} \n' \
                               '\t\t Frequency: {} \n' \
                               '\t\t Autoencoder {} \n' \
