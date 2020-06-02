@@ -1,4 +1,4 @@
-# audio-super-resolution
+# Audio Enhancing with Wasserstein GANs
 This repository contains the code that was implemented in the context of an optional semester project at the 
 [VITA](https://www.epfl.ch/labs/vita/) lab worth 8 ECTS. The project was done under the supervision of 
 Brian Sifringer and Prof. A. Alahi.
