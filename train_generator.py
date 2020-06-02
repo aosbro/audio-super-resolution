@@ -2,7 +2,6 @@ from trainers.generator_trainer import GeneratorTrainer
 from utils.constants_parser import get_general_args
 from utils.utils import prepare_maestro_data
 import argparse
-import os
 
 
 def get_generator_trainer_args():
@@ -39,7 +38,7 @@ def get_generator_trainer_args():
     # Trainer related constants
     parser.add_argument('--savepath', type=str,
                         help='Location where to save the generator trainer to resume training.')
-    parser.add_argument('--loadpath', default='objects/generator_trainer_no_skip2.tar', type=str,
+    parser.add_argument('--loadpath', default='objects/generator_trainer_freq.tar', type=str,
                         help='Location of an existing generator trainer from which to resume training.')
     parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate for the generator.')
     parser.add_argument('--scheduler_step', default=30, type=int,
@@ -75,13 +74,14 @@ def get_generator_trainer(general_args, trainer_args):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
     # Get the parameters related to the track generation
     trainer_args = get_generator_trainer_args()
 
     # Get the general parameters
     general_args = get_general_args()
 
+    # Get the trainer
     generator_trainer = get_generator_trainer(general_args, trainer_args)
+
+    # Start training
     generator_trainer.train(epochs=trainer_args.epochs)

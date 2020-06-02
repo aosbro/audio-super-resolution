@@ -2,7 +2,6 @@ from utils.constants_parser import get_general_args
 from trainers.wgan_trainer import WGanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
-import os
 
 
 def get_wgan_trainer_args():
@@ -38,7 +37,7 @@ def get_wgan_trainer_args():
     # Trainer related constants
     parser.add_argument('--savepath', default='/content/drive/My Drive/audio_objects/gan_trainer.tar', type=str,
                         help='Location where to save the gan trainer to resume training.')
-    parser.add_argument('--loadpath', default='', type=str,
+    parser.add_argument('--loadpath', default='objects/wgan_gp_trainer_128fc_2.tar', type=str,
                         help='Location of an existing gan trainer from which to resume training.')
     parser.add_argument('--lambda_adversarial', default=1e-4, type=float,
                         help='Weight given to the adversarial loss during the GAN training.')
@@ -85,11 +84,11 @@ def get_wgan_trainer(general_args, trainer_args):
     :param trainer_args: instance of an argument parser that stores parameters related to the training.
     :return: instance of an GanTrainer.
     """
-    train_loader, _, valid_loader = prepare_maestro_data(trainer_args)
+    train_loader, test_loader, valid_loader = prepare_maestro_data(trainer_args)
 
     # Load the train class which will automatically resume previous state from 'loadpath'
     wgan_trainer = WGanTrainer(train_loader=train_loader,
-                               test_loader=None,
+                               test_loader=test_loader,
                                valid_loader=valid_loader,
                                general_args=general_args,
                                trainer_args=trainer_args)
@@ -97,9 +96,6 @@ def get_wgan_trainer(general_args, trainer_args):
 
 
 if __name__ == '__main__':
-    # TODO: Delete next line
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
     # Get the parameters related to the track generation
     trainer_args = get_wgan_trainer_args()
 
@@ -108,4 +104,6 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_wgan_trainer(general_args, trainer_args)
+
+    # Start training
     gan_trainer.train(epochs=trainer_args.epochs)

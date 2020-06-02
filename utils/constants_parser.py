@@ -2,7 +2,7 @@ import argparse
 
 
 def get_general_args():
-    parser = argparse.ArgumentParser(description='Store all constants required for the models and training.')
+    parser = argparse.ArgumentParser(description='Stores all constants required for the models and training.')
     # Data related constants
     parser.add_argument('--window_length', default=8192, type=int, help='Number of samples per input tensor.')
     parser.add_argument('--overlap', default=0.5, type=float, help='Overlap between two contiguous windows.')
@@ -20,7 +20,7 @@ def get_general_args():
     parser.add_argument('--leaky_relu_slope', default=0.2, type=float,
                         help='Slope of the negative part of the leaky ReLu activation.')
     parser.add_argument('--dropout_probability', default=0.2, type=float,
-                        help='Dropout probability of channes during training.')
+                        help='Dropout probability of channels during training.')
     parser.add_argument('--kernel_sizes', nargs='+', default=[3, 9, 27, 81], type=int,
                         help='All models rely on multi-scale convolutions, therefore each convolution implements '
                              'sub-convolutions with different kernel sizes and number of filter. The features maps '
@@ -91,7 +91,7 @@ def get_general_args():
     parser.add_argument('--discriminator_bottleneck_reduction_factor', default=16, type=int,
                         help='Factor by which the number of input channels should be reduced by a first convolution '
                              'with kernels of width 1.')
-    parser.add_argument('--fc1_output_features', default=64, type=int,
+    parser.add_argument('--fc1_output_features', default=128, type=int,
                         help='Number of output features in first linear layer of the discriminator.')
     parser.add_argument('--use_layer_norm', default=True, type=bool,
                         help='Flag indicating whether to use layer normalization or batch normalization as the latter '

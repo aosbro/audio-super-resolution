@@ -32,7 +32,7 @@ def overlap_and_add_samples(batch, general_args, use_windowing=True):
 
 
 def generate_single_track(original_midi_filepath, temporary_directory_path, transformations, generator_path,
-                          device, general_args):
+                          device, general_args, track_args):
     """
     Generates a part of single track using a pre-trained generator starting from the original .midi file. The
     transformation to apply to get the (input, target) pair of signals are specified in the transformations dictionary.
@@ -45,6 +45,7 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
     :param generator_path: location of the generator trainer to restore pre-trained weights (string).
     :param device: either 'cpu' or 'cuda' depending on hardware availability
     :param general_args: argument parser that contains the arguments that are independent to the script being executed.
+    :param track_args: argument parser that contains the arguments related to the track generation.
     :return:None
     """
     # Load the pre-trained generator
@@ -74,7 +75,7 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
 
     # Split the input file
     input_tensor, fs = cut_track_and_stack(track_path=os.path.join(temporary_directory_path, 'input.wav'))
-    input_tensor = torch.from_numpy(input_tensor).float()[:160]
+    input_tensor = torch.from_numpy(input_tensor).float()[:track_args.n_samples]
 
     # # Generate the output
     generated_tensor = torch.zeros_like(input_tensor)
@@ -86,6 +87,7 @@ def generate_single_track(original_midi_filepath, temporary_directory_path, tran
 
     full_sample_generated = overlap_and_add_samples(batch=generated_tensor, general_args=general_args)
     write(os.path.join(temporary_directory_path, 'generated.wav'), fs, full_sample_generated.numpy())
+    print(full_sample_input.shape)
     write(os.path.join(temporary_directory_path, 'input.wav'), fs, full_sample_input[:, 0])
     write(os.path.join(temporary_directory_path, 'target.wav'), fs, full_sample_target[:, 0])
 

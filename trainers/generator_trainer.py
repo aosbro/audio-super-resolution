@@ -1,6 +1,7 @@
 from trainers.base_trainer import Trainer
 from models.generator import Generator
 from torch.optim import lr_scheduler
+from utils.metrics import snr, lsd
 import numpy as np
 import torch
 from torch import nn
@@ -104,7 +105,7 @@ class GeneratorTrainer(Trainer):
             # Transfer to GPU
             input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
 
-            # Generates a fake batch
+            # Generates a batch
             generated_batch = self.generator(input_batch)
 
             # Get the spectrogram
@@ -160,3 +161,35 @@ class GeneratorTrainer(Trainer):
         self.train_losses = checkpoint['train_losses']
         self.test_losses = checkpoint['test_losses']
         self.valid_losses = checkpoint['valid_losses']
+
+    def evaluate_metrics(self, n_batches):
+        """
+        Evaluates the quality of the reconstruction with the SNR and LSD metrics on a specified number of batches
+        :param: n_batches: number of batches to process
+        :return: mean and std for each metric
+        """
+        with torch.no_grad():
+            snrs = []
+            lsds = []
+            generator = self.generator.eval()
+            for k in range(n_batches):
+                # Transfer to GPU
+                local_batch = next(self.test_loader_iter)
+                # Transfer to GPU
+                input_batch, target_batch = local_batch[0].to(self.device), local_batch[1].to(self.device)
+
+                # Generates a batch
+                generated_batch = generator(input_batch)
+
+                # Get the metrics
+                snrs.append(snr(x=generated_batch.squeeze(), x_ref=target_batch.squeeze()))
+                lsds.append(lsd(x=generated_batch.squeeze(), x_ref=target_batch.squeeze()))
+
+            snrs = torch.cat(snrs).cpu().numpy()
+            lsds = torch.cat(lsds).cpu().numpy()
+
+            # Some signals corresponding to silence will be all zeroes and cause troubles due to the logarithm
+            snrs[np.isinf(snrs)] = np.nan
+            lsds[np.isinf(lsds)] = np.nan
+        return np.nanmean(snrs), np.nanstd(snrs), np.nanmean(lsds), np.nanstd(lsds)
+

@@ -144,9 +144,6 @@ def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_leng
     and 'valid' phases.
     :param hdf5_path: path to location where to create the .h5 file (string)
     :param window_length: number of samples per window (scalar int)
-    :param n_train: number of train tracks to select
-    :param n_test: number of test tracks to select
-    :param n_valid: number of valid tracks to select (scalar int).
     :return: None
     """
     with h5py.File(hdf5_path, 'w') as hdf:
@@ -184,6 +181,14 @@ def create_hdf5_file(file_dict, temporary_directory_path, hdf5_path, window_leng
 
 
 def create_npy_files(file_dict, temporary_directory_path, savepath, window_length=8192):
+    """
+    Creates three .npy files based on randomly selected files.
+    :param file_dict: dictionary containing the selected files and stored by phase.
+    :param temporary_directory_path: directory used to temporary store the .wav files.
+    :param savepath: location where to save the created files.
+    :param window_length: length of cropped signal.
+    :return:
+    """
     # Iterate over the phases
     for phase in ['train', 'test', 'valid']:
         phase_directory = os.path.join(temporary_directory_path, phase)

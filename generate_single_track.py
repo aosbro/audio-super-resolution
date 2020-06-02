@@ -3,7 +3,6 @@ from utils.constants_parser import get_general_args
 from utils.utils import prepare_transformations
 import argparse
 import torch
-import os
 
 
 def get_track_generation_args():
@@ -14,14 +13,15 @@ def get_track_generation_args():
     """
     parser = argparse.ArgumentParser(description='Generates a track from an input .midi file.')
     parser.add_argument('--original_midi',
-                        default='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2004/MIDI-Unprocessed_XP_06_R2_2004_01_ORIG_MID--AUDIO_06_R2_2004_01_Track01_wav.midi',
+                        default='/media/thomas/Samsung_T5/VITA/data/maestro-v1.0.0/2015/MIDI-Unprocessed_R1_D1-1-8_mid--AUDIO-from_mp3_04_R1_2015_wav--4.midi',
                         type=str, help='Original .midi file to base the input and target on.')
     parser.add_argument('--temp_dir', default='data/temp', type=str,
                         help='Location of a temporary directory to store temporary files. If is does not exists it will'
                              'be created. If it already exists its content will be erased. After the creation of the '
                              'dataset the temporary folder and its content will be deleted.')
-    parser.add_argument('--generator_path', default='objects/generator_trainer_freq.tar', type=str,
-                        help='Path to a generator trainer to load pre-trained weights.')
+    parser.add_argument('--generator_path', default='objects/generator_trainer_autoencoder.tar', type=str,
+                        help='Path to a generator or gan trainer to load pre-trained weights.')
+    parser.add_argument('--n_samples', default=300, type=int, help='Number of samples to generate.')
     parser.add_argument('--input_instrument', default=4, type=int, help='Input instrument, default is electric piano.')
     parser.add_argument('--input_velocity', default=None, type=int,
                         help='Velocity corresponds to the volume at which a given key is played. When set to a value in'
@@ -50,21 +50,21 @@ def get_track_generation_args():
 
 def generate_track(general_args, track_args):
     """
-
-    :param general_args:
-    :param track_args:
-    :return:
+    Generates a single track with a pre-trained generator and an input .midi files.
+    :param general_args: argument parser storing constants independent of the executed file.
+    :param track_args: aurgument parser storing constants related to the track generation.
+    :return: None
     """
     generate_single_track(original_midi_filepath=track_args.original_midi,
                           temporary_directory_path=track_args.temp_dir,
                           transformations=prepare_transformations(track_args),
                           generator_path=track_args.generator_path,
                           device=('cuda' if torch.cuda.is_available() else 'cpu'),
-                          general_args=general_args)
+                          general_args=general_args,
+                          track_args=track_args)
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     # Get the parameters related to the track generation
     track_args = get_track_generation_args()
 

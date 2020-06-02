@@ -2,7 +2,6 @@ from utils.constants_parser import get_general_args
 from trainers.gan_trainer import GanTrainer
 from utils.utils import prepare_maestro_data
 import argparse
-import os
 
 
 def get_gan_trainer_args():
@@ -36,9 +35,10 @@ def get_gan_trainer_args():
     parser.add_argument('--num_worker', default=2, type=int, help='Number of workers used by the data loaders.')
 
     # Trainer related constants
-    parser.add_argument('--savepath', default='/content/drive/My Drive/audio_objects/gan_trainer.tar', type=str,
+    parser.add_argument('--savepath', default='/content/drive/My Drive/audio_objects/generator_trainer_autoencoder.tar',
+                        type=str,
                         help='Location where to save the gan trainer to resume training.')
-    parser.add_argument('--loadpath', default='', type=str,
+    parser.add_argument('--loadpath', default='objects/generator_trainer_autoencoder.tar', type=str,
                         help='Location of an existing gan trainer from which to resume training.')
     parser.add_argument('--use_adversarial', default=True, type=bool,
                         help='Flag indicating whether or not the adversarial criterion should be used')
@@ -96,8 +96,6 @@ def get_gan_trainer(general_args, trainer_args):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
     # Get the parameters related to the track generation
     trainer_args = get_gan_trainer_args()
 
@@ -106,4 +104,6 @@ if __name__ == '__main__':
 
     # Get the trainer
     gan_trainer = get_gan_trainer(general_args, trainer_args)
+
+    # Start training
     gan_trainer.train(epochs=trainer_args.epochs)

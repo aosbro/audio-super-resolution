@@ -39,7 +39,7 @@ def get_autoencoder_trainer_args():
     # Trainer related constants
     parser.add_argument('--savepath', type=str,
                         help='Location where to save the auto-encoder trainer to resume training.')
-    parser.add_argument('--loadpath', default='objects/autoencoder_trainer.tar', type=str,
+    parser.add_argument('--loadpath', default='objects/autoencoder_trainer_new.tar', type=str,
                         help='Location of an existing auto-encoder trainer from which to resume training.')
     parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate for the auto-encoder.')
     parser.add_argument('--scheduler_step', default=30, type=int,
@@ -71,8 +71,6 @@ def get_autoencoder_trainer(general_args, trainer_args):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
     # Get the parameters related to the track generation
     trainer_args = get_autoencoder_trainer_args()
 
@@ -80,5 +78,7 @@ if __name__ == '__main__':
     general_args = get_general_args()
 
     autoencoder_trainer = get_autoencoder_trainer(general_args, trainer_args)
+
+    # Start training
     autoencoder_trainer.train(epochs=trainer_args.epochs)
 

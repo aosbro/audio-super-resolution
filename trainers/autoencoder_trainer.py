@@ -50,7 +50,6 @@ class AutoEncoderTrainer(Trainer):
                 input_batch, target_batch = data_batch[0].to(self.device), data_batch[1].to(self.device)
 
                 # Concatenate the input and target signals along first dimension and transfer to GPU
-                # local_batch = torch.cat(local_batch).to(self.device)
                 self.optimizer.zero_grad()
 
                 # Train with input samples
@@ -211,8 +210,6 @@ class AutoEncoderTrainer(Trainer):
                 axes[i // 3][i % 3].scatter(tsne_results[k * n_pairs: (k + 1) * n_pairs, 0],
                                             tsne_results[k * n_pairs: (k + 1) * n_pairs:, 1], label=label)
                 axes[i // 3][i % 3].set_title('Channel {}'.format(random_feature), fontsize=14)
-                axes[i // 3][i % 3].set_xlabel('Learned dimension 1', fontsize=14)
-                axes[i // 3][i % 3].set_ylabel('Learned dimension 2', fontsize=14)
                 axes[i // 3][i % 3].legend()
 
         # Save plot if needed

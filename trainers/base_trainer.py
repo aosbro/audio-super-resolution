@@ -1,9 +1,9 @@
-import abc
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
 from torchaudio.transforms import Spectrogram, AmplitudeToDB
+import matplotlib.pyplot as plt
 from itertools import cycle
+import numpy as np
+import torch
+import abc
 
 
 class Trainer(abc.ABC):
@@ -19,8 +19,7 @@ class Trainer(abc.ABC):
         # Iterators to cycle over the datasets
         self.train_loader_iter = cycle(iter(self.train_loader))
         self.valid_loader_iter = cycle(iter(self.valid_loader))
-        if self.test_loader:
-            self.test_loader_iter = cycle(iter(self.test_loader))
+        self.test_loader_iter = cycle(iter(self.test_loader))
 
         # Epoch counter
         self.epoch = 0
@@ -233,6 +232,7 @@ class Trainer(abc.ABC):
                 axes[1].set_xlabel('Pseudo-epochs ({} batches)'.format(self.valid_batches_per_epoch), fontsize=14)
                 axes[1].legend()
         plt.show()
+
 
     @abc.abstractmethod
     def train(self, epochs):
