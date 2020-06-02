@@ -1,6 +1,7 @@
 # audio-super-resolution
 This repository contains the code that was implemented in the context of an optional semester project at the 
-[VITA](https://www.epfl.ch/labs/vita/) lab credited 8 ECTS. 
+[VITA](https://www.epfl.ch/labs/vita/) lab worth 8 ECTS. The project was done under the supervision of 
+Brian Sifringer and Prof. A. Alahi.
 
 The objective of the project is to adapt the frameworks of [Generative Adversarial Networks](https://papers.nips.cc/paper/5423-generative-adversarial-nets.pdf)
 to the field of audio which in contrast to images has received relatively few attention in the recent years. The task
@@ -101,3 +102,11 @@ To do so, the file ``generate_single_track.py`` can be used. Every argument to p
 # Display the help menu
 python3 generate_single_track.py --help 
 ```
+
+## Report
+The report can be found in the ```docs``` directory. It is designed with the goal of providing all the required theoretical
+background to understand the code.
+
+## Samples
+Audio samples as .wav files are available in the ```samples``` directory. The different sub-directories correspond to
+the different experiments described in Section V of the report.
